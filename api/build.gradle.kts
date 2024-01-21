@@ -16,12 +16,15 @@ dependencies {
 
     api("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
     api("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightlib:1.3.1-SNAPSHOT")
+    api("org.wallentines:midnightlib:1.5.0-SNAPSHOT")
 
     api("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
 
     api("io.netty:netty-codec:4.1.105.Final")
     api("io.netty:netty-buffer:4.1.105.Final")
+
+    api("com.mojang:authlib:6.0.52")
+    api("com.google.guava:guava:33.0.0-jre")
 
     api("org.slf4j:slf4j-api:2.0.9")
 

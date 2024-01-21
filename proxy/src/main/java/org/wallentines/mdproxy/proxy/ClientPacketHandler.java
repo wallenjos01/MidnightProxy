@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy;
+package org.wallentines.mdproxy.proxy;
 
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mcore.text.TextColor;
+import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.CryptUtil;
 
@@ -29,6 +30,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
     private ServerboundLoginPacket login;
     private final MinecraftSessionService minecraft;
     private final KeyPair keyPair;
+    private ClientConnectionImpl conn;
     private Channel channel;
 
     public ClientPacketHandler(MinecraftSessionService minecraft, KeyPair keyPair) {
@@ -53,6 +55,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         else if(packet instanceof ServerboundLoginPacket l) {
 
             this.login = l;
+            this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
 
             disconnect(Component.text("Initial connection success").withColor(TextColor.GREEN));
 
@@ -75,7 +78,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                 if(res == null) {
                     disconnect(Component.translate("multiplayer.disconnect.unverified_username"));
                 } else {
-                    // Send login success
+                    this.conn = conn.withAuth();
                 }
 
             } catch (AuthenticationUnavailableException ex) {

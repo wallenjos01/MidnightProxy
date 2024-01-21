@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy;
+package org.wallentines.mdproxy.proxy;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

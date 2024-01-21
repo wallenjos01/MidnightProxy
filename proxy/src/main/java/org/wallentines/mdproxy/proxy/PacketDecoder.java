@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy;
+package org.wallentines.mdproxy.proxy;
 
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import io.netty.buffer.ByteBuf;

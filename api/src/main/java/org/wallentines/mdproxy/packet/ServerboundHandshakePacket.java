@@ -3,6 +3,8 @@ package org.wallentines.mdproxy.packet;
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
+import java.util.Locale;
+
 public record ServerboundHandshakePacket(int protocolVersion, String address, int port, Intent intent) implements Packet {
 
     public static final int ID = 0;
@@ -24,7 +26,7 @@ public record ServerboundHandshakePacket(int protocolVersion, String address, in
     public static ServerboundHandshakePacket read(ByteBuf buffer) {
 
         int version = PacketBufferUtil.readVarInt(buffer);
-        String addr = PacketBufferUtil.readUtf(buffer, 255);
+        String addr = PacketBufferUtil.readUtf(buffer, 255).toLowerCase(Locale.ROOT);
         int port = buffer.readUnsignedShort();
         Intent intent = Intent.byId(PacketBufferUtil.readVarInt(buffer));
         if(intent == null) {
