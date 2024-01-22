@@ -1,7 +1,7 @@
 package org.wallentines.mdproxy.proxy;
 
+import com.google.common.primitives.Ints;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
-import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,8 +19,8 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.util.Random;
 
 public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
@@ -28,14 +28,12 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private ServerboundHandshakePacket handshake;
     private ServerboundLoginPacket login;
-    private final MinecraftSessionService minecraft;
-    private final KeyPair keyPair;
+    private final ProxyServer server;
     private ClientConnectionImpl conn;
     private Channel channel;
 
-    public ClientPacketHandler(MinecraftSessionService minecraft, KeyPair keyPair) {
-        this.minecraft = minecraft;
-        this.keyPair = keyPair;
+    public ClientPacketHandler(ProxyServer server) {
+        this.server = server;
     }
 
     @Override
@@ -57,33 +55,44 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             this.login = l;
             this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
 
-            disconnect(Component.text("Initial connection success").withColor(TextColor.GREEN));
+            Random rand = new Random();
+            byte[] challenge = Ints.toByteArray(rand.nextInt());
+
+            send(new ClientboundEncryptionPacket("MDB", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
 
         }
         else if(packet instanceof ServerboundEncryptionPacket e) {
 
-
-            PrivateKey privateKey = keyPair.getPrivate();
+            PrivateKey privateKey = server.getKeyPair().getPrivate();
             SecretKey key = new SecretKeySpec(CryptUtil.decryptData(privateKey, e.sharedSecret()), "AES");
-            String serverId = new BigInteger(CryptUtil.hashData(SERVER_ID.getBytes("ISO_8859_1"), keyPair.getPublic().getEncoded(), key.getEncoded())).toString(16);
+            String serverId = new BigInteger(CryptUtil.hashData(SERVER_ID.getBytes("ISO_8859_1"), server.getKeyPair().getPublic().getEncoded(), key.getEncoded())).toString(16);
 
             SocketAddress socketAddress = ctx.channel().remoteAddress();
             InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
 
             setupEncryption(ctx, key);
 
-            try {
+            if(server.requiresAuth()) {
 
-                ProfileResult res = minecraft.hasJoinedServer(login.username(), serverId, addr);
-                if(res == null) {
-                    disconnect(Component.translate("multiplayer.disconnect.unverified_username"));
-                } else {
-                    this.conn = conn.withAuth();
+                // TODO: Threading
+                try {
+
+                    ProfileResult res = server.getSessionService().hasJoinedServer(login.username(), serverId, addr);
+                    if (res == null) {
+                        disconnect(Component.translate("multiplayer.disconnect.unverified_username"));
+                    } else {
+                        this.conn = conn.withAuth();
+                    }
+
+                } catch (AuthenticationUnavailableException ex) {
+                    disconnect(Component.translate("multiplayer.disconnect.authservers_down"));
                 }
-
-            } catch (AuthenticationUnavailableException ex) {
-                disconnect(Component.translate("multiplayer.disconnect.authservers_down"));
+            } else {
+                this.conn = conn.withAuth();
             }
+
+            disconnect(Component.text("Encryption Success"));
+
         }
     }
 
@@ -101,7 +110,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
     private void disconnect(Component component) {
 
         channel.writeAndFlush(new ClientboundKickPacket(component));
-        channel.disconnect();
+        channel.close().awaitUninterruptibly();
 
     }
 
@@ -128,4 +137,14 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     }
 
+
+    public void send(Packet packet) {
+
+        if(channel.eventLoop().inEventLoop()) {
+            channel.writeAndFlush(packet);
+        } else {
+            channel.eventLoop().execute(() -> channel.writeAndFlush(packet));
+        }
+
+    }
 }

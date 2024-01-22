@@ -9,6 +9,7 @@ java.targetCompatibility = JavaVersion.VERSION_17
 repositories {
     mavenCentral()
     maven("https://maven.wallentines.org/")
+    maven("https://libraries.minecraft.net/")
     mavenLocal()
 }
 
