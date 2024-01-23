@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy.packet;
 
+import org.wallentines.mdproxy.packet.config.ClientboundSetCookiePacket;
+import org.wallentines.mdproxy.packet.config.ClientboundTransferPacket;
 import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
@@ -36,6 +38,7 @@ public class PacketRegistry {
     public static final PacketRegistry LOGIN_CLIENTBOUND = new PacketRegistry(ClientboundKickPacket.TYPE, ClientboundEncryptionPacket.TYPE, ClientboundLoginFinishedPacket.TYPE, ClientboundCookieRequestPacket.TYPE);
     public static final PacketRegistry LOGIN_SERVERBOUND = new PacketRegistry(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
 
+    public static final PacketRegistry CONFIG_CLIENTBOUND = new PacketRegistry(ClientboundSetCookiePacket.TYPE, ClientboundTransferPacket.TYPE);
 
     public static PacketRegistry getRegistry(PacketFlow flow, ProtocolPhase phase) {
 
@@ -45,7 +48,7 @@ public class PacketRegistry {
                 case HANDSHAKE -> PacketRegistry.HANDSHAKE;
                 case STATUS -> PacketRegistry.STATUS_SERVERBOUND;
                 case LOGIN -> PacketRegistry.LOGIN_SERVERBOUND;
-                case CONFIG -> throw new UnsupportedOperationException("Config packets not implemented yet!");
+                case CONFIG -> throw new IllegalArgumentException("Cannot send config packets to backends!");
             };
 
         } else {
@@ -53,7 +56,7 @@ public class PacketRegistry {
                 case HANDSHAKE -> throw new IllegalArgumentException("Handshake packets are not sent to the client!");
                 case STATUS -> PacketRegistry.STATUS_CLIENTBOUND;
                 case LOGIN -> PacketRegistry.LOGIN_CLIENTBOUND;
-                case CONFIG -> throw new UnsupportedOperationException("Config packets not implemented yet!");
+                case CONFIG -> PacketRegistry.CONFIG_CLIENTBOUND;
             };
         }
 

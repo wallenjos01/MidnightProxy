@@ -6,7 +6,7 @@ import org.wallentines.mdcfg.serializer.NumberSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
-public record Backend(String hostname, int port, int priority, @Nullable WrappedRequirement requirement) implements Comparable<Backend> {
+public record Backend(String hostname, int port, int priority, @Nullable WrappedRequirement requirement, boolean redirect) implements Comparable<Backend> {
 
     @Override
     public int compareTo(@NotNull Backend o) {
@@ -18,6 +18,7 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
             NumberSerializer.forInt(1, 65535).entry("port", Backend::port).orElse(25565),
             Serializer.INT.entry("priority", Backend::priority).orElse(0),
             WrappedRequirement.SERIALIZER.entry("requirement", Backend::requirement).optional(),
+            Serializer.BOOLEAN.entry("redirect", Backend::redirect).orElse(false),
             Backend::new
     );
 
