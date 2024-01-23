@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 
 public interface Packet {
 
-    int getId();
+    PacketType getType();
 
     void write(ByteBuf buf);
 

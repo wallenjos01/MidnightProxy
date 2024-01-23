@@ -1,24 +1,16 @@
 package org.wallentines.mdproxy.proxy;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import io.netty.handler.codec.MessageToMessageEncoder;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-import java.util.List;
+public class LengthPrepender extends MessageToByteEncoder<ByteBuf> {
 
-public class LengthPrepender extends MessageToMessageEncoder<ByteBuf> {
-
-    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> out) {
+    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf out) {
 
         int length = byteBuf.readableBytes();
-
-        ByteBuf len = Unpooled.buffer();
-        PacketBufferUtil.writeVarInt(len, length);
-
-        out.add(len);
-        out.add(byteBuf);
+        PacketBufferUtil.writeVarInt(out, length);
+        out.writeBytes(byteBuf);
     }
 }

@@ -7,13 +7,12 @@ import java.util.Locale;
 
 public record ServerboundHandshakePacket(int protocolVersion, String address, int port, Intent intent) implements Packet {
 
-    public static final int ID = 0;
+    public static final PacketType TYPE = PacketType.of(0, ServerboundHandshakePacket::read);
 
     @Override
-    public int getId() {
-        return ID;
+    public PacketType getType() {
+        return TYPE;
     }
-
 
     @Override
     public void write(ByteBuf buf) {

@@ -10,15 +10,10 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public class PacketEncoder extends MessageToByteEncoder<Packet> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("PacketEncoder");
-
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, Packet packet, ByteBuf byteBuf) throws Exception {
 
-        LOGGER.warn("Sending packet " + packet.getClass().getName() + "!");
-
-        PacketBufferUtil.writeVarInt(byteBuf, packet.getId());
-        byteBuf.release();
+        PacketBufferUtil.writeVarInt(byteBuf, packet.getType().getId());
         packet.write(byteBuf);
 
     }

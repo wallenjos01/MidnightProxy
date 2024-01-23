@@ -1,17 +1,20 @@
-package org.wallentines.mdproxy.packet;
+package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.UUID;
 
 public record ServerboundLoginPacket(String username, UUID uuid) implements Packet {
 
-    public static final int ID = 0;
+    public static final PacketType TYPE = PacketType.of(0, ServerboundLoginPacket::read);
 
     @Override
-    public int getId() {
-        return ID;
+    public PacketType getType() {
+        return TYPE;
     }
 
     @Override

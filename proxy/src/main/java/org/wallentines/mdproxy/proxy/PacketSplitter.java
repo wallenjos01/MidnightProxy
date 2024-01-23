@@ -10,9 +10,7 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 import java.util.List;
 
 public class PacketSplitter extends ByteToMessageDecoder {
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
+
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
         byteBuf.markReaderIndex();

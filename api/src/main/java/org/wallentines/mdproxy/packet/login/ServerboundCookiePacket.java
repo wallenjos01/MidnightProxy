@@ -1,6 +1,8 @@
-package org.wallentines.mdproxy.packet;
+package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -8,11 +10,12 @@ import java.util.Optional;
 
 public record ServerboundCookiePacket(Identifier key, Optional<ByteBuf> data) implements Packet {
 
-    public static final int ID = 4;
+
+    public static final PacketType TYPE = PacketType.of(4, ServerboundEncryptionPacket::read);
 
     @Override
-    public int getId() {
-        return ID;
+    public PacketType getType() {
+        return TYPE;
     }
 
     @Override

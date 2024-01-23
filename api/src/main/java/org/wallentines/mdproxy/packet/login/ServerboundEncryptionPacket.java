@@ -1,6 +1,8 @@
-package org.wallentines.mdproxy.packet;
+package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
@@ -9,16 +11,17 @@ import java.security.PublicKey;
 
 public record ServerboundEncryptionPacket(byte[] sharedSecret, byte[] verifyToken) implements Packet {
 
-    public static final int ID = 1;
-
     public ServerboundEncryptionPacket(SecretKey key, PublicKey publicKey, byte[] verifyBytes) {
         this(CryptUtil.encryptData(publicKey, key.getEncoded()), CryptUtil.encryptData(publicKey, verifyBytes));
     }
 
+    public static final PacketType TYPE = PacketType.of(1, ServerboundEncryptionPacket::read);
+
     @Override
-    public int getId() {
-        return ID;
+    public PacketType getType() {
+        return TYPE;
     }
+
 
     @Override
     public void write(ByteBuf buf) {

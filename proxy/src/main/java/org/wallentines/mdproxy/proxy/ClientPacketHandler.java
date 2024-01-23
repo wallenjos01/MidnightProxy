@@ -3,13 +3,18 @@ package org.wallentines.mdproxy.proxy;
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.yggdrasil.ProfileResult;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
+import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
-import org.wallentines.mcore.text.TextColor;
 import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.packet.*;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.login.ClientboundEncryptionPacket;
+import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
+import org.wallentines.mdproxy.packet.login.ServerboundEncryptionPacket;
+import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
+import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
+import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
 
 import javax.crypto.Cipher;
@@ -29,18 +34,14 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
     private ServerboundHandshakePacket handshake;
     private ServerboundLoginPacket login;
     private final ProxyServer server;
+    private final Channel channel;
     private ClientConnectionImpl conn;
-    private Channel channel;
 
-    public ClientPacketHandler(ProxyServer server) {
+    public ClientPacketHandler(Channel channel, ProxyServer server) {
         this.server = server;
+        this.channel = channel;
     }
 
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
-        this.channel = ctx.channel();
-    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
@@ -48,6 +49,23 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         if(packet instanceof ServerboundHandshakePacket h) {
 
             this.handshake = h;
+            if(h.intent() == ServerboundHandshakePacket.Intent.STATUS) {
+
+                changeState(ctx, PacketRegistry.STATUS_SERVERBOUND);
+
+            } else {
+
+                changeState(ctx, PacketRegistry.LOGIN_SERVERBOUND);
+            }
+        }
+        else if(packet instanceof ServerboundStatusPacket) {
+
+            send(new ClientboundStatusPacket(
+                    new GameVersion("MidnightProxy", handshake.protocolVersion()),
+                    Component.text("A MidnightProxy Server"),
+                    100, 0,
+                    false, false
+            ), ChannelFutureListener.CLOSE);
 
         }
         else if(packet instanceof ServerboundLoginPacket l) {
@@ -109,8 +127,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private void disconnect(Component component) {
 
-        channel.writeAndFlush(new ClientboundKickPacket(component));
-        channel.close().awaitUninterruptibly();
+        channel.writeAndFlush(new ClientboundKickPacket(component)).addListener(ChannelFutureListener.CLOSE);
 
     }
 
@@ -137,14 +154,35 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     }
 
+    public void changeState(ChannelHandlerContext ctx, PacketRegistry registry) {
+
+        ctx.pipeline().remove("decoder");
+        ctx.pipeline().addBefore(ctx.name(), "decoder", new PacketDecoder(registry));
+
+    }
+
 
     public void send(Packet packet) {
 
-        if(channel.eventLoop().inEventLoop()) {
-            channel.writeAndFlush(packet);
-        } else {
-            channel.eventLoop().execute(() -> channel.writeAndFlush(packet));
-        }
-
+        send(packet, null);
     }
+
+    public void send(Packet packet, ChannelFutureListener listener) {
+
+        if(channel.eventLoop().inEventLoop()) {
+            doSend(packet, listener);
+        } else {
+            channel.eventLoop().execute(() -> doSend(packet, listener));
+        }
+    }
+
+    private void doSend(Packet packet, ChannelFutureListener listener) {
+
+        ChannelFuture future = channel.writeAndFlush(packet);
+
+        if(listener != null) {
+            future.addListener(listener);
+        }
+    }
+
 }
