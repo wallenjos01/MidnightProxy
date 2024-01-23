@@ -7,6 +7,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 public class PacketForwarder extends SimpleChannelInboundHandler<ByteBuf> {
 
+
     private final Channel forwardTarget;
 
     public PacketForwarder(Channel forwardTarget) {
@@ -15,12 +16,12 @@ public class PacketForwarder extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf data) throws Exception {
+        forwardTarget.writeAndFlush(data.retain());
+    }
 
-        if(!forwardTarget.isWritable()) {
-            ctx.close();
-            return;
-        }
-        forwardTarget.writeAndFlush(data);
-
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        forwardTarget.close();
     }
 }

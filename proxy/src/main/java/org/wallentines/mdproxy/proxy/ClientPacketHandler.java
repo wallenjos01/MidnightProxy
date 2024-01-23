@@ -1,20 +1,23 @@
 package org.wallentines.mdproxy.proxy;
 
-import com.google.common.primitives.Ints;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import io.netty.channel.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdproxy.Backend;
 import org.wallentines.mdproxy.ClientConnectionImpl;
-import org.wallentines.mdproxy.packet.*;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
-import org.wallentines.mdproxy.packet.login.ClientboundEncryptionPacket;
 import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundEncryptionPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
+import org.wallentines.mdproxy.packet.status.StatusPingPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
 
 import javax.crypto.Cipher;
@@ -25,21 +28,25 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
-import java.util.Random;
 
 public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
     private static final String SERVER_ID = "MDP";
+
+    private final ProxyServer server;
+    private final Channel channel;
 
     private ServerboundHandshakePacket handshake;
     private ServerboundLoginPacket login;
-    private final ProxyServer server;
-    private final Channel channel;
     private ClientConnectionImpl conn;
+    private boolean encrypted;
+
 
     public ClientPacketHandler(Channel channel, ProxyServer server) {
         this.server = server;
         this.channel = channel;
+        this.encrypted = false;
     }
 
 
@@ -65,18 +72,24 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                     Component.text("A MidnightProxy Server"),
                     100, 0,
                     false, false
-            ), ChannelFutureListener.CLOSE);
+            ));
 
+        }
+        else if(packet instanceof StatusPingPacket sp) {
+            send(sp);
         }
         else if(packet instanceof ServerboundLoginPacket l) {
 
             this.login = l;
             this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
 
-            Random rand = new Random();
-            byte[] challenge = Ints.toByteArray(rand.nextInt());
+            Backend b = server.getBackends().get(0);
+            connectToBackend(ctx, b);
 
-            send(new ClientboundEncryptionPacket("MDB", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
+            //Random rand = new Random();
+            //byte[] challenge = Ints.toByteArray(rand.nextInt());
+
+            //send(new ClientboundEncryptionPacket("MDB", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
 
         }
         else if(packet instanceof ServerboundEncryptionPacket e) {
@@ -114,14 +127,15 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         }
     }
 
-    private void connectToBackend(ChannelHandlerContext ctx, Channel channel) {
+    private void connectToBackend(ChannelHandlerContext ctx, Backend b) {
 
-        BackendConnection conn = new BackendConnection("localhost", 25566, channel, false);
+        BackendConnection conn = new BackendConnection(b.hostname(), b.port(), false);
         conn.connect().thenAccept(ch -> {
             ch.write(handshake);
             ch.write(login);
-            ch.flush();
             setupForwarding(ctx, ch);
+            conn.setupForwarding(channel);
+            ch.flush();
         });
     }
 
@@ -138,26 +152,37 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
         ctx.pipeline().addBefore("splitter", "decrypt", new CryptDecoder(decrypt));
         ctx.pipeline().addBefore("prepender", "encrypt", new CryptEncoder(encrypt));
+
+        this.encrypted = true;
     }
 
     protected void setupForwarding(ChannelHandlerContext ctx, Channel forward) {
 
-        ctx.pipeline().remove("splitter");
-        ctx.pipeline().remove("decrypt");
-        ctx.pipeline().remove("decoder");
-        ctx.pipeline().remove("handler");
-        ctx.pipeline().remove("prepender");
-        ctx.pipeline().remove("encoder");
-        ctx.pipeline().remove("encrypt");
+        try {
+            ctx.pipeline().remove("splitter");
+            ctx.pipeline().remove("decoder");
+            ctx.pipeline().remove("handler");
+            ctx.pipeline().remove("prepender");
+            ctx.pipeline().remove("encoder");
+            
+            if(encrypted) {
+                ctx.pipeline().remove("decrypt");
+                ctx.pipeline().remove("encrypt");
+            }
 
-        ctx.pipeline().addLast("forward", new PacketForwarder(forward));
+            ctx.pipeline().addLast("forward", new PacketForwarder(forward));
+
+        } catch (Exception ex) {
+
+            LOGGER.error("An exception occurred while establishing a backend connection!", ex);
+            channel.close();
+        }
 
     }
 
     public void changeState(ChannelHandlerContext ctx, PacketRegistry registry) {
 
-        ctx.pipeline().remove("decoder");
-        ctx.pipeline().addBefore(ctx.name(), "decoder", new PacketDecoder(registry));
+        ctx.pipeline().get(PacketDecoder.class).setRegistry(registry);
 
     }
 

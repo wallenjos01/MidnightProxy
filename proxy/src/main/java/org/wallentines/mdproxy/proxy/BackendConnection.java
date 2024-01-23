@@ -13,16 +13,14 @@ public class BackendConnection {
 
     public static final int CONNECTION_TIMEOUT_MS = 5000;
 
-    private final Channel client;
     private final String hostname;
     private final int port;
     private final boolean haproxy;
     private Channel channel;
 
-    public BackendConnection(String host, int port, Channel client, boolean haproxy) {
+    public BackendConnection(String host, int port, boolean haproxy) {
         this.hostname = host;
         this.port = port;
-        this.client = client;
         this.haproxy = haproxy;
     }
 
@@ -39,9 +37,8 @@ public class BackendConnection {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         ch.pipeline()
-                                .addLast(new LengthPrepender())
-                                .addLast(new PacketEncoder())
-                                .addLast(new PacketForwarder(client));
+                                .addLast("prepender", new LengthPrepender())
+                                .addLast("encoder", new PacketEncoder());
 
                         if(haproxy) {
                             ch.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
@@ -60,6 +57,14 @@ public class BackendConnection {
                 }).channel();
 
         return out;
+    }
+
+    public void setupForwarding(Channel client) {
+
+        this.channel.pipeline().remove("prepender");
+        this.channel.pipeline().remove("encoder");
+
+        this.channel.pipeline().addLast(new PacketForwarder(client));
     }
 
     public Channel getChannel() {

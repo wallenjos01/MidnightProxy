@@ -3,7 +3,6 @@ package org.wallentines.mdproxy.packet.login;
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
-import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.UUID;

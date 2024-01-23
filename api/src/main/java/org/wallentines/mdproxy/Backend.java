@@ -17,7 +17,7 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
             Serializer.STRING.entry("hostname", Backend::hostname),
             NumberSerializer.forInt(1, 65535).entry("port", Backend::port).orElse(25565),
             Serializer.INT.entry("priority", Backend::priority).orElse(0),
-            WrappedRequirement.SERIALIZER.entry("requirement", Backend::requirement),
+            WrappedRequirement.SERIALIZER.entry("requirement", Backend::requirement).optional(),
             Backend::new
     );
 
