@@ -37,5 +37,26 @@ public class PacketRegistry {
     public static final PacketRegistry LOGIN_SERVERBOUND = new PacketRegistry(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
 
 
+    public static PacketRegistry getRegistry(PacketFlow flow, ProtocolPhase phase) {
+
+        if(flow == PacketFlow.SERVERBOUND) {
+
+            return switch (phase) {
+                case HANDSHAKE -> PacketRegistry.HANDSHAKE;
+                case STATUS -> PacketRegistry.STATUS_SERVERBOUND;
+                case LOGIN -> PacketRegistry.LOGIN_SERVERBOUND;
+                case CONFIG -> throw new UnsupportedOperationException("Config packets not implemented yet!");
+            };
+
+        } else {
+            return switch (phase) {
+                case HANDSHAKE -> throw new IllegalArgumentException("Handshake packets are not sent to the client!");
+                case STATUS -> PacketRegistry.STATUS_CLIENTBOUND;
+                case LOGIN -> PacketRegistry.LOGIN_CLIENTBOUND;
+                case CONFIG -> throw new UnsupportedOperationException("Config packets not implemented yet!");
+            };
+        }
+
+    }
 
 }

@@ -9,9 +9,7 @@ import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.Backend;
 import org.wallentines.mdproxy.ClientConnectionImpl;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketRegistry;
-import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundEncryptionPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
@@ -58,11 +56,11 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             this.handshake = h;
             if(h.intent() == ServerboundHandshakePacket.Intent.STATUS) {
 
-                changeState(ctx, PacketRegistry.STATUS_SERVERBOUND);
+                changeState(ProtocolPhase.STATUS);
 
             } else {
 
-                changeState(ctx, PacketRegistry.LOGIN_SERVERBOUND);
+                changeState(ProtocolPhase.LOGIN);
             }
         }
         else if(packet instanceof ServerboundStatusPacket) {
@@ -131,7 +129,9 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
         BackendConnection conn = new BackendConnection(b.hostname(), b.port(), false);
         conn.connect().thenAccept(ch -> {
+            conn.changePhase(ProtocolPhase.HANDSHAKE);
             ch.write(handshake);
+            conn.changePhase(ProtocolPhase.LOGIN);
             ch.write(login);
             setupForwarding(ctx, ch);
             conn.setupForwarding(channel);
@@ -180,9 +180,10 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     }
 
-    public void changeState(ChannelHandlerContext ctx, PacketRegistry registry) {
+    public void changeState(ProtocolPhase phase) {
 
-        ctx.pipeline().get(PacketDecoder.class).setRegistry(registry);
+        channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getRegistry(PacketFlow.SERVERBOUND, phase));
+        channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getRegistry(PacketFlow.CLIENTBOUND, phase));
 
     }
 

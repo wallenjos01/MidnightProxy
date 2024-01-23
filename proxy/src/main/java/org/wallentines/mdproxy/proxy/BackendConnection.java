@@ -6,6 +6,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wallentines.mdproxy.packet.PacketFlow;
+import org.wallentines.mdproxy.packet.PacketRegistry;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -65,6 +70,11 @@ public class BackendConnection {
         this.channel.pipeline().remove("encoder");
 
         this.channel.pipeline().addLast(new PacketForwarder(client));
+    }
+
+    public void changePhase(ProtocolPhase phase) {
+
+        this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getRegistry(PacketFlow.SERVERBOUND, phase));
     }
 
     public Channel getChannel() {
