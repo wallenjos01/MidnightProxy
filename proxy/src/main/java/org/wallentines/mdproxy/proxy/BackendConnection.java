@@ -40,7 +40,7 @@ public class BackendConnection {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         ch.pipeline()
-                                .addLast("prepender", new FrameEncoder())
+                                .addLast("frame_enc", new FrameEncoder())
                                 .addLast("encoder", new PacketEncoder());
 
                         if(haproxy) {
@@ -64,7 +64,7 @@ public class BackendConnection {
 
     public void setupForwarding(Channel client) {
 
-        this.channel.pipeline().remove("prepender");
+        this.channel.pipeline().remove("frame_enc");
         this.channel.pipeline().remove("encoder");
 
         this.channel.pipeline().addLast(new PacketForwarder(client));

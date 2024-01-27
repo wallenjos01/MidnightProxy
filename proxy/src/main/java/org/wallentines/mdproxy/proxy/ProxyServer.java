@@ -8,6 +8,10 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.netty.util.internal.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigObject;
@@ -60,6 +64,7 @@ public class ProxyServer {
                     .channelFactory(NioServerSocketChannel::new)
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.IP_TOS, 0x18)
+                    .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ProxyChannelInitializer(this))
                     .group(eventLoopGroup)
                     .localAddress(new InetSocketAddress(port));

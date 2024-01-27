@@ -12,7 +12,6 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public class PacketEncoder extends MessageToByteEncoder<Packet> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("PacketEncoder");
 
     private PacketRegistry registry;
 
@@ -24,13 +23,11 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
     protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf byteBuf) throws Exception {
 
         if(registry == null) {
-            LOGGER.error("Attempt to send a packet before setting a registry!");
-            ctx.close();
+            throw new EncoderException("Attempt to send a packet before setting a registry!");
         }
 
         if(registry.getPacketType(packet.getType().getId()) != packet.getType()) {
-            LOGGER.error("Attempt to send an unregistered packet with id " + packet.getType().getId() + "!");
-            ctx.close();
+            throw new EncoderException("Attempt to send an unregistered packet with id " + packet.getType().getId() + "!");
         }
 
         PacketBufferUtil.writeVarInt(byteBuf, packet.getType().getId());
@@ -38,8 +35,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
         try {
             packet.write(byteBuf);
         } catch (Exception ex) {
-            LOGGER.error("An exception occurred while sending a packet!", ex);
-            ctx.close();
+            throw new EncoderException("An exception occurred while sending a packet!", ex);
         }
     }
 

@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import io.netty.channel.*;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
@@ -25,11 +26,14 @@ import org.wallentines.midnightlib.registry.Identifier;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.util.*;
 
@@ -40,6 +44,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private final ProxyServer server;
     private final Channel channel;
+    private byte[] challenge;
 
     private ServerboundHandshakePacket handshake;
     private ServerboundLoginPacket login;
@@ -66,7 +71,20 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
+        try {
+            handlePacket(packet);
+        } finally {
+            ReferenceCountUtil.release(packet);
+        }
+    }
 
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOGGER.error("An exception occurred while handling a packet!", cause);
+        channel.close();
+    }
+
+    private void handlePacket(Packet packet) throws Exception {
         if(packet instanceof ServerboundHandshakePacket h) {
 
             this.handshake = h;
@@ -94,11 +112,11 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         }
         else if(packet instanceof ServerboundLoginPacket l) {
 
-            GameVersion ver = new GameVersion("", handshake.protocolVersion());
-            if (!ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-                disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
-                return;
-            }
+//            GameVersion ver = new GameVersion("", handshake.protocolVersion());
+//            if (!ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
+//                disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
+//                return;
+//            }
 
             this.login = l;
             this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
@@ -116,24 +134,43 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
             } else {
 
+                // Check if backend could be connected immediately
+
                 // Continue with login
                 startLogin();
             }
         }
         else if(packet instanceof ServerboundEncryptionPacket e) {
 
+            if(login == null || challenge == null) {
+                throw new IllegalStateException("Received unrequested login packet!");
+            }
+
             PrivateKey privateKey = server.getKeyPair().getPrivate();
-            SecretKey key = new SecretKeySpec(CryptUtil.decryptData(privateKey, e.sharedSecret()), "AES");
-            String serverId = new BigInteger(CryptUtil.hashData(key.getEncoded(), server.getKeyPair().getPublic().getEncoded())).toString(16);
+            if(!MessageDigest.isEqual(challenge, CryptUtil.decryptData(privateKey, e.verifyToken()))) {
+                throw new IllegalStateException("Encryption unsuccessful!");
+            }
 
-            SocketAddress socketAddress = ctx.channel().remoteAddress();
-            InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
+            byte[] encryptedSecret = e.sharedSecret();
+            LOGGER.warn("Secret length (E): " + encryptedSecret.length);
+            byte[] decryptedSecret = CryptUtil.decryptData(privateKey, e.sharedSecret());
+            LOGGER.warn("Secret length (D): " + decryptedSecret.length);
 
-            setupEncryption(ctx, key);
+            FileOutputStream fos = new FileOutputStream("key.aes");
+            fos.write(decryptedSecret);
+            fos.close();
+
 
             if (server.requiresAuth()) {
 
+                LOGGER.info("Starting authentication for " + login.username());
+
+                String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
+                LOGGER.warn("Server ID is " + serverId);
                 try {
+
+                    SocketAddress socketAddress = channel.remoteAddress();
+                    InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
 
                     ProfileResult res = server.getSessionService().hasJoinedServer(login.username(), serverId, addr);
                     if (res == null) {
@@ -154,6 +191,8 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
             LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.getId());
 
+            setupEncryption(decryptedSecret);
+
             for (Backend b : backendQueue) {
                 requiredCookies.addAll(b.getRequiredCookies());
             }
@@ -161,6 +200,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             if (requiredCookies.isEmpty()) {
                 LOGGER.warn("No cookies required - sending login finished packet");
                 send(new ClientboundLoginFinishedPacket(profile));
+
             } else {
                 for(Identifier i : requiredCookies) {
                     send(new ClientboundCookieRequestPacket(i));
@@ -238,6 +278,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         }
     }
 
+
     private void connectToBackend(Backend b) {
 
         BackendConnection conn = new BackendConnection(b.hostname(), b.port(), false);
@@ -266,8 +307,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             return;
         }
 
-        byte[] challenge = Ints.toByteArray(rand.nextInt());
-
+        challenge = Ints.toByteArray(rand.nextInt());
         send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
     }
 
@@ -297,13 +337,22 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         return null;
     }
 
-    protected void setupEncryption(ChannelHandlerContext ctx, SecretKey key) {
+    protected void setupEncryption(byte[] key) throws GeneralSecurityException {
 
-        Cipher encrypt = CryptUtil.getCipher(Cipher.ENCRYPT_MODE, key);
-        Cipher decrypt = CryptUtil.getCipher(Cipher.DECRYPT_MODE, key);
+        if(!channel.isActive()) {
+            throw new IllegalStateException("Channel is not active!");
+        }
+        if(!channel.eventLoop().inEventLoop()) {
+            throw new IllegalStateException("Attempt to enable encryption from outside the event loop!");
+        }
 
-        ctx.pipeline().addBefore("splitter", "decrypt", new CryptDecoder(decrypt));
-        ctx.pipeline().addBefore("prepender", "encrypt", new CryptEncoder(encrypt));
+        SecretKey secret = new SecretKeySpec(key, "AES");
+
+        WrappedCipher decrypt = WrappedCipher.forDecryption(secret);
+        WrappedCipher encrypt = WrappedCipher.forEncryption(secret);
+
+        channel.pipeline().addBefore("frame_dec", "decrypt", new CryptDecoder(decrypt));
+        channel.pipeline().addBefore("frame_enc", "encrypt", new CryptEncoder(encrypt));
 
         this.encrypted = true;
     }
@@ -311,10 +360,10 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
     protected void setupForwarding(Channel forward) {
 
         try {
-            channel.pipeline().remove("splitter");
+            channel.pipeline().remove("frame_dec");
             channel.pipeline().remove("decoder");
             channel.pipeline().remove("handler");
-            channel.pipeline().remove("prepender");
+            channel.pipeline().remove("frame_enc");
             channel.pipeline().remove("encoder");
             
             if(encrypted) {
@@ -367,10 +416,15 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private void doSend(Packet packet, ChannelFutureListener listener) {
 
-        ChannelFuture future = channel.writeAndFlush(packet);
+        try {
+            ChannelFuture future = channel.writeAndFlush(packet);
 
-        if(listener != null) {
-            future.addListener(listener);
+            if (listener != null) {
+                future.addListener(listener);
+            }
+        } catch (Exception ex) {
+            LOGGER.error("An exception occurred while sending a packet!", ex);
+            channel.close();
         }
     }
 

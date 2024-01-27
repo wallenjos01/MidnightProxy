@@ -1,10 +1,9 @@
 package org.wallentines.mdproxy.util;
 
 import javax.crypto.Cipher;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 
 public class CryptUtil {
 
@@ -47,13 +46,13 @@ public class CryptUtil {
         }
     }
 
-    public static byte[] hashData(byte[]... data) {
+
+    public static byte[] hashServerId(byte[] secret, PublicKey key) {
 
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            for (byte[] cs : data) {
-                messageDigest.update(cs);
-            }
+            messageDigest.update(secret);
+            messageDigest.update(key.getEncoded());
             return messageDigest.digest();
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to hash data!", ex);

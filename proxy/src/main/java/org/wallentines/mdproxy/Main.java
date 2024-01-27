@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy;
 
+import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.netty.util.internal.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigList;
@@ -27,6 +29,8 @@ public class Main {
 
 
     public static void main(String[] args) {
+
+        InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
 
         FileCodecRegistry reg = new FileCodecRegistry();
         reg.registerFileCodec(JSONCodec.fileCodec());

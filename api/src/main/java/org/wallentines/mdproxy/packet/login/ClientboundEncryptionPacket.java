@@ -19,11 +19,11 @@ public record ClientboundEncryptionPacket(String serverId, byte[] publicKey, byt
 
     @Override
     public void write(ByteBuf buf) {
-        PacketBufferUtil.writeUtf(buf, serverId, 20);
+        PacketBufferUtil.writeUtf(buf, serverId);
         PacketBufferUtil.writeVarInt(buf, publicKey.length);
         buf.writeBytes(publicKey);
         PacketBufferUtil.writeVarInt(buf, verifyToken.length);
         buf.writeBytes(verifyToken);
-        buf.writeBoolean(authEnabled);
+        //buf.writeBoolean(authEnabled);
     }
 }

@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public record ClientboundConfigKickPacket(Component message) implements Packet {
 
-    public static final PacketType TYPE = PacketType.of(0, buf -> {
+    public static final PacketType TYPE = PacketType.of(2, buf -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 

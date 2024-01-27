@@ -14,8 +14,6 @@ public class FrameDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf data, List<Object> out) {
 
-
-
         data.markReaderIndex();
         byte[] bs = new byte[3];
         for (int i = 0; i < bs.length; ++i) {
@@ -39,6 +37,7 @@ public class FrameDecoder extends ByteToMessageDecoder {
                 buf.release();
             }
         }
+
         throw new CorruptedFrameException("length wider than 21-bit");
     }
 }
