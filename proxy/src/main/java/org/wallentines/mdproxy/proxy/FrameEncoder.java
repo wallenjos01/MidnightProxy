@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-public class LengthPrepender extends MessageToByteEncoder<ByteBuf> {
+public class FrameEncoder extends MessageToByteEncoder<ByteBuf> {
 
     protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf out) {
 

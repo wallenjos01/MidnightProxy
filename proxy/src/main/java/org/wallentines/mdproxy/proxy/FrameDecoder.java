@@ -9,27 +9,30 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.List;
 
-public class PacketSplitter extends ByteToMessageDecoder {
+public class FrameDecoder extends ByteToMessageDecoder {
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-        byteBuf.markReaderIndex();
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf data, List<Object> out) {
+
+
+
+        data.markReaderIndex();
         byte[] bs = new byte[3];
         for (int i = 0; i < bs.length; ++i) {
-            if (!byteBuf.isReadable()) {
-                byteBuf.resetReaderIndex();
+            if (!data.isReadable()) {
+                data.resetReaderIndex();
                 return;
             }
-            bs[i] = byteBuf.readByte();
+            bs[i] = data.readByte();
             if (bs[i] < 0) continue;
             ByteBuf buf = Unpooled.wrappedBuffer(bs);
             try {
                 int j = PacketBufferUtil.readVarInt(buf);
-                if (byteBuf.readableBytes() < j) {
-                    byteBuf.resetReaderIndex();
+                if (data.readableBytes() < j) {
+                    data.resetReaderIndex();
                     return;
                 }
-                list.add(byteBuf.readBytes(j));
+                out.add(data.readBytes(j));
                 return;
             }
             finally {

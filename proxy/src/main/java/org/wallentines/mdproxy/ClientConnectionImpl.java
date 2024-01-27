@@ -12,19 +12,21 @@ public class ClientConnectionImpl implements ClientConnection {
     private final String username;
     private final UUID uuid;
     private final boolean auth;
+    private final boolean transferable;
     private final Map<Identifier, byte[]> cookies;
 
     public ClientConnectionImpl(String hostname, int port, String username, UUID uuid) {
-        this(hostname, port, username, uuid, false, null);
+        this(hostname, port, username, uuid, false, null, false);
     }
 
-    private ClientConnectionImpl(String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies) {
+    private ClientConnectionImpl(String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable) {
         this.hostname = hostname;
         this.port = port;
         this.username = username;
         this.uuid = uuid;
         this.auth = auth;
         this.cookies = cookies;
+        this.transferable = transferable;
     }
 
     @Override
@@ -35,6 +37,11 @@ public class ClientConnectionImpl implements ClientConnection {
     @Override
     public boolean cookiesAvailable() {
         return cookies != null;
+    }
+
+    @Override
+    public boolean canTransfer() {
+        return transferable;
     }
 
     @Override
@@ -63,10 +70,14 @@ public class ClientConnectionImpl implements ClientConnection {
     }
 
     public ClientConnectionImpl withAuth() {
-        return new ClientConnectionImpl(hostname, port, username, uuid, true, cookies);
+        return new ClientConnectionImpl(hostname, port, username, uuid, true, cookies, transferable);
     }
 
     public ClientConnectionImpl withCookies(Map<Identifier, byte[]> cookies) {
-        return new ClientConnectionImpl(hostname, port, username, uuid, auth, cookies);
+        return new ClientConnectionImpl(hostname, port, username, uuid, auth, cookies, transferable);
+    }
+
+    public ClientConnectionImpl withTransferable() {
+        return new ClientConnectionImpl(hostname, port, username, uuid, auth, cookies, true);
     }
 }

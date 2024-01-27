@@ -14,12 +14,14 @@ import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdproxy.Backend;
+import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.util.CryptUtil;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ProxyServer {
@@ -36,6 +38,7 @@ public class ProxyServer {
     private final List<Backend> backends = new ArrayList<>();
 
     private ChannelFuture channel;
+    private final HashMap<String, ClientConnectionImpl> awaitingReconnect = new HashMap<>();
 
     public ProxyServer(FileWrapper<ConfigObject> config) {
 
@@ -90,6 +93,14 @@ public class ProxyServer {
 
         this.backends.clear();
         this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
+    }
+
+    public ClientConnectionImpl getReconnectData(String id) {
+        return awaitingReconnect.get(id);
+    }
+
+    public void clearReconnect(String id) {
+        awaitingReconnect.remove(id);
     }
 
     public KeyPair getKeyPair() {

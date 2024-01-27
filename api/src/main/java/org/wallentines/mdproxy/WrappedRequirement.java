@@ -59,6 +59,10 @@ public class WrappedRequirement implements ConnectionRequirement {
         return null;
     }
 
+    public boolean check(ClientConnection conn) {
+        return internal.check(conn);
+    }
+
 
     public static final Serializer<WrappedRequirement> SERIALIZER = Requirement.serializer(ConnectionRequirement.REGISTRY).map(o -> o.internal, WrappedRequirement::new);
 

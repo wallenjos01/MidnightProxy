@@ -25,7 +25,7 @@ public record ClientboundLoginFinishedPacket(GameProfile gameProfile) implements
     public void write(ByteBuf buf) {
 
         PacketBufferUtil.writeUUID(buf, gameProfile.getId());
-        PacketBufferUtil.writeUtf(buf, gameProfile.toString(), 16);
+        PacketBufferUtil.writeUtf(buf, gameProfile.getName(), 16);
 
         PropertyMap map = gameProfile.getProperties();
         PacketBufferUtil.writeVarInt(buf, map.size());

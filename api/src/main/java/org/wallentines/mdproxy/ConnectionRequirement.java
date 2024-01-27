@@ -88,7 +88,10 @@ public interface ConnectionRequirement {
         private final Identifier cookie;
 
         public Cookie(RequirementType<ClientConnection> type, Identifier cookie, List<String> value) {
-            super(type, (conn -> new String(conn.getCookie(cookie), StandardCharsets.UTF_8)), value);
+            super(type, (conn -> {
+                byte[] data = conn.getCookie(cookie);
+                return data == null ? "" : new String(conn.getCookie(cookie), StandardCharsets.UTF_8);
+            }), value);
             this.cookie = cookie;
         }
 

@@ -48,7 +48,7 @@ public class PacketRegistry {
                 case HANDSHAKE -> PacketRegistry.HANDSHAKE;
                 case STATUS -> PacketRegistry.STATUS_SERVERBOUND;
                 case LOGIN -> PacketRegistry.LOGIN_SERVERBOUND;
-                case CONFIG -> throw new IllegalArgumentException("Cannot send config packets to backends!");
+                case CONFIG -> new PacketRegistry();
             };
 
         } else {

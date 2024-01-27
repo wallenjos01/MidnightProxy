@@ -8,7 +8,7 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 import java.util.Optional;
 
-public record ServerboundCookiePacket(Identifier key, Optional<ByteBuf> data) implements Packet {
+public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) implements Packet {
 
 
     public static final PacketType TYPE = PacketType.of(4, ServerboundEncryptionPacket::read);
@@ -28,7 +28,7 @@ public record ServerboundCookiePacket(Identifier key, Optional<ByteBuf> data) im
     public static ServerboundCookiePacket read(ByteBuf buf) {
 
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
-        Optional<ByteBuf> data = PacketBufferUtil.readOptional(buf, b -> b);
+        Optional<byte[]> data = PacketBufferUtil.readOptional(buf, ByteBuf::array);
 
         return new ServerboundCookiePacket(id, data);
     }

@@ -21,19 +21,26 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Packet packet, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf byteBuf) throws Exception {
 
         if(registry == null) {
             LOGGER.error("Attempt to send a packet before setting a registry!");
+            ctx.close();
         }
 
         if(registry.getPacketType(packet.getType().getId()) != packet.getType()) {
             LOGGER.error("Attempt to send an unregistered packet with id " + packet.getType().getId() + "!");
+            ctx.close();
         }
 
         PacketBufferUtil.writeVarInt(byteBuf, packet.getType().getId());
-        packet.write(byteBuf);
 
+        try {
+            packet.write(byteBuf);
+        } catch (Exception ex) {
+            LOGGER.error("An exception occurred while sending a packet!", ex);
+            ctx.close();
+        }
     }
 
 }

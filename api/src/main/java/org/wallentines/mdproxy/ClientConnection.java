@@ -9,6 +9,7 @@ public interface ClientConnection {
     boolean authenticated();
 
     boolean cookiesAvailable();
+    boolean canTransfer();
 
     String hostname();
 

@@ -3,6 +3,7 @@ package org.wallentines.mdproxy.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
+import org.wallentines.mdproxy.VarInt;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -15,12 +16,6 @@ import java.util.function.Function;
  */
 public class PacketBufferUtil {
 
-    // How many bits are in each segment of a variable-length integer (VarInt)
-    private static final int SEGMENT_BITS = 0b01111111;
-
-    // If this bit is set when reading a VarInt, then the next byte should be read as part of the VarInt
-    private static final int CONTINUE_BIT = 0b10000000;
-
 
     /**
      * Reads a variable-length integer (VarInt) from a buffer
@@ -29,23 +24,8 @@ public class PacketBufferUtil {
      */
     public static int readVarInt(ByteBuf buffer) {
 
-        int value = 0;
-        int position = 0;
-
-        byte currentByte;
-        do {
-
-            currentByte = buffer.readByte();
-            value |= (currentByte & SEGMENT_BITS) << position * 7;
-            position ++;
-
-            if(position > 5) {
-                throw new IllegalArgumentException("Attempt to read a VarInt which is too large!");
-            }
-
-        } while((currentByte & CONTINUE_BIT) == CONTINUE_BIT);
-
-        return value;
+        VarInt varInt = VarInt.read(buffer);
+        return varInt.value();
     }
 
     /**
@@ -55,11 +35,7 @@ public class PacketBufferUtil {
      */
     public static void writeVarInt(ByteBuf buffer, int value) {
 
-        while((value & ~SEGMENT_BITS) != 0) {
-            buffer.writeByte((value & SEGMENT_BITS) | CONTINUE_BIT);
-            value >>>= 7;
-        }
-        buffer.writeByte(value);
+        new VarInt(value).write(buffer);
     }
 
     /**
