@@ -4,25 +4,32 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mcore.GameVersion;
+import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.Map;
 
-public record ClientboundLoginFinishedPacket(GameProfile gameProfile) implements Packet {
+public record ClientboundLoginFinishedPacket(GameProfile gameProfile) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType TYPE = PacketType.of(2, buf -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(2, (ver, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 
     @Override
-    public PacketType getType() {
+    public PacketType<ClientboundPacketHandler> getType() {
         return TYPE;
     }
 
     @Override
-    public void write(ByteBuf buf) {
+    public void handle(ClientboundPacketHandler handler) {
+        throw new UnsupportedOperationException("Unable to handle clientbound packet");
+    }
+
+    @Override
+    public void write(GameVersion version, ByteBuf buf) {
 
         PacketBufferUtil.writeUUID(buf, gameProfile.getId());
         PacketBufferUtil.writeUtf(buf, gameProfile.getName(), 16);

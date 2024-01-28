@@ -1,30 +1,36 @@
 package org.wallentines.mdproxy.packet;
 
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.Locale;
 
-public record ServerboundHandshakePacket(int protocolVersion, String address, int port, Intent intent) implements Packet {
+public record ServerboundHandshakePacket(int protocolVersion, String address, int port, Intent intent) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType TYPE = PacketType.of(0, ServerboundHandshakePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(0, ServerboundHandshakePacket::read);
 
     @Override
-    public PacketType getType() {
+    public PacketType<ServerboundPacketHandler> getType() {
         return TYPE;
     }
 
     @Override
-    public void write(ByteBuf buf) {
+    public void write(GameVersion version, ByteBuf buf) {
         PacketBufferUtil.writeVarInt(buf, protocolVersion);
         PacketBufferUtil.writeUtf(buf, address);
         buf.writeShort(port);
         PacketBufferUtil.writeVarInt(buf, intent.getId());
     }
 
-    public static ServerboundHandshakePacket read(ByteBuf buffer) {
+    @Override
+    public void handle(ServerboundPacketHandler handler) {
+        handler.handle(this);
+    }
 
-        int version = PacketBufferUtil.readVarInt(buffer);
+    public static ServerboundHandshakePacket read(GameVersion version, ByteBuf buffer) {
+
+        int proto = PacketBufferUtil.readVarInt(buffer);
         String addr = PacketBufferUtil.readUtf(buffer, 255).toLowerCase(Locale.ROOT);
         int port = buffer.readUnsignedShort();
         Intent intent = Intent.byId(PacketBufferUtil.readVarInt(buffer));
@@ -32,7 +38,7 @@ public record ServerboundHandshakePacket(int protocolVersion, String address, in
             throw new IllegalStateException("Client sent handshake with invalid intent!");
         }
 
-        return new ServerboundHandshakePacket(version, addr, port, intent);
+        return new ServerboundHandshakePacket(proto, addr, port, intent);
     }
 
 

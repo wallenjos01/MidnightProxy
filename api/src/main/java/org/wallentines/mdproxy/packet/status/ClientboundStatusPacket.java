@@ -7,11 +7,12 @@ import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-public record ClientboundStatusPacket(ConfigSection data) implements Packet {
+public record ClientboundStatusPacket(ConfigSection data) implements Packet<ClientboundPacketHandler> {
 
 
     public ClientboundStatusPacket(GameVersion version, Component motd, int maxPlayers, int onlinePlayers, boolean enforcesSecureChat, boolean previewsChat) {
@@ -29,20 +30,25 @@ public record ClientboundStatusPacket(ConfigSection data) implements Packet {
                 .with("previewsChat", previewsChat));
     }
 
-    public static final PacketType TYPE = PacketType.of(0, ClientboundStatusPacket::read);
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(0, ClientboundStatusPacket::read);
 
     @Override
-    public PacketType getType() {
+    public PacketType<ClientboundPacketHandler> getType() {
         return TYPE;
     }
 
     @Override
-    public void write(ByteBuf buf) {
+    public void write(GameVersion ver, ByteBuf buf) {
 
         PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, data));
     }
 
-    public static ClientboundStatusPacket read(ByteBuf buf) {
+    @Override
+    public void handle(ClientboundPacketHandler handler) {
+        handler.handle(this);
+    }
+
+    public static ClientboundStatusPacket read(GameVersion version, ByteBuf buf) {
 
         return new ClientboundStatusPacket(JSONCodec.loadConfig(PacketBufferUtil.readUtf(buf)).asSection());
     }

@@ -1,11 +1,14 @@
 package org.wallentines.mdproxy.packet;
 
 import io.netty.buffer.ByteBuf;
+import org.wallentines.mcore.GameVersion;
 
-public interface Packet {
+public interface Packet<T> {
 
-    PacketType getType();
+    PacketType<T> getType();
 
-    void write(ByteBuf buf);
+    void write(GameVersion version, ByteBuf buf);
+
+    void handle(T handler);
 
 }

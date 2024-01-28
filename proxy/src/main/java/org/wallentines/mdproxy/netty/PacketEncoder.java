@@ -8,30 +8,31 @@ import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-public class PacketEncoder extends MessageToByteEncoder<Packet> {
+public class PacketEncoder<T> extends MessageToByteEncoder<Packet<T>> {
 
 
-    private PacketRegistry registry;
+    private PacketRegistry<T> registry;
 
-    public void setRegistry(PacketRegistry registry) {
+    public void setRegistry(PacketRegistry<T> registry) {
         this.registry = registry;
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Packet<T> packet, ByteBuf byteBuf) throws Exception {
 
         if(registry == null) {
             throw new EncoderException("Attempt to send a packet before setting a registry!");
         }
 
-        if(registry.getPacketType(packet.getType().getId()) != packet.getType()) {
-            throw new EncoderException("Attempt to send an unregistered packet with id " + packet.getType().getId() + "!");
+        int id = registry.getId(packet);
+        if(id == -1) {
+            throw new EncoderException("Attempt to send an unregistered packet with id " + packet.getType().getId(registry.getVersion()) + "!");
         }
 
-        PacketBufferUtil.writeVarInt(byteBuf, packet.getType().getId());
+        PacketBufferUtil.writeVarInt(byteBuf, registry.getId(packet));
 
         try {
-            packet.write(byteBuf);
+            packet.write(registry.getVersion(), byteBuf);
         } catch (Exception ex) {
             throw new EncoderException("An exception occurred while sending a packet!", ex);
         }

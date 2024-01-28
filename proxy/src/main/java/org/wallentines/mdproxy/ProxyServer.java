@@ -13,9 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
-import org.wallentines.mdproxy.Backend;
-import org.wallentines.mdproxy.ReconnectCache;
-import org.wallentines.mdproxy.netty.ProxyChannelInitializer;
+import org.wallentines.mdproxy.netty.ClientChannelInitializer;
 import org.wallentines.mdproxy.util.CryptUtil;
 
 import java.net.InetSocketAddress;
@@ -62,7 +60,7 @@ public class ProxyServer {
                     .channelFactory(NioServerSocketChannel::new)
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.IP_TOS, 0x18)
-                    .childHandler(new ProxyChannelInitializer(this))
+                    .childHandler(new ClientChannelInitializer(this))
                     .group(eventLoopGroup)
                     .localAddress(new InetSocketAddress(port));
 

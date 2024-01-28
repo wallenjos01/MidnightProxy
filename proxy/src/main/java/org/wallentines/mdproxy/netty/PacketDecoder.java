@@ -13,16 +13,16 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.List;
 
-public class PacketDecoder extends ByteToMessageDecoder {
+public class PacketDecoder<T> extends ByteToMessageDecoder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PacketDecoder");
-    private PacketRegistry registry;
+    private PacketRegistry<T> registry;
 
-    public PacketDecoder(PacketRegistry registry) {
+    public PacketDecoder(PacketRegistry<T> registry) {
         this.registry = registry;
     }
 
-    public void setRegistry(PacketRegistry registry) {
+    public void setRegistry(PacketRegistry<T> registry) {
         this.registry = registry;
     }
 
@@ -31,14 +31,13 @@ public class PacketDecoder extends ByteToMessageDecoder {
 
         int id = PacketBufferUtil.readVarInt(bytes);
 
-        PacketType type = registry.getPacketType(id);
-        if(type == null) {
+        Packet<T> p = registry.read(id, bytes);
+        if(p == null) {
             LOGGER.warn("Found unknown packet with id " + id);
             out.add(new UnknownPacket(id, bytes));
             return;
         }
 
-        Packet p = type.read(bytes);
         out.add(p);
     }
 

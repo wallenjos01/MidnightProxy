@@ -6,10 +6,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
+import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.netty.FrameEncoder;
 import org.wallentines.mdproxy.netty.PacketEncoder;
 import org.wallentines.mdproxy.netty.PacketForwarder;
-import org.wallentines.mdproxy.packet.PacketFlow;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 
@@ -19,12 +19,14 @@ public class BackendConnection {
 
     public static final int CONNECTION_TIMEOUT_MS = 5000;
 
+    private final GameVersion version;
     private final String hostname;
     private final int port;
     private final boolean haproxy;
     private Channel channel;
 
-    public BackendConnection(String host, int port, boolean haproxy) {
+    public BackendConnection(GameVersion version, String host, int port, boolean haproxy) {
+        this.version = version;
         this.hostname = host;
         this.port = port;
         this.haproxy = haproxy;
@@ -44,7 +46,7 @@ public class BackendConnection {
                     protected void initChannel(SocketChannel ch) {
                         ch.pipeline()
                                 .addLast("frame_enc", new FrameEncoder())
-                                .addLast("encoder", new PacketEncoder());
+                                .addLast("encoder", new PacketEncoder<>());
 
                         if(haproxy) {
                             ch.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
@@ -67,15 +69,18 @@ public class BackendConnection {
 
     public void setupForwarding(Channel client) {
 
+        this.channel.config().setAutoRead(false);
         this.channel.pipeline().remove("frame_enc");
         this.channel.pipeline().remove("encoder");
 
         this.channel.pipeline().addLast(new PacketForwarder(client));
+        this.channel.config().setAutoRead(true);
     }
 
+    @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
-        this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getRegistry(PacketFlow.SERVERBOUND, phase));
+        this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
     }
 
     public Channel getChannel() {
