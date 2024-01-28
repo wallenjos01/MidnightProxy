@@ -2,9 +2,6 @@ package org.wallentines.mdproxy.proxy;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.handler.flow.FlowControlHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 
 public class ProxyChannelInitializer extends ChannelInitializer<Channel> {

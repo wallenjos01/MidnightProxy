@@ -74,8 +74,8 @@ public class ClientConnectionImpl implements ClientConnection {
     }
 
     @Override
-    public ServerboundHandshakePacket handshakePacket() {
-        return new ServerboundHandshakePacket(protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.LOGIN);
+    public ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent) {
+        return new ServerboundHandshakePacket(protocolVersion, hostname, port, intent);
     }
 
     @Override

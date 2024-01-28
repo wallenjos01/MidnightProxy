@@ -9,7 +9,6 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public record Backend(String hostname, int port, int priority, @Nullable WrappedRequirement requirement, boolean redirect) implements Comparable<Backend> {
 

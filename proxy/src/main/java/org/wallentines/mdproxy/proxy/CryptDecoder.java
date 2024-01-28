@@ -1,14 +1,12 @@
 package org.wallentines.mdproxy.proxy;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.Cipher;
 import java.util.List;
 
 public class CryptDecoder  extends MessageToMessageDecoder<ByteBuf> {

@@ -8,10 +8,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.netty.util.internal.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigObject;
@@ -19,6 +15,7 @@ import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdproxy.Backend;
 import org.wallentines.mdproxy.ClientConnectionImpl;
+import org.wallentines.mdproxy.ReconnectCache;
 import org.wallentines.mdproxy.util.CryptUtil;
 
 import java.net.InetSocketAddress;
@@ -36,13 +33,12 @@ public class ProxyServer {
     private final KeyPair keyPair;
     private final MinecraftSessionService minecraft;
     private final FileWrapper<ConfigObject> config;
-    private final int port;
-
-    private boolean requireAuth;
+    private final ReconnectCache reconnectCache;
     private final List<Backend> backends = new ArrayList<>();
 
+    private boolean requireAuth;
+    private final int port;
     private ChannelFuture channel;
-    private final HashMap<String, ClientConnectionImpl> awaitingReconnect = new HashMap<>();
 
     public ProxyServer(FileWrapper<ConfigObject> config) {
 
@@ -55,6 +51,7 @@ public class ProxyServer {
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.minecraft = new YggdrasilAuthenticationService(Proxy.NO_PROXY).createMinecraftSessionService();
+        this.reconnectCache = new ReconnectCache(getConfig().getInt("reconnect_threads"), getConfig().getInt("reconnect_timeout"));
     }
 
     public void startup() throws Exception {
@@ -99,16 +96,8 @@ public class ProxyServer {
         this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
     }
 
-    public ClientConnectionImpl getReconnectData(String id) {
-        return awaitingReconnect.get(id);
-    }
-
-    public void clearReconnect(String id) {
-        awaitingReconnect.remove(id);
-    }
-
-    public void setReconnectData(String id, ClientConnectionImpl impl) {
-        awaitingReconnect.put(id, impl);
+    public ReconnectCache getReconnectCache() {
+        return reconnectCache;
     }
 
     public KeyPair getKeyPair() {

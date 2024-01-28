@@ -22,7 +22,7 @@ public interface ClientConnection {
 
     byte[] getCookie(Identifier id);
 
-    ServerboundHandshakePacket handshakePacket();
+    ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent);
 
     ServerboundLoginPacket loginPacket();
 

@@ -25,7 +25,9 @@ public class Main {
             .with("port", 25565)
             .with("haproxy_protocol", false)
             .with("backends", new ConfigList())
-            .with("online_mode", true);
+            .with("online_mode", true)
+            .with("reconnect_threads", 4)
+            .with("reconnect_timeout", 3000);
 
 
     public static void main(String[] args) {

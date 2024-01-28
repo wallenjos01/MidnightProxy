@@ -26,7 +26,6 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,7 +34,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Random;
 
 public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
@@ -200,7 +202,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             if(c.key().equals(RECONNECT_COOKIE)) {
 
                 String id = c.data().map(bytes -> new String(c.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
-                ClientConnectionImpl newConn = id == null ? null : server.getReconnectData(id);
+                ClientConnectionImpl newConn = id == null ? null : server.getReconnectCache().get(id);
 
                 if(newConn == null) {
                     startLogin();
@@ -212,7 +214,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                     return;
                 }
 
-                server.clearReconnect(id);
+                server.getReconnectCache().clear(id);
                 conn = newConn;
 
                 LOGGER.info("User {} reconnected with UUID {}", getUsername(), login.uuid());
@@ -263,7 +265,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
             channel.config().setAutoRead(false);
 
-            server.setReconnectData(id, conn);
+            server.getReconnectCache().set(id, conn);
         }
     }
 
@@ -274,13 +276,18 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         BackendConnection bconn = new BackendConnection(b.hostname(), b.port(), false);
 
         bconn.connect().thenAccept(ch -> {
+
             bconn.changePhase(ProtocolPhase.HANDSHAKE);
-            ch.write(conn.handshakePacket());
+            ch.write(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
+
             bconn.changePhase(ProtocolPhase.LOGIN);
             ch.write(conn.loginPacket());
+
             setupForwarding(ch);
             bconn.setupForwarding(channel);
+
             ch.flush();
+
         });
     }
 

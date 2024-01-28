@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
-import org.wallentines.midnightlib.registry.Identifier;
 
 public record ClientboundTransferPacket(String host, int port) implements Packet {
 

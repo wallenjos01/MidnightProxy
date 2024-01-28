@@ -1,8 +1,6 @@
 package org.wallentines.mdproxy.util;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 public class CryptUtil {
