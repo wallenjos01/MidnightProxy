@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy.proxy;
+package org.wallentines.mdproxy;
 
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.GameProfile;
@@ -10,8 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
-import org.wallentines.mdproxy.Backend;
-import org.wallentines.mdproxy.ClientConnectionImpl;
+import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.packet.config.ClientboundConfigKickPacket;
 import org.wallentines.mdproxy.packet.config.ClientboundSetCookiePacket;
@@ -250,7 +249,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             Backend b = findBackend();
 
             if(b == null) {
-                LOGGER.warn("Unable to find backend after login!");
+                LOGGER.warn("Unable to find backend server for " + getUsername() + " after login!");
                 disconnect(Component.text("Unable to find backend server!"));
                 return;
             }
@@ -367,11 +366,14 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             channel.pipeline().remove("decrypt");
             channel.pipeline().remove("encrypt");
         }
+
+        channel.config().setAutoRead(false);
     }
 
     private void setupForwarding(Channel forward) {
 
         channel.pipeline().addLast("forward", new PacketForwarder(forward));
+        channel.config().setAutoRead(true);
     }
 
     public String getUsername() {
