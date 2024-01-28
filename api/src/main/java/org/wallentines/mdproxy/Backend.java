@@ -44,7 +44,12 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
             if(requirement.requiresAuth() && !conn.authenticated()) {
                 return false;
             }
-            return !requirement.requiresCookies() || conn.cookiesAvailable();
+
+            if(requirement.requiresCookies() && !conn.cookiesAvailable()) {
+                return false;
+            }
+
+            return !requirement.requiresLocale() || conn.localeAvailable();
         }
 
         return true;

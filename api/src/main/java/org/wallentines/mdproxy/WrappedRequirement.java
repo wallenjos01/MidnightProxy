@@ -59,6 +59,17 @@ public class WrappedRequirement implements ConnectionRequirement {
         return null;
     }
 
+    @Override
+    public boolean requiresLocale() {
+        if(internal instanceof MultiRequirement<ClientConnection> mr) {
+        for(Requirement<ClientConnection> sr : mr.getRequirements()) {
+            if(sr instanceof ConnectionRequirement cr && cr.requiresLocale()) return true;
+        }
+    }
+
+        return internal instanceof ConnectionRequirement cr && cr.requiresLocale();
+    }
+
     public boolean check(ClientConnection conn) {
         return internal.check(conn);
     }

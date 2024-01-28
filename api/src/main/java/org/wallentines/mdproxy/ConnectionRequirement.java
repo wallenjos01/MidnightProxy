@@ -22,6 +22,8 @@ public interface ConnectionRequirement {
 
     Collection<Identifier> getRequiredCookies();
 
+    boolean requiresLocale();
+
     Registry<RequirementType<ClientConnection>> REGISTRY = new Registry<>("mdp");
 
 
@@ -48,6 +50,8 @@ public interface ConnectionRequirement {
         }
     });
 
+    RequirementType<ClientConnection> LOCALE = REGISTRY.register("locale", StringRequirement.type(ClientConnection::locale, Locale::new));
+
     class NoAuthString extends StringRequirement<ClientConnection> implements ConnectionRequirement {
         public NoAuthString(RequirementType<ClientConnection> type, Function<ClientConnection, String> func, Collection<String> str) {
             super(type, func, str);
@@ -58,6 +62,8 @@ public interface ConnectionRequirement {
         public boolean requiresCookies() { return false; }
         @Override
         public Collection<Identifier> getRequiredCookies() { return null; }
+        @Override
+        public boolean requiresLocale() { return false; }
     }
 
     class Port extends NumberRequirement<ClientConnection> implements ConnectionRequirement {
@@ -70,6 +76,8 @@ public interface ConnectionRequirement {
         public boolean requiresCookies() { return false; }
         @Override
         public Collection<Identifier> getRequiredCookies() { return null; }
+        @Override
+        public boolean requiresLocale() { return false; }
     }
 
     class AuthString extends StringRequirement<ClientConnection> implements ConnectionRequirement {
@@ -82,6 +90,8 @@ public interface ConnectionRequirement {
         public boolean requiresCookies() { return false; }
         @Override
         public Collection<Identifier> getRequiredCookies() { return null; }
+        @Override
+        public boolean requiresLocale() { return false; }
     }
 
     class Cookie extends StringRequirement<ClientConnection> implements ConnectionRequirement {
@@ -99,16 +109,37 @@ public interface ConnectionRequirement {
         public boolean requiresAuth() {
             return true;
         }
-
         @Override
         public boolean requiresCookies() {
             return true;
         }
-
         @Override
         public Collection<Identifier> getRequiredCookies() {
             return List.of(cookie);
         }
+        @Override
+        public boolean requiresLocale() { return false; }
+    }
+
+    class Locale extends StringRequirement<ClientConnection> implements ConnectionRequirement {
+        public Locale(RequirementType<ClientConnection> type, Function<ClientConnection, String> func, Collection<String> str) {
+            super(type, func, str);
+        }
+
+        @Override
+        public boolean requiresAuth() {
+            return true;
+        }
+        @Override
+        public boolean requiresCookies() {
+            return false;
+        }
+        @Override
+        public Collection<Identifier> getRequiredCookies() {
+            return null;
+        }
+        @Override
+        public boolean requiresLocale() { return true; }
     }
 
 }

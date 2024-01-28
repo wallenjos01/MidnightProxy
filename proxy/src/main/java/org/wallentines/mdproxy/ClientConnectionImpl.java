@@ -17,12 +17,13 @@ public class ClientConnectionImpl implements ClientConnection {
     private final boolean auth;
     private final boolean transferable;
     private final Map<Identifier, byte[]> cookies;
+    private final String locale;
 
     public ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid) {
-        this(protocolVersion, hostname, port, username, uuid, false, null, false);
+        this(protocolVersion, hostname, port, username, uuid, false, null, false, null);
     }
 
-    private ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable) {
+    private ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable, String locale) {
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
@@ -31,6 +32,7 @@ public class ClientConnectionImpl implements ClientConnection {
         this.auth = auth;
         this.cookies = cookies;
         this.transferable = transferable;
+        this.locale = locale;
     }
 
     @Override
@@ -46,6 +48,11 @@ public class ClientConnectionImpl implements ClientConnection {
     @Override
     public boolean canTransfer() {
         return transferable;
+    }
+
+    @Override
+    public boolean localeAvailable() {
+        return locale != null;
     }
 
     @Override
@@ -74,6 +81,11 @@ public class ClientConnectionImpl implements ClientConnection {
     }
 
     @Override
+    public String locale() {
+        return locale;
+    }
+
+    @Override
     public ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent) {
         return new ServerboundHandshakePacket(protocolVersion, hostname, port, intent);
     }
@@ -84,14 +96,18 @@ public class ClientConnectionImpl implements ClientConnection {
     }
 
     public ClientConnectionImpl withAuth() {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, true, cookies, transferable);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, true, cookies, transferable, locale);
     }
 
     public ClientConnectionImpl withCookies(Map<Identifier, byte[]> cookies) {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, transferable);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, transferable, locale);
     }
 
     public ClientConnectionImpl withTransferable() {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, true);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, true, locale);
+    }
+
+    public ClientConnectionImpl withLocale(String locale) {
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, transferable, locale);
     }
 }

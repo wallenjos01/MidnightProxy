@@ -104,10 +104,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginPacket login) {
 
         version = new GameVersion("", handshake.protocolVersion());
-        if (!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-            disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
-            return;
-        }
 
         if (backendQueue.isEmpty()) {
             disconnect(Component.text("There are no backend servers available!"));
@@ -115,13 +111,22 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         this.login = login;
+        this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port(), login.username(), login.uuid());
+
+        if(tryConnectBackend()) {
+            return;
+        }
+
+        if(!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
+            disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
+            return;
+        }
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.TRANSFER) {
 
             send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
-            this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port(), login.username(), login.uuid());
             this.profile = new GameProfile(login.uuid(), login.username());
 
             // Continue with login
@@ -143,7 +148,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         byte[] decryptedSecret = CryptUtil.decryptData(privateKey, encrypt.sharedSecret());
         if (server.requiresAuth()) {
 
-            LOGGER.info("Starting authentication for " + login.username());
+            LOGGER.info("Starting authentication for {}", login.username());
 
             String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
             try {
@@ -194,28 +199,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginFinishedPacket finished) {
 
         changePhase(ProtocolPhase.CONFIG);
-
-        // Pick Server, Transfer
         conn = conn.withTransferable();
-        Backend b = findBackend();
-
-        if(b == null) {
-            LOGGER.warn("Unable to find backend server for " + getUsername() + " after login!");
-            disconnect(Component.text("Unable to find backend server!"));
-            return;
-        }
-
-        String host = b.redirect() ? b.hostname() : handshake.address();
-        int port = b.redirect() ? b.port() : handshake.port();
-
-        String id = StringUtil.randomId(16);
-
-        send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
-        send(new ClientboundTransferPacket(host, port));
-
-        channel.config().setAutoRead(false);
-
-        server.getReconnectCache().set(id, conn);
     }
 
     @Override
@@ -252,7 +236,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         if(requiredCookies.remove(cookie.key())) {
             cookie.data().ifPresent(data -> cookies.put(cookie.key(), data));
         } else {
-            LOGGER.warn("Received unsolicited cookie with ID " + cookie.key() + " from user " + getUsername());
+            LOGGER.warn("Received unsolicited cookie with ID {} from user {}!", cookie.key(), getUsername());
         }
 
         if(requiredCookies.isEmpty()) {
@@ -273,6 +257,17 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundSettingsPacket settings) {
 
+        conn = conn.withLocale(settings.locale());
+
+        Backend b = findBackend();
+
+        if(b == null) {
+            LOGGER.warn("Unable to find backend server for {} after login!", getUsername());
+            disconnect(Component.text("Unable to find backend server!"));
+            return;
+        }
+
+        reconnect(b);
     }
 
 
@@ -346,7 +341,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         return null;
     }
 
-    protected void setupEncryption(byte[] key) throws GeneralSecurityException {
+    private void setupEncryption(byte[] key) throws GeneralSecurityException {
 
         if(!channel.isActive()) {
             throw new IllegalStateException("Channel is not active!");
@@ -366,7 +361,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.encrypted = true;
     }
 
-    protected void prepareForwarding() {
+    private void prepareForwarding() {
 
         channel.pipeline().remove("frame_dec");
         channel.pipeline().remove("decoder");
@@ -405,6 +400,21 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
         channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
 
+    }
+
+    private void reconnect(Backend b) {
+
+        String host = b.redirect() ? b.hostname() : handshake.address();
+        int port = b.redirect() ? b.port() : handshake.port();
+
+        String id = StringUtil.randomId(16);
+
+        send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
+        send(new ClientboundTransferPacket(host, port));
+
+        channel.config().setAutoRead(false);
+
+        server.getReconnectCache().set(id, conn);
     }
 
 

@@ -11,6 +11,7 @@ public interface ClientConnection {
     boolean authenticated();
     boolean cookiesAvailable();
     boolean canTransfer();
+    boolean localeAvailable();
 
     String hostname();
 
@@ -21,6 +22,8 @@ public interface ClientConnection {
     UUID uuid();
 
     byte[] getCookie(Identifier id);
+
+    String locale();
 
     ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent);
 
