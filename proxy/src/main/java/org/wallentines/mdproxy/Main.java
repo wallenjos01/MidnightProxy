@@ -27,6 +27,7 @@ public class Main {
             .with("online_mode", true)
             .with("reconnect_threads", 4)
             .with("reconnect_timeout", 3000)
+            .with("backend_timeout", 5000)
             .with("client_timeout", 15000);
 
 

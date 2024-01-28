@@ -35,6 +35,7 @@ public class ProxyServer {
 
     private final int port;
     private final int clientTimeout;
+    private int backendTimeout;
     private boolean requireAuth;
     private ChannelFuture channel;
 
@@ -90,6 +91,7 @@ public class ProxyServer {
         config.load();
 
         this.requireAuth = getConfig().getBoolean("online_mode");
+        this.backendTimeout = getConfig().getInt("backend_timeout");
 
         this.backends.clear();
         this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
@@ -113,6 +115,10 @@ public class ProxyServer {
 
     public int getClientTimeout() {
         return clientTimeout;
+    }
+
+    public int getBackendTimeout() {
+        return backendTimeout;
     }
 
     public List<Backend> getBackends() {

@@ -17,19 +17,19 @@ import java.util.concurrent.CompletableFuture;
 
 public class BackendConnection {
 
-    public static final int CONNECTION_TIMEOUT_MS = 5000;
-
     private final GameVersion version;
     private final String hostname;
     private final int port;
+    private final int timeout;
     private final boolean haproxy;
     private Channel channel;
 
-    public BackendConnection(GameVersion version, String host, int port, boolean haproxy) {
+    public BackendConnection(GameVersion version, String host, int port, int timeout, boolean haproxy) {
         this.version = version;
         this.hostname = host;
         this.port = port;
         this.haproxy = haproxy;
+        this.timeout = timeout;
     }
 
     public CompletableFuture<Channel> connect() {
@@ -40,7 +40,7 @@ public class BackendConnection {
         Bootstrap bootstrap = new Bootstrap()
                 .group(group)
                 .channel(NioSocketChannel.class)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECTION_TIMEOUT_MS)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeout)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {

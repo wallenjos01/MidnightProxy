@@ -279,7 +279,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void connectToBackend(Backend b) {
 
         prepareForwarding();
-        BackendConnection bconn = new BackendConnection(version, b.hostname(), b.port(), false);
+        BackendConnection bconn = new BackendConnection(version, b.hostname(), b.port(), server.getBackendTimeout(), false);
 
         bconn.connect().thenAccept(ch -> {
 
