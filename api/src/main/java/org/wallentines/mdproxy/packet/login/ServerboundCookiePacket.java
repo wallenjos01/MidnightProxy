@@ -11,7 +11,7 @@ import java.util.Optional;
 public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) implements Packet {
 
 
-    public static final PacketType TYPE = PacketType.of(4, ServerboundEncryptionPacket::read);
+    public static final PacketType TYPE = PacketType.of(4, ServerboundCookiePacket::read);
 
     @Override
     public PacketType getType() {
@@ -28,7 +28,13 @@ public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) imp
     public static ServerboundCookiePacket read(ByteBuf buf) {
 
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
-        Optional<byte[]> data = PacketBufferUtil.readOptional(buf, ByteBuf::array);
+        Optional<byte[]> data = PacketBufferUtil.readOptional(buf, buf1 -> {
+
+            byte[] out = new byte[PacketBufferUtil.readVarInt(buf1)];
+            buf1.readBytes(out);
+
+            return out;
+        });
 
         return new ServerboundCookiePacket(id, data);
     }

@@ -24,7 +24,6 @@ import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.mdproxy.util.StringUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
@@ -61,6 +60,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
 
     public ClientPacketHandler(Channel channel, ProxyServer server) {
+
         this.server = server;
         this.channel = channel;
         this.encrypted = false;
@@ -88,6 +88,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
     private void handlePacket(Packet packet) throws Exception {
         if(packet instanceof ServerboundHandshakePacket h) {
 
+            LOGGER.info("Received handshake from " + getUsername() + " to " + h.address() + " (" + h.intent().name() + ")");
             this.handshake = h;
             if(h.intent() == ServerboundHandshakePacket.Intent.STATUS) {
 
@@ -119,23 +120,20 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                 return;
             }
 
-            this.login = l;
-            this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
-
-            this.profile = new GameProfile(login.uuid(), login.username());
-
             if (backendQueue.isEmpty()) {
                 disconnect(Component.text("There are no backend servers available!"));
                 return;
             }
 
+            this.login = l;
+
             if(handshake.intent() == ServerboundHandshakePacket.Intent.TRANSFER) {
-                // Check for reconnect
+
                 send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
             } else {
-
-                // Check if backend could be connected immediately
+                this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port(), login.username(), login.uuid());
+                this.profile = new GameProfile(login.uuid(), login.username());
 
                 // Continue with login
                 startLogin();
@@ -144,7 +142,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         else if(packet instanceof ServerboundEncryptionPacket e) {
 
             if(login == null || challenge == null) {
-                throw new IllegalStateException("Received unrequested login packet!");
+                throw new IllegalStateException("Received unrequested encryption packet!");
             }
 
             PrivateKey privateKey = server.getKeyPair().getPrivate();
@@ -153,18 +151,11 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             }
 
             byte[] decryptedSecret = CryptUtil.decryptData(privateKey, e.sharedSecret());
-
-            FileOutputStream fos = new FileOutputStream("key.aes");
-            fos.write(decryptedSecret);
-            fos.close();
-
-
             if (server.requiresAuth()) {
 
                 LOGGER.info("Starting authentication for " + login.username());
 
                 String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
-                LOGGER.warn("Server ID is " + serverId);
                 try {
 
                     SocketAddress socketAddress = channel.remoteAddress();
@@ -196,7 +187,6 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             }
 
             if (requiredCookies.isEmpty()) {
-                LOGGER.warn("No cookies required - sending login finished packet");
                 send(new ClientboundLoginFinishedPacket(profile));
 
             } else {
@@ -225,7 +215,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                 server.clearReconnect(id);
                 conn = newConn;
 
-                LOGGER.info("User {} reconnected with UUID {}", getUsername(), profile.getId());
+                LOGGER.info("User {} reconnected with UUID {}", getUsername(), login.uuid());
 
                 if(!tryConnectBackend()) {
                     disconnect(Component.text("Unable to find backend server!"));
@@ -251,7 +241,6 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         }
         else if(packet instanceof ServerboundLoginFinishedPacket) {
 
-            LOGGER.warn("Login finished, transitioning to config...");
             changePhase(ProtocolPhase.CONFIG);
 
             // Pick Server, Transfer
@@ -269,9 +258,10 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
             String id = StringUtil.randomId(16);
 
-            LOGGER.warn("Setting reconnect cookie");
             send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
             send(new ClientboundTransferPacket(host, port));
+
+            channel.config().setAutoRead(false);
 
             server.setReconnectData(id, conn);
         }
@@ -280,14 +270,16 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private void connectToBackend(Backend b) {
 
-        BackendConnection conn = new BackendConnection(b.hostname(), b.port(), false);
-        conn.connect().thenAccept(ch -> {
-            conn.changePhase(ProtocolPhase.HANDSHAKE);
-            ch.write(handshake);
-            conn.changePhase(ProtocolPhase.LOGIN);
-            ch.write(login);
+        prepareForwarding();
+        BackendConnection bconn = new BackendConnection(b.hostname(), b.port(), false);
+
+        bconn.connect().thenAccept(ch -> {
+            bconn.changePhase(ProtocolPhase.HANDSHAKE);
+            ch.write(conn.handshakePacket());
+            bconn.changePhase(ProtocolPhase.LOGIN);
+            ch.write(conn.loginPacket());
             setupForwarding(ch);
-            conn.setupForwarding(channel);
+            bconn.setupForwarding(channel);
             ch.flush();
         });
     }
@@ -356,28 +348,23 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         this.encrypted = true;
     }
 
-    protected void setupForwarding(Channel forward) {
+    protected void prepareForwarding() {
 
-        try {
-            channel.pipeline().remove("frame_dec");
-            channel.pipeline().remove("decoder");
-            channel.pipeline().remove("handler");
-            channel.pipeline().remove("frame_enc");
-            channel.pipeline().remove("encoder");
-            
-            if(encrypted) {
-                channel.pipeline().remove("decrypt");
-                channel.pipeline().remove("encrypt");
-            }
+        channel.pipeline().remove("frame_dec");
+        channel.pipeline().remove("decoder");
+        channel.pipeline().remove("handler");
+        channel.pipeline().remove("frame_enc");
+        channel.pipeline().remove("encoder");
 
-            channel.pipeline().addLast("forward", new PacketForwarder(forward));
-
-        } catch (Exception ex) {
-
-            LOGGER.error("An exception occurred while establishing a backend connection!", ex);
-            channel.close();
+        if(encrypted) {
+            channel.pipeline().remove("decrypt");
+            channel.pipeline().remove("encrypt");
         }
+    }
 
+    private void setupForwarding(Channel forward) {
+
+        channel.pipeline().addLast("forward", new PacketForwarder(forward));
     }
 
     public String getUsername() {

@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy;
 
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.util.UUID;
@@ -7,7 +9,6 @@ import java.util.UUID;
 public interface ClientConnection {
 
     boolean authenticated();
-
     boolean cookiesAvailable();
     boolean canTransfer();
 
@@ -20,5 +21,9 @@ public interface ClientConnection {
     UUID uuid();
 
     byte[] getCookie(Identifier id);
+
+    ServerboundHandshakePacket handshakePacket();
+
+    ServerboundLoginPacket loginPacket();
 
 }

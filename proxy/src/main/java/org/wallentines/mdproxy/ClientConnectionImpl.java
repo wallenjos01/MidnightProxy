@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy;
 
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.util.Map;
@@ -7,6 +9,7 @@ import java.util.UUID;
 
 public class ClientConnectionImpl implements ClientConnection {
 
+    private final int protocolVersion;
     private final String hostname;
     private final int port;
     private final String username;
@@ -15,11 +18,12 @@ public class ClientConnectionImpl implements ClientConnection {
     private final boolean transferable;
     private final Map<Identifier, byte[]> cookies;
 
-    public ClientConnectionImpl(String hostname, int port, String username, UUID uuid) {
-        this(hostname, port, username, uuid, false, null, false);
+    public ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid) {
+        this(protocolVersion, hostname, port, username, uuid, false, null, false);
     }
 
-    private ClientConnectionImpl(String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable) {
+    private ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable) {
+        this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
         this.username = username;
@@ -69,15 +73,25 @@ public class ClientConnectionImpl implements ClientConnection {
         return cookies == null ? null : cookies.get(id);
     }
 
+    @Override
+    public ServerboundHandshakePacket handshakePacket() {
+        return new ServerboundHandshakePacket(protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.LOGIN);
+    }
+
+    @Override
+    public ServerboundLoginPacket loginPacket() {
+        return new ServerboundLoginPacket(username, uuid);
+    }
+
     public ClientConnectionImpl withAuth() {
-        return new ClientConnectionImpl(hostname, port, username, uuid, true, cookies, transferable);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, true, cookies, transferable);
     }
 
     public ClientConnectionImpl withCookies(Map<Identifier, byte[]> cookies) {
-        return new ClientConnectionImpl(hostname, port, username, uuid, auth, cookies, transferable);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, transferable);
     }
 
     public ClientConnectionImpl withTransferable() {
-        return new ClientConnectionImpl(hostname, port, username, uuid, auth, cookies, true);
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, auth, cookies, true);
     }
 }

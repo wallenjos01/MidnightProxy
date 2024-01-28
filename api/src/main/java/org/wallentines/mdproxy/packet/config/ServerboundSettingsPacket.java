@@ -6,7 +6,7 @@ import org.wallentines.mdproxy.packet.PacketType;
 
 public class ServerboundSettingsPacket implements Packet {
 
-    public static final PacketType TYPE = PacketType.of(0, buf -> null);
+    public static final PacketType TYPE = PacketType.of(0, buf -> new ServerboundSettingsPacket());
     @Override
     public PacketType getType() {
         return TYPE;
