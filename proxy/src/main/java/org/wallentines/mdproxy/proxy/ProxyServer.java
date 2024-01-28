@@ -64,7 +64,6 @@ public class ProxyServer {
                     .channelFactory(NioServerSocketChannel::new)
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.IP_TOS, 0x18)
-                    .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ProxyChannelInitializer(this))
                     .group(eventLoopGroup)
                     .localAddress(new InetSocketAddress(port));
@@ -106,6 +105,10 @@ public class ProxyServer {
 
     public void clearReconnect(String id) {
         awaitingReconnect.remove(id);
+    }
+
+    public void setReconnectData(String id, ClientConnectionImpl impl) {
+        awaitingReconnect.put(id, impl);
     }
 
     public KeyPair getKeyPair() {

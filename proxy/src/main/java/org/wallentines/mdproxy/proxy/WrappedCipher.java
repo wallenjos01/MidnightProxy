@@ -6,10 +6,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Base64;
 
 public class WrappedCipher {
 
@@ -40,22 +37,17 @@ public class WrappedCipher {
         int inputLength = buffer.readableBytes();
 
         byte[] input = new byte[inputLength];
-        buffer.writeBytes(input);
+        buffer.readBytes(input);
 
         byte[] output = new byte[cipher.getOutputSize(inputLength)];
 
         try {
+
             cipher.update(input, 0, inputLength, output, 0);
 
-            FileOutputStream fos = new FileOutputStream("packet.bin");
-            fos.write(Base64.getEncoder().encode(output));
-            fos.close();
-
-        } catch (ShortBufferException | IOException ex) {
+        } catch (ShortBufferException ex) {
             throw new IllegalStateException("Not enough room for ciphered data!");
         }
-
-
 
         out.writeBytes(output);
     }

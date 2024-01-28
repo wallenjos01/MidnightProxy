@@ -25,7 +25,6 @@ public class ProxyChannelInitializer extends ChannelInitializer<Channel> {
                 .addLast("frame_dec", new FrameDecoder())
                 .addLast("decoder", new PacketDecoder(PacketRegistry.HANDSHAKE))
                 .addLast("handler", new ClientPacketHandler(channel, server))
-                .addLast(new ExceptionHandler())
-                .addFirst(new LoggingHandler(LogLevel.INFO));
+                .addLast(new ExceptionHandler());
     }
 }

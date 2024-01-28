@@ -20,6 +20,13 @@ public record ClientboundSetCookiePacket(Identifier id, byte[] data) implements 
     @Override
     public void write(ByteBuf buf) {
         PacketBufferUtil.writeUtf(buf, id.toString());
+        if(data == null || data.length == 0) {
+            buf.writeByte(0);
+            return;
+        }
+
+        PacketBufferUtil.writeVarInt(buf, data.length);
         buf.writeBytes(data);
+
     }
 }

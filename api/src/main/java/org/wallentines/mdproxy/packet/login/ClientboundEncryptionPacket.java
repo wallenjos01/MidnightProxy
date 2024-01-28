@@ -24,6 +24,6 @@ public record ClientboundEncryptionPacket(String serverId, byte[] publicKey, byt
         buf.writeBytes(publicKey);
         PacketBufferUtil.writeVarInt(buf, verifyToken.length);
         buf.writeBytes(verifyToken);
-        //buf.writeBoolean(authEnabled);
+        buf.writeBoolean(authEnabled);
     }
 }

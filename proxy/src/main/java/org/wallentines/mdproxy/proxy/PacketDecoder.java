@@ -6,6 +6,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
@@ -32,10 +33,12 @@ public class PacketDecoder extends ByteToMessageDecoder {
 
         PacketType type = registry.getPacketType(id);
         if(type == null) {
-            throw new DecoderException("Found unknown packet with id " + id);
+            LOGGER.warn("Found unknown packet with id " + id);
+            return;
         }
 
-        out.add(type.read(bytes));
+        Packet p = type.read(bytes);
+        if(p != null) out.add(p);
     }
 
 

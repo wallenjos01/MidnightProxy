@@ -21,6 +21,7 @@ import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.StatusPingPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
+import org.wallentines.mdproxy.util.StringUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import javax.crypto.Cipher;
@@ -112,11 +113,11 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
         }
         else if(packet instanceof ServerboundLoginPacket l) {
 
-//            GameVersion ver = new GameVersion("", handshake.protocolVersion());
-//            if (!ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-//                disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
-//                return;
-//            }
+            GameVersion ver = new GameVersion("", handshake.protocolVersion());
+            if (!ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
+                disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
+                return;
+            }
 
             this.login = l;
             this.conn = new ClientConnectionImpl(handshake.address(), handshake.port(), login.username(), login.uuid());
@@ -151,10 +152,7 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
                 throw new IllegalStateException("Encryption unsuccessful!");
             }
 
-            byte[] encryptedSecret = e.sharedSecret();
-            LOGGER.warn("Secret length (E): " + encryptedSecret.length);
             byte[] decryptedSecret = CryptUtil.decryptData(privateKey, e.sharedSecret());
-            LOGGER.warn("Secret length (D): " + decryptedSecret.length);
 
             FileOutputStream fos = new FileOutputStream("key.aes");
             fos.write(decryptedSecret);
@@ -269,12 +267,13 @@ public class ClientPacketHandler extends SimpleChannelInboundHandler<Packet> {
             String host = b.redirect() ? b.hostname() : handshake.address();
             int port = b.redirect() ? b.port() : handshake.port();
 
-            String randId = Integer.toHexString(rand.nextInt());
+            String id = StringUtil.randomId(16);
 
-            LOGGER.warn("Requesting reconnect cookie");
-            send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, randId.getBytes(StandardCharsets.US_ASCII)));
+            LOGGER.warn("Setting reconnect cookie");
+            send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
             send(new ClientboundTransferPacket(host, port));
 
+            server.setReconnectData(id, conn);
         }
     }
 
