@@ -2,10 +2,7 @@ package org.wallentines.mdproxy.packet;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.config.ClientboundSetCookiePacket;
-import org.wallentines.mdproxy.packet.config.ClientboundTransferPacket;
-import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
-import org.wallentines.mdproxy.packet.config.ServerboundSettingsPacket;
+import org.wallentines.mdproxy.packet.config.*;
 import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ClientboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
@@ -66,7 +63,7 @@ public class PacketRegistry<T> {
     private static final List<PacketType<ClientboundPacketHandler>> LOGIN_CLIENTBOUND = List.of(ClientboundKickPacket.TYPE, ClientboundEncryptionPacket.TYPE, ClientboundLoginFinishedPacket.TYPE, ClientboundCookieRequestPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> LOGIN_SERVERBOUND = List.of(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
 
-    private static final List<PacketType<ClientboundPacketHandler>> CONFIG_CLIENTBOUND = List.of(ClientboundSetCookiePacket.TYPE, ClientboundTransferPacket.TYPE);
+    private static final List<PacketType<ClientboundPacketHandler>> CONFIG_CLIENTBOUND = List.of(ClientboundSetCookiePacket.TYPE, ClientboundTransferPacket.TYPE, ClientboundConfigKickPacket.TYPE, ClientboundPluginMessagePacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> CONFIG_SERVERBOUND = List.of(ServerboundSettingsPacket.TYPE, ServerboundPluginMessagePacket.TYPE);
 
     public static PacketRegistry<ServerboundPacketHandler> getServerbound(GameVersion version, ProtocolPhase phase) {
