@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface ClientConnection {
 
+    boolean nameAvailable();
     boolean authenticated();
     boolean cookiesAvailable();
     boolean canTransfer();

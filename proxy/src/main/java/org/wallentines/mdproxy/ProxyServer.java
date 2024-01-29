@@ -28,7 +28,7 @@ public class ProxyServer {
 
     private final EventLoopGroup eventLoopGroup;
     private final KeyPair keyPair;
-    private final MinecraftSessionService minecraft;
+    private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
     private final ReconnectCache reconnectCache;
     private final List<Backend> backends = new ArrayList<>();
@@ -50,7 +50,7 @@ public class ProxyServer {
         this.clientTimeout = getConfig().getInt("client_timeout");
 
         this.keyPair = CryptUtil.generateKeyPair();
-        this.minecraft = new YggdrasilAuthenticationService(Proxy.NO_PROXY).createMinecraftSessionService();
+        this.authenticator = new Authenticator(new YggdrasilAuthenticationService(Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
         this.reconnectCache = new ReconnectCache(getConfig().getInt("reconnect_threads"), getConfig().getInt("reconnect_timeout"));
     }
 
@@ -105,8 +105,8 @@ public class ProxyServer {
         return keyPair;
     }
 
-    public MinecraftSessionService getSessionService() {
-        return minecraft;
+    public Authenticator getAuthenticator() {
+        return authenticator;
     }
 
     public int getPort() {

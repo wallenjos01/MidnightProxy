@@ -19,8 +19,8 @@ public class ClientConnectionImpl implements ClientConnection {
     private final Map<Identifier, byte[]> cookies;
     private final String locale;
 
-    public ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid) {
-        this(protocolVersion, hostname, port, username, uuid, false, null, false, null);
+    public ClientConnectionImpl(int protocolVersion, String hostname, int port) {
+        this(protocolVersion, hostname, port, null, null, false, null, false, null);
     }
 
     private ClientConnectionImpl(int protocolVersion, String hostname, int port, String username, UUID uuid, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable, String locale) {
@@ -33,6 +33,11 @@ public class ClientConnectionImpl implements ClientConnection {
         this.cookies = cookies;
         this.transferable = transferable;
         this.locale = locale;
+    }
+
+    @Override
+    public boolean nameAvailable() {
+        return username != null;
     }
 
     @Override
@@ -93,6 +98,10 @@ public class ClientConnectionImpl implements ClientConnection {
     @Override
     public ServerboundLoginPacket loginPacket() {
         return new ServerboundLoginPacket(username, uuid);
+    }
+
+    public ClientConnectionImpl withName(String username, UUID uuid) {
+        return new ClientConnectionImpl(protocolVersion, hostname, port, username, uuid, true, cookies, transferable, locale);
     }
 
     public ClientConnectionImpl withAuth() {

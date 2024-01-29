@@ -2,8 +2,6 @@ package org.wallentines.mdproxy;
 
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
-import com.mojang.authlib.yggdrasil.ProfileResult;
 import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,16 +42,15 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final ProxyServer server;
     private final Channel channel;
     private byte[] challenge;
-
     private GameVersion version;
     private ServerboundHandshakePacket handshake;
     private ServerboundLoginPacket login;
     private ClientConnectionImpl conn;
     private boolean encrypted;
     private GameProfile profile;
-    private final Random rand = new Random();
     private ProtocolPhase phase;
 
+    private final Random rand = new Random();
     private final PriorityQueue<Backend> backendQueue;
     private final HashSet<Identifier> requiredCookies = new HashSet<>();
     private final HashMap<Identifier, byte[]> cookies = new HashMap<>();
@@ -75,6 +72,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         LOGGER.info("Received handshake from " + getUsername() + " to " + handshake.address() + " (" + handshake.intent().name() + ")");
         this.handshake = handshake;
+        this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port());
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {
             changePhase(ProtocolPhase.STATUS);
@@ -111,7 +109,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         this.login = login;
-        this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port(), login.username(), login.uuid());
+        this.conn = conn.withName(login.username(), login.uuid());
 
         if(tryConnectBackend()) {
             return;
@@ -146,34 +144,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         byte[] decryptedSecret = CryptUtil.decryptData(privateKey, encrypt.sharedSecret());
-        if (server.requiresAuth()) {
-
-            LOGGER.info("Starting authentication for {}", login.username());
-
-            String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
-            try {
-
-                SocketAddress socketAddress = channel.remoteAddress();
-                InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
-
-                ProfileResult res = server.getSessionService().hasJoinedServer(login.username(), serverId, addr);
-                if (res == null) {
-                    disconnect(Component.translate("multiplayer.disconnect.unverified_username"));
-                    return;
-                }
-
-                this.conn = conn.withAuth();
-                profile = res.profile();
-
-            } catch (AuthenticationUnavailableException ex) {
-                disconnect(Component.translate("multiplayer.disconnect.authservers_down"));
-                return;
-            }
-        } else {
-            this.conn = conn.withAuth();
-        }
-
-        LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.getId());
 
         try {
             setupEncryption(decryptedSecret);
@@ -181,17 +151,23 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Encryption unsuccessful!");
         }
 
-        for (Backend b : backendQueue) {
-            requiredCookies.addAll(b.getRequiredCookies());
-        }
+        if (server.requiresAuth()) {
 
-        if (requiredCookies.isEmpty()) {
-            send(new ClientboundLoginFinishedPacket(profile));
+            LOGGER.info("Starting authentication for {}", login.username());
+
+            String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
+
+            SocketAddress socketAddress = channel.remoteAddress();
+            InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
+
+            server.getAuthenticator().authenticate(this, login.username(), serverId, addr).thenAcceptAsync(res -> {
+
+                finishAuthentication(res.profile());
+
+            }, channel.eventLoop());
 
         } else {
-            for(Identifier i : requiredCookies) {
-                send(new ClientboundCookieRequestPacket(i));
-            }
+            finishAuthentication(profile);
         }
     }
 
@@ -297,7 +273,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         });
     }
 
-    private void disconnect(Component component) {
+    public void disconnect(Component component) {
 
         LOGGER.info("Disconnecting player {}: {}", getUsername(), component.allText());
         Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(component) : new ClientboundKickPacket(component);
@@ -324,6 +300,28 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         connectToBackend(b);
         return true;
+    }
+
+    private void finishAuthentication(GameProfile profile) {
+
+        this.profile = profile;
+        this.conn = conn.withAuth();
+
+        LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.getId());
+
+        for (Backend b : backendQueue) {
+            requiredCookies.addAll(b.getRequiredCookies());
+        }
+
+        if (requiredCookies.isEmpty()) {
+            send(new ClientboundLoginFinishedPacket(profile));
+
+        } else {
+            for(Identifier i : requiredCookies) {
+                send(new ClientboundCookieRequestPacket(i));
+            }
+        }
+
     }
 
     private Backend findBackend() {

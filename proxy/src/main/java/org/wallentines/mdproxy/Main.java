@@ -26,6 +26,7 @@ public class Main {
             .with("backends", new ConfigList())
             .with("online_mode", true)
             .with("reconnect_threads", 4)
+            .with("auth_threads", 4)
             .with("reconnect_timeout", 3000)
             .with("backend_timeout", 5000)
             .with("client_timeout", 15000);
@@ -40,10 +41,12 @@ public class Main {
 
         File configFile = new File("config.json");
         FileWrapper<ConfigObject> config = new FileWrapper<>(ConfigContext.INSTANCE, JSONCodec.fileCodec(), configFile, StandardCharsets.UTF_8, DEFAULT_CONFIG);
-        if(!configFile.exists()) {
-            config.setRoot(DEFAULT_CONFIG);
-            config.save();
+
+        if(configFile.isFile()) {
+            config.load();
         }
+
+        config.save();
 
         ProxyServer ps = new ProxyServer(config);
 
