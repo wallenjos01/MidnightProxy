@@ -51,9 +51,10 @@ public class Main {
         ProxyServer ps = new ProxyServer(config);
 
         try {
-            ps.startup();
+            ps.start();
         } catch (Exception ex) {
             LOGGER.error("An exception occurred while running the server!", ex);
+            ps.shutdown();
         }
     }
 

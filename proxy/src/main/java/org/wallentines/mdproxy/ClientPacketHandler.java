@@ -111,15 +111,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.login = login;
         this.conn = conn.withName(login.username(), login.uuid());
 
-        if(tryConnectBackend()) {
-            return;
-        }
-
-        if(!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-            disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
-            return;
-        }
-
         if(handshake.intent() == ServerboundHandshakePacket.Intent.TRANSFER) {
 
             send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
@@ -246,30 +237,25 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         reconnect(b);
     }
 
+    public void close() {
+        channel.close();
+    }
 
     private void connectToBackend(Backend b) {
 
         prepareForwarding();
+
         BackendConnection bconn = new BackendConnection(version, b.hostname(), b.port(), server.getBackendTimeout(), false);
+        bconn.connect(channel.eventLoop()).addListener(future -> {
+            if(future.isSuccess()) {
 
-        bconn.connect().thenAccept(ch -> {
+                bconn.sendClientInformation(conn);
+                bconn.setupForwarding(channel);
+                setupForwarding(bconn.getChannel());
 
-            if(ch == null) {
+            } else {
                 disconnect(Component.text("Unable to connect to backend!"));
-                return;
             }
-
-            bconn.changePhase(ProtocolPhase.HANDSHAKE);
-            ch.write(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
-
-            bconn.changePhase(ProtocolPhase.LOGIN);
-            ch.write(conn.loginPacket());
-
-            setupForwarding(ch);
-            bconn.setupForwarding(channel);
-
-            ch.flush();
-
         });
     }
 
@@ -284,6 +270,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void startLogin() {
 
         if(tryConnectBackend()) {
+            return;
+        }
+
+        if(!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
+            disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
             return;
         }
 

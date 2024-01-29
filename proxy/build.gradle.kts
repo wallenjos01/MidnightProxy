@@ -9,6 +9,11 @@ application.mainClass.set("org.wallentines.mdproxy.Main")
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 
+tasks.named<JavaExec>("run") {
+
+    standardInput = System.`in`
+}
+
 repositories {
     mavenCentral()
     maven("https://maven.wallentines.org/")

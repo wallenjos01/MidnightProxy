@@ -1,47 +1,39 @@
 package org.wallentines.mdproxy;
 
-import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
-import org.wallentines.mdproxy.netty.ClientChannelInitializer;
+import org.wallentines.mdproxy.command.CommandExecutor;
+import org.wallentines.mdproxy.command.StopCommand;
+import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.util.CryptUtil;
+import org.wallentines.midnightlib.registry.StringRegistry;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public class ProxyServer {
+public class ProxyServer implements Proxy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ProxyServer");
 
-    private final EventLoopGroup eventLoopGroup;
     private final KeyPair keyPair;
     private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
     private final ReconnectCache reconnectCache;
+    private final StringRegistry<CommandExecutor> commands;
     private final List<Backend> backends = new ArrayList<>();
+    private final ConnectionManager listener;
+    private final ConsoleHandler console;
 
     private final int port;
     private final int clientTimeout;
     private int backendTimeout;
     private boolean requireAuth;
-    private ChannelFuture channel;
 
     public ProxyServer(FileWrapper<ConfigObject> config) {
-
-        this.eventLoopGroup = new NioEventLoopGroup();
 
         this.config = config;
         reload();
@@ -50,43 +42,43 @@ public class ProxyServer {
         this.clientTimeout = getConfig().getInt("client_timeout");
 
         this.keyPair = CryptUtil.generateKeyPair();
-        this.authenticator = new Authenticator(new YggdrasilAuthenticationService(Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
+        this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
         this.reconnectCache = new ReconnectCache(getConfig().getInt("reconnect_threads"), getConfig().getInt("reconnect_timeout"));
+        this.commands = new StringRegistry<>();
+
+        this.commands.register("stop", new StopCommand());
+
+        this.listener = new ConnectionManager(this);
+        this.console = new ConsoleHandler(this);
     }
 
-    public void startup() throws Exception {
+    public void start() {
 
-        try {
-            ServerBootstrap bootstrap = new ServerBootstrap()
-                    .channelFactory(NioServerSocketChannel::new)
-                    .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childOption(ChannelOption.IP_TOS, 0x18)
-                    .childHandler(new ClientChannelInitializer(this))
-                    .group(eventLoopGroup)
-                    .localAddress(new InetSocketAddress(port));
+        this.listener.startup();
+        console.start();
 
-            channel = bootstrap.bind().syncUninterruptibly();
-            channel.channel().closeFuture().sync();
-
-        } catch (Exception ex) {
-
-            LOGGER.error("An error occurred while the server was running!", ex);
-
-        } finally {
-            shutdown();
-        }
     }
 
+    @Override
     public void shutdown() {
 
         LOGGER.info("Shutting down...");
-        channel.channel().close();
+
+        console.stop();
+
+        listener.shutdown();
+
+        authenticator.close();
+        reconnectCache.close();
+
     }
 
+    @Override
     public ConfigSection getConfig() {
         return config.getRoot().asSection();
     }
 
+    @Override
     public void reload() {
         config.load();
 
@@ -95,6 +87,26 @@ public class ProxyServer {
 
         this.backends.clear();
         this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
+    }
+
+    @Override
+    public int getPort() {
+        return port;
+    }
+
+    @Override
+    public List<Backend> getBackends() {
+        return backends;
+    }
+
+    @Override
+    public boolean requiresAuth() {
+        return requireAuth;
+    }
+
+    @Override
+    public StringRegistry<CommandExecutor> getCommands() {
+        return commands;
     }
 
     public ReconnectCache getReconnectCache() {
@@ -109,10 +121,6 @@ public class ProxyServer {
         return authenticator;
     }
 
-    public int getPort() {
-        return port;
-    }
-
     public int getClientTimeout() {
         return clientTimeout;
     }
@@ -120,13 +128,4 @@ public class ProxyServer {
     public int getBackendTimeout() {
         return backendTimeout;
     }
-
-    public List<Backend> getBackends() {
-        return backends;
-    }
-
-    public boolean requiresAuth() {
-        return requireAuth;
-    }
-
 }

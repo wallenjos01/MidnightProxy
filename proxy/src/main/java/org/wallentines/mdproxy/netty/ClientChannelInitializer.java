@@ -12,10 +12,12 @@ import java.util.concurrent.TimeUnit;
 public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
 
+    private final ConnectionManager manager;
     private final ProxyServer server;
 
-    public ClientChannelInitializer(ProxyServer server) {
+    public ClientChannelInitializer(ConnectionManager manager, ProxyServer server) {
         this.server = server;
+        this.manager = manager;
     }
 
     @Override
@@ -30,6 +32,12 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
         ClientPacketHandler handler = new ClientPacketHandler(channel, server);
         channel.pipeline().addLast("handler", new PacketHandler<>(handler));
+
+        manager.addConnection(channel);
+        channel.closeFuture().addListener(future -> {
+            manager.removeConnection(channel);
+        });
+
 
     }
 }

@@ -12,6 +12,7 @@ import org.wallentines.mdproxy.netty.PacketEncoder;
 import org.wallentines.mdproxy.netty.PacketForwarder;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,10 +33,7 @@ public class BackendConnection {
         this.timeout = timeout;
     }
 
-    public CompletableFuture<Channel> connect() {
-
-        CompletableFuture<Channel> out = new CompletableFuture<>();
-        EventLoopGroup group = new NioEventLoopGroup();
+    public ChannelFuture connect(EventLoopGroup group) {
 
         Bootstrap bootstrap = new Bootstrap()
                 .group(group)
@@ -55,14 +53,8 @@ public class BackendConnection {
                 });
 
 
-        this.channel = bootstrap.connect(hostname, port)
-                .addListener((ChannelFutureListener) future -> {
-                    if(future.isSuccess()) {
-                        out.complete(future.channel());
-                    } else {
-                        out.complete(null);
-                    }
-                }).channel();
+        ChannelFuture out = bootstrap.connect(hostname, port);
+        this.channel = out.channel();
 
         return out;
     }
@@ -75,6 +67,18 @@ public class BackendConnection {
 
         this.channel.pipeline().addLast(new PacketForwarder(client));
         this.channel.config().setAutoRead(true);
+    }
+
+    public void sendClientInformation(ClientConnectionImpl conn) {
+
+        changePhase(ProtocolPhase.HANDSHAKE);
+        channel.write(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
+
+        changePhase(ProtocolPhase.LOGIN);
+        channel.write(conn.loginPacket());
+
+        channel.flush();
+
     }
 
     @SuppressWarnings("unchecked")

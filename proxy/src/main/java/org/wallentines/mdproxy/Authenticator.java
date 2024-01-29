@@ -42,4 +42,8 @@ public class Authenticator {
 
     }
 
+    public void close() {
+        executor.shutdown();
+    }
+
 }

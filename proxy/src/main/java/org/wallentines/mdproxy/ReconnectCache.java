@@ -5,7 +5,7 @@ import java.util.concurrent.*;
 
 public class ReconnectCache {
 
-    private final Executor executor;
+    private final ThreadPoolExecutor executor;
     private final int timeout;
     private final Map<String, ClientConnectionImpl> awaiting = new ConcurrentHashMap<>();
 
@@ -24,6 +24,12 @@ public class ReconnectCache {
             }
             awaiting.remove(id);
         });
+    }
+
+
+    public void close() {
+        executor.shutdown();
+        awaiting.clear();
     }
 
     public void clear(String id) {
