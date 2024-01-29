@@ -1,5 +1,6 @@
 package org.wallentines.mdproxy;
 
+import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -19,6 +20,7 @@ public interface ClientConnection {
     String hostname();
 
     int port();
+    int protocolVersion();
 
     String username();
 

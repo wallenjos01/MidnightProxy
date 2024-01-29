@@ -1,5 +1,6 @@
 package org.wallentines.mdproxy;
 
+import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.lang.LocaleHolder;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
@@ -80,6 +81,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public int port() {
         return port;
+    }
+
+    @Override
+    public int protocolVersion() {
+        return protocolVersion;
     }
 
     @Override

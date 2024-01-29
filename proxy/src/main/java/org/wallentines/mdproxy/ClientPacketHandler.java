@@ -45,13 +45,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final ProxyServer server;
     private final Channel channel;
     private byte[] challenge;
-    private GameVersion version;
-    private ServerboundHandshakePacket handshake;
-    private ServerboundLoginPacket login;
     private ClientConnectionImpl conn;
     private boolean encrypted;
     private GameProfile profile;
     private ProtocolPhase phase;
+    private ServerboundHandshakePacket.Intent intent;
 
     private final Random rand = new Random();
     private final PriorityQueue<Backend> backendQueue;
@@ -61,7 +59,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     public ClientPacketHandler(Channel channel, ProxyServer server) {
 
-        this.version = GameVersion.MAX;
         this.server = server;
         this.channel = channel;
         this.encrypted = false;
@@ -74,8 +71,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundHandshakePacket handshake) {
 
         LOGGER.info("Received handshake from " + getUsername() + " to " + handshake.address() + " (" + handshake.intent().name() + ")");
-        this.handshake = handshake;
         this.conn = new ClientConnectionImpl(handshake.protocolVersion(), handshake.address(), handshake.port());
+        this.intent = handshake.intent();
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {
             changePhase(ProtocolPhase.STATUS);
@@ -89,7 +86,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         // TODO: Status
         send(new ClientboundStatusPacket(
-                new GameVersion("MidnightProxy", handshake.protocolVersion()),
+                new GameVersion("MidnightProxy", conn.protocolVersion()),
                 Component.text("A MidnightProxy Server"),
                 100, 0,
                 false, false
@@ -105,17 +102,15 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundLoginPacket login) {
 
-        version = new GameVersion("", handshake.protocolVersion());
 
         if (backendQueue.isEmpty()) {
             disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
         }
 
-        this.login = login;
         this.conn = conn.withPlayerInfo(new PlayerInfo(login.username(), login.uuid()));
 
-        if(handshake.intent() == ServerboundHandshakePacket.Intent.TRANSFER) {
+        if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
 
             send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
@@ -129,7 +124,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundEncryptionPacket encrypt) {
-        if(login == null || challenge == null) {
+        if(!conn.playerInfoAvailable() || challenge == null) {
             throw new IllegalStateException("Received unrequested encryption packet!");
         }
 
@@ -148,14 +143,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if (server.requiresAuth()) {
 
-            LOGGER.info("Starting authentication for {}", login.username());
+            LOGGER.info("Starting authentication for {}", conn.username());
 
             String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
 
             SocketAddress socketAddress = channel.remoteAddress();
             InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
 
-            server.getAuthenticator().authenticate(this, login.username(), serverId, addr).thenAcceptAsync(res -> {
+            server.getAuthenticator().authenticate(this, conn.username(), serverId, addr).thenAcceptAsync(res -> {
 
                 finishAuthentication(res.profile());
 
@@ -186,7 +181,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
-            if(!newConn.username().equals(login.username()) || !newConn.uuid().equals(login.uuid())) {
+            if(!newConn.username().equals(conn.username()) || !newConn.uuid().equals(conn.uuid())) {
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
@@ -194,7 +189,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             server.getReconnectCache().clear(id);
             conn = newConn;
 
-            LOGGER.info("User {} reconnected with UUID {}", getUsername(), login.uuid());
+            LOGGER.info("User {} reconnected with UUID {}", getUsername(), conn.uuid());
 
             if(!tryConnectBackend()) {
                 disconnect(server.getLangManager().component("error.no_valid_backends", conn));
@@ -249,7 +244,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         prepareForwarding();
 
-        BackendConnection bconn = new BackendConnection(version, b.hostname(), b.port(), server.getBackendTimeout(), false);
+        BackendConnection bconn = new BackendConnection(new GameVersion("", conn.protocolVersion()), b.hostname(), b.port(), server.getBackendTimeout(), false);
         bconn.connect(channel.eventLoop()).addListener(future -> {
             if(future.isSuccess()) {
 
@@ -284,7 +279,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        if(!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
+        if(!new GameVersion("", conn.protocolVersion()).hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
             disconnect(server.getLangManager().component("error.cannot_transfer", conn));
             return;
         }
@@ -390,10 +385,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     public String getUsername() {
 
-        return profile == null ?
-                login == null ? channel.remoteAddress().toString() :
-                        login.username() :
-                profile.getName();
+        return profile == null
+                ? conn.playerInfoAvailable()
+                        ? conn.username()
+                        : channel.remoteAddress().toString()
+                : profile.getName();
 
     }
 
@@ -402,6 +398,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         this.phase = phase;
 
+        GameVersion version = new GameVersion("", conn.protocolVersion());
+
         channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
         channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
 
@@ -409,8 +407,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void reconnect(Backend b) {
 
-        String host = b.redirect() ? b.hostname() : handshake.address();
-        int port = b.redirect() ? b.port() : handshake.port();
+        String host = b.redirect() ? b.hostname() : conn.hostname();
+        int port = b.redirect() ? b.port() : conn.port();
 
         String id = StringUtil.randomId(16);
 
