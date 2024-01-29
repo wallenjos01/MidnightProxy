@@ -5,6 +5,7 @@ import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface Proxy {
 
@@ -25,5 +26,7 @@ public interface Proxy {
     int getOnlinePlayers();
 
     int getPlayerLimit();
+
+    boolean bypassesPlayerLimit(PlayerInfo info);
 
 }

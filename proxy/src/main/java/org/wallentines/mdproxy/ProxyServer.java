@@ -128,6 +128,11 @@ public class ProxyServer implements Proxy {
         return playerLimit;
     }
 
+    @Override
+    public boolean bypassesPlayerLimit(PlayerInfo info) {
+        return false;
+    }
+
     public ReconnectCache getReconnectCache() {
         return reconnectCache;
     }

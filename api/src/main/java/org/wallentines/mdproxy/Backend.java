@@ -35,32 +35,21 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
 
     }
 
-    public boolean canCheck(ClientConnection conn) {
+    public TestResult canUse(ClientConnection conn) {
 
         if(redirect && !conn.canTransfer()) {
-            return false;
+            return TestResult.NOT_ENOUGH_INFO;
         }
         if(requirement != null) {
-            if(requirement.requiresAuth() && !conn.authenticated()) {
-                return false;
-            }
+            if ((requirement.requiresAuth() && !conn.authenticated()) ||
+                    (requirement.requiresCookies() && !conn.cookiesAvailable()) ||
+                    (requirement.requiresLocale() && !conn.localeAvailable())) {
 
-            if(requirement.requiresCookies() && !conn.cookiesAvailable()) {
-                return false;
+                return TestResult.NOT_ENOUGH_INFO;
             }
-
-            return !requirement.requiresLocale() || conn.localeAvailable();
         }
 
-        return true;
-    }
-
-    public boolean canUse(ClientConnection conn) {
-
-        if(!canCheck(conn)) {
-            return false;
-        }
-        return requirement == null || requirement.check(conn);
+        return (requirement == null || requirement.check(conn)) ? TestResult.PASS : TestResult.FAIL;
     }
 
 }

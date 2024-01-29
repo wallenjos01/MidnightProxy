@@ -8,13 +8,13 @@ import java.util.UUID;
 
 public interface ClientConnection {
 
-    boolean nameAvailable();
+    boolean playerInfoAvailable();
     boolean authenticated();
     boolean cookiesAvailable();
     boolean canTransfer();
     boolean localeAvailable();
 
-    boolean bypassesPlayerLimit(Proxy proxy);
+    TestResult bypassesPlayerLimit(Proxy proxy);
 
     String hostname();
 
@@ -23,6 +23,8 @@ public interface ClientConnection {
     String username();
 
     UUID uuid();
+
+    PlayerInfo playerInfo();
 
     byte[] getCookie(Identifier id);
 

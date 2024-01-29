@@ -113,7 +113,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         this.login = login;
-        this.conn = conn.withName(login.username(), login.uuid());
+        this.conn = conn.withPlayerInfo(new PlayerInfo(login.username(), login.uuid()));
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.TRANSFER) {
 
@@ -328,12 +328,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private Backend findBackend() {
 
-        backendQueue.removeIf(b -> b.canCheck(conn) && !b.canUse(conn));
+        backendQueue.removeIf(b -> b.canUse(conn) == TestResult.FAIL);
         if(backendQueue.isEmpty()) return null;
 
         for(Backend b : backendQueue) {
-            if(!b.canCheck(conn)) return null;
-            if(b.canUse(conn)) {
+            TestResult res = b.canUse(conn);
+            if(res == TestResult.NOT_ENOUGH_INFO) {
+                return null;
+            } else if (res == TestResult.PASS) {
                 return b;
             }
         }

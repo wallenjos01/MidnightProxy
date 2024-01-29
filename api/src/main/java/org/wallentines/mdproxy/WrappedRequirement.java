@@ -71,6 +71,7 @@ public class WrappedRequirement implements ConnectionRequirement {
     }
 
     public boolean check(ClientConnection conn) {
+
         return internal.check(conn);
     }
 
