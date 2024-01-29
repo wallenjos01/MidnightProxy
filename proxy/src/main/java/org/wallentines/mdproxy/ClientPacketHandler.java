@@ -358,6 +358,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void prepareForwarding() {
 
+        channel.config().setAutoRead(false);
+
         channel.pipeline().remove("frame_dec");
         channel.pipeline().remove("decoder");
         channel.pipeline().remove("handler");
@@ -368,8 +370,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             channel.pipeline().remove("decrypt");
             channel.pipeline().remove("encrypt");
         }
-
-        channel.config().setAutoRead(false);
     }
 
     private void setupForwarding(Channel forward) {

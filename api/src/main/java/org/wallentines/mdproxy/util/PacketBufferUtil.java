@@ -24,7 +24,7 @@ public class PacketBufferUtil {
      */
     public static int readVarInt(ByteBuf buffer) {
 
-        VarInt varInt = VarInt.read(buffer);
+        VarInt varInt = VarInt.read(buffer, 5);
         return varInt.value();
     }
 

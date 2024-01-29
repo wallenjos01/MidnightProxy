@@ -1,11 +1,10 @@
 package org.wallentines.mdproxy.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.CorruptedFrameException;
-import org.wallentines.mdproxy.util.PacketBufferUtil;
+import io.netty.handler.codec.DecoderException;
+import org.wallentines.mdproxy.VarInt;
 
 import java.util.List;
 
@@ -14,30 +13,19 @@ public class FrameDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf data, List<Object> out) {
 
-        data.markReaderIndex();
-        byte[] bs = new byte[3];
-        for (int i = 0; i < bs.length; ++i) {
-            if (!data.isReadable()) {
-                data.resetReaderIndex();
-                return;
-            }
-            bs[i] = data.readByte();
-            if (bs[i] < 0) continue;
-            ByteBuf buf = Unpooled.wrappedBuffer(bs);
-            try {
-                int j = PacketBufferUtil.readVarInt(buf);
-                if (data.readableBytes() < j) {
-                    data.resetReaderIndex();
-                    return;
-                }
-                out.add(data.readBytes(j));
-                return;
-            }
-            finally {
-                buf.release();
-            }
+        if(!data.isReadable()) return;
+
+        VarInt vLength = VarInt.read(data, 3);
+        int length = vLength.value();
+
+        if(length == 0) return;
+        if(length < 0) {
+            data.clear();
+            throw new DecoderException("Received packet with negative length!");
         }
 
-        throw new CorruptedFrameException("length wider than 21-bit");
+        if(data.isReadable(length)) {
+            out.add(data.readRetainedSlice(length));
+        }
     }
 }

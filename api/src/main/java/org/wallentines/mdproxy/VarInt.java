@@ -1,15 +1,16 @@
 package org.wallentines.mdproxy;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.DecoderException;
 
 public record VarInt(int value) {
 
 
     // How many bits are in each segment of a variable-length integer (VarInt)
-    private static final int SEGMENT_BITS = 0b01111111;
+    public static final int SEGMENT_BITS = 0b01111111;
 
     // If this bit is set when reading a VarInt, then the next byte should be read as part of the VarInt
-    private static final int CONTINUE_BIT = 0b10000000;
+    public static final int CONTINUE_BIT = 0b10000000;
 
     int getWidth() {
         return (31 - Integer.numberOfLeadingZeros(value)) / 7;
@@ -40,12 +41,15 @@ public record VarInt(int value) {
 
     }
 
-    public static VarInt read(ByteBuf buffer) {
+    public static VarInt read(ByteBuf buffer, int limit) {
 
         int out = 0;
         int position = 0;
         byte currentByte;
         do {
+            if(position == limit) {
+                throw new DecoderException("VarInt was too big!");
+            }
             currentByte = buffer.readByte();
             out |= (currentByte & SEGMENT_BITS) << (7 * position);
             position++;
