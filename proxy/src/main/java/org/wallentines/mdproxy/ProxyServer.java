@@ -15,7 +15,8 @@ import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.security.KeyPair;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProxyServer implements Proxy {
 
@@ -34,6 +35,7 @@ public class ProxyServer implements Proxy {
     private final int port;
     private final int clientTimeout;
     private int backendTimeout;
+    private int playerLimit;
     private boolean requireAuth;
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager manager) {
@@ -90,6 +92,7 @@ public class ProxyServer implements Proxy {
 
         this.requireAuth = getConfig().getBoolean("online_mode");
         this.backendTimeout = getConfig().getInt("backend_timeout");
+        this.playerLimit = getConfig().getInt("player_limit");
 
         this.backends.clear();
         this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
@@ -113,6 +116,16 @@ public class ProxyServer implements Proxy {
     @Override
     public StringRegistry<CommandExecutor> getCommands() {
         return commands;
+    }
+
+    @Override
+    public int getOnlinePlayers() {
+        return listener.getConnectedClients();
+    }
+
+    @Override
+    public int getPlayerLimit() {
+        return playerLimit;
     }
 
     public ReconnectCache getReconnectCache() {

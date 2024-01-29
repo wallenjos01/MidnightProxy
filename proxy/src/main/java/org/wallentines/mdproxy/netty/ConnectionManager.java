@@ -6,6 +6,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mdproxy.ClientPacketHandler;
 import org.wallentines.mdproxy.ProxyServer;
 
 import java.net.InetSocketAddress;
@@ -18,7 +19,7 @@ public class ConnectionManager {
 
     private final EventLoopGroup eventLoopGroup;
     private final ProxyServer server;
-    private final Set<Channel> connected;
+    private final Set<ClientPacketHandler> connected;
     private ChannelFuture channel;
 
     public ConnectionManager(ProxyServer server) {
@@ -53,12 +54,16 @@ public class ConnectionManager {
         return channel;
     }
 
-    public void addConnection(Channel channel) {
+    public void addClientConnection(ClientPacketHandler channel) {
         this.connected.add(channel);
     }
 
-    public void removeConnection(Channel channel) {
+    public void removeClientConnection(ClientPacketHandler channel) {
         this.connected.remove(channel);
+    }
+
+    public int getConnectedClients() {
+        return connected.size();
     }
 
 
@@ -67,7 +72,7 @@ public class ConnectionManager {
         if (channel != null) {
             channel.channel().close();
         }
-        for(Channel c : connected) {
+        for(ClientPacketHandler c : connected) {
             c.close();
         }
         eventLoopGroup.shutdownGracefully();

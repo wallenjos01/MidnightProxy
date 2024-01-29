@@ -6,8 +6,8 @@ import org.wallentines.mdproxy.packet.config.*;
 import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ClientboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
-import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
+import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 
 import java.util.Collection;
 import java.util.HashMap;

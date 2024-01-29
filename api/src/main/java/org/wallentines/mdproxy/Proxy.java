@@ -22,4 +22,8 @@ public interface Proxy {
 
     StringRegistry<CommandExecutor> getCommands();
 
+    int getOnlinePlayers();
+
+    int getPlayerLimit();
+
 }

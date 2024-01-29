@@ -33,7 +33,8 @@ public class Main {
             .with("auth_threads", 4)
             .with("reconnect_timeout", 3000)
             .with("backend_timeout", 5000)
-            .with("client_timeout", 15000);
+            .with("client_timeout", 15000)
+            .with("player_limit", 100);
 
 
     public static void main(String[] args) {

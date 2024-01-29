@@ -2,7 +2,6 @@ package org.wallentines.mdproxy;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
@@ -13,8 +12,6 @@ import org.wallentines.mdproxy.netty.PacketForwarder;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
-
-import java.util.concurrent.CompletableFuture;
 
 public class BackendConnection {
 

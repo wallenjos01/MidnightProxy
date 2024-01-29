@@ -2,7 +2,9 @@ package org.wallentines.mdproxy;
 
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.GameProfile;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
@@ -85,6 +87,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundStatusPacket ping) {
 
+        // TODO: Status
         send(new ClientboundStatusPacket(
                 new GameVersion("MidnightProxy", handshake.protocolVersion()),
                 Component.text("A MidnightProxy Server"),
@@ -271,6 +274,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     private void startLogin() {
+
+        if(server.getPlayerLimit() >= server.getOnlinePlayers()) {
+            disconnect(server.getLangManager().component("error.server_full"));
+            return;
+        }
 
         if(tryConnectBackend()) {
             return;

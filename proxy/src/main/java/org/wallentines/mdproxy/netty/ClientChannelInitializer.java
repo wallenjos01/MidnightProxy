@@ -33,9 +33,9 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
         ClientPacketHandler handler = new ClientPacketHandler(channel, server);
         channel.pipeline().addLast("handler", new PacketHandler<>(handler));
 
-        manager.addConnection(channel);
+        manager.addClientConnection(handler);
         channel.closeFuture().addListener(future -> {
-            manager.removeConnection(channel);
+            manager.removeClientConnection(handler);
         });
 
 

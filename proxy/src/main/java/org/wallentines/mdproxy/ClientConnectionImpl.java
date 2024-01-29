@@ -62,6 +62,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
+    public boolean bypassesPlayerLimit(Proxy server) {
+        return false;
+    }
+
+    @Override
     public String hostname() {
         return hostname;
     }

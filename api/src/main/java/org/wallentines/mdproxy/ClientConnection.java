@@ -14,6 +14,8 @@ public interface ClientConnection {
     boolean canTransfer();
     boolean localeAvailable();
 
+    boolean bypassesPlayerLimit(Proxy proxy);
+
     String hostname();
 
     int port();
