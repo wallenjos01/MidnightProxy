@@ -1,0 +1,7 @@
+{
+  "error.no_backends": "There are no servers available!",
+  "error.invalid_reconnect": "Invalid reconnection!",
+  "error.no_valid_backends": "There are no servers available!",
+  "error.backend_connection_failed": "Server connection failed!",
+  "error.cannot_transfer": "This server requires at least version 1.20.5!"
+}

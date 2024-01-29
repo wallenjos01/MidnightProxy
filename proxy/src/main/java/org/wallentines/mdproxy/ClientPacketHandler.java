@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mcore.text.ComponentResolver;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.packet.config.*;
@@ -104,7 +105,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         version = new GameVersion("", handshake.protocolVersion());
 
         if (backendQueue.isEmpty()) {
-            disconnect(Component.text("There are no backend servers available!"));
+            disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
         }
 
@@ -183,7 +184,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
 
             if(!newConn.username().equals(login.username()) || !newConn.uuid().equals(login.uuid())) {
-                disconnect(Component.text("Invalid reconnection!"));
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
 
@@ -193,7 +194,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             LOGGER.info("User {} reconnected with UUID {}", getUsername(), login.uuid());
 
             if(!tryConnectBackend()) {
-                disconnect(Component.text("Unable to find backend server!"));
+                disconnect(server.getLangManager().component("error.no_valid_backends", conn));
             }
 
             return;
@@ -229,8 +230,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         Backend b = findBackend();
 
         if(b == null) {
-            LOGGER.warn("Unable to find backend server for {} after login!", getUsername());
-            disconnect(Component.text("Unable to find backend server!"));
+            LOGGER.warn("Unable to find any backend server for {} after login!", getUsername());
+            disconnect(server.getLangManager().component("error.no_valid_backends", conn));
             return;
         }
 
@@ -254,15 +255,17 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 setupForwarding(bconn.getChannel());
 
             } else {
-                disconnect(Component.text("Unable to connect to backend!"));
+                disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
             }
         });
     }
 
     public void disconnect(Component component) {
 
-        LOGGER.info("Disconnecting player {}: {}", getUsername(), component.allText());
-        Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(component) : new ClientboundKickPacket(component);
+        Component cmp = ComponentResolver.resolveComponent(component, conn);
+
+        LOGGER.info("Disconnecting player {}: {}", getUsername(), cmp.allText());
+        Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
 
         channel.writeAndFlush(p).addListener(ChannelFutureListener.CLOSE);
     }
@@ -274,7 +277,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         if(!version.hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-            disconnect(Component.text("This server requires at least version 1.20.5! (24w03a)"));
+            disconnect(server.getLangManager().component("error.cannot_transfer", conn));
             return;
         }
 
@@ -338,6 +341,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         if(!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("Attempt to enable encryption from outside the event loop!");
         }
+        channel.config().setAutoRead(false);
 
         SecretKey secret = new SecretKeySpec(key, "AES");
 
@@ -346,8 +350,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         channel.pipeline().addBefore("frame_dec", "decrypt", new CryptDecoder(decrypt));
         channel.pipeline().addBefore("frame_enc", "encrypt", new CryptEncoder(encrypt));
-
         this.encrypted = true;
+
+        channel.config().setAutoRead(true);
+
     }
 
     private void prepareForwarding() {

@@ -3,10 +3,12 @@ package org.wallentines.mdproxy;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mcore.lang.LangManager;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdproxy.command.CommandExecutor;
+import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
 import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.util.CryptUtil;
@@ -27,15 +29,17 @@ public class ProxyServer implements Proxy {
     private final List<Backend> backends = new ArrayList<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
+    private final LangManager manager;
 
     private final int port;
     private final int clientTimeout;
     private int backendTimeout;
     private boolean requireAuth;
 
-    public ProxyServer(FileWrapper<ConfigObject> config) {
+    public ProxyServer(FileWrapper<ConfigObject> config, LangManager manager) {
 
         this.config = config;
+        this.manager = manager;
         reload();
 
         this.port = getConfig().getInt("port");
@@ -47,6 +51,7 @@ public class ProxyServer implements Proxy {
         this.commands = new StringRegistry<>();
 
         this.commands.register("stop", new StopCommand());
+        this.commands.register("reload", new ReloadCommand());
 
         this.listener = new ConnectionManager(this);
         this.console = new ConsoleHandler(this);
@@ -81,6 +86,7 @@ public class ProxyServer implements Proxy {
     @Override
     public void reload() {
         config.load();
+        manager.reload();
 
         this.requireAuth = getConfig().getBoolean("online_mode");
         this.backendTimeout = getConfig().getInt("backend_timeout");
@@ -127,5 +133,9 @@ public class ProxyServer implements Proxy {
 
     public int getBackendTimeout() {
         return backendTimeout;
+    }
+
+    public LangManager getLangManager() {
+        return manager;
     }
 }
