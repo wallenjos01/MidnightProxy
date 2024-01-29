@@ -150,11 +150,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             SocketAddress socketAddress = channel.remoteAddress();
             InetAddress addr = ((InetSocketAddress) socketAddress).getAddress();
 
-            server.getAuthenticator().authenticate(this, conn.username(), serverId, addr).thenAcceptAsync(res -> {
-
-                finishAuthentication(res.profile());
-
-            }, channel.eventLoop());
+            server.getAuthenticator().authenticate(this, conn.username(), serverId, addr).thenAcceptAsync(res -> finishAuthentication(res.profile()), channel.eventLoop());
 
         } else {
             finishAuthentication(profile);

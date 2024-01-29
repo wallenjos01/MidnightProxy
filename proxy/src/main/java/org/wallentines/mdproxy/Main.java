@@ -28,6 +28,7 @@ public class Main {
             .with("port", 25565)
             .with("haproxy_protocol", false)
             .with("backends", new ConfigList())
+            .with("status", new ConfigList())
             .with("online_mode", true)
             .with("reconnect_threads", 4)
             .with("auth_threads", 4)

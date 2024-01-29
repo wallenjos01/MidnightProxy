@@ -28,6 +28,7 @@ public class ProxyServer implements Proxy {
     private final ReconnectCache reconnectCache;
     private final StringRegistry<CommandExecutor> commands;
     private final List<Backend> backends = new ArrayList<>();
+    private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager manager;
@@ -95,7 +96,10 @@ public class ProxyServer implements Proxy {
         this.playerLimit = getConfig().getInt("player_limit");
 
         this.backends.clear();
-        this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER));
+        this.backends.addAll(getConfig().getListFiltered("backends", Backend.SERIALIZER, LOGGER::warn));
+
+        this.statusEntries.clear();
+        this.statusEntries.addAll(getConfig().getListFiltered("status", StatusEntry.SERIALIZER, LOGGER::warn));
     }
 
     @Override
