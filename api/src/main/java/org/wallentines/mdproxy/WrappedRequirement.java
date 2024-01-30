@@ -62,17 +62,24 @@ public class WrappedRequirement implements ConnectionRequirement {
     @Override
     public boolean requiresLocale() {
         if(internal instanceof MultiRequirement<ClientConnection> mr) {
-        for(Requirement<ClientConnection> sr : mr.getRequirements()) {
-            if(sr instanceof ConnectionRequirement cr && cr.requiresLocale()) return true;
+            for(Requirement<ClientConnection> sr : mr.getRequirements()) {
+                if(sr instanceof ConnectionRequirement cr && cr.requiresLocale()) return true;
+            }
         }
-    }
 
         return internal instanceof ConnectionRequirement cr && cr.requiresLocale();
     }
 
-    public boolean check(ClientConnection conn) {
+    public TestResult check(ClientConnection conn) {
 
-        return internal.check(conn);
+        if ((requiresAuth() && !conn.authenticated()) ||
+                (requiresCookies() && !conn.cookiesAvailable()) ||
+                (requiresLocale() && !conn.localeAvailable())) {
+
+            return TestResult.NOT_ENOUGH_INFO;
+        }
+
+        return internal.check(conn) ? TestResult.PASS : TestResult.FAIL;
     }
 
 

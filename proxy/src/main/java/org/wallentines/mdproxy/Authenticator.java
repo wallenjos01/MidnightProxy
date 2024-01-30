@@ -4,8 +4,8 @@ import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 
-import java.net.InetAddress;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -21,21 +21,25 @@ public class Authenticator {
         this.executor = new ThreadPoolExecutor(1, maxThreads, 5000, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(maxThreads));
     }
 
-    public CompletableFuture<ProfileResult> authenticate(ClientPacketHandler handler, String username, String serverId, InetAddress address) {
+    public CompletableFuture<ProfileResult> authenticate(ClientConnection connection, String serverId) {
+
+        if(!connection.playerInfoAvailable()) {
+            return CompletableFuture.completedFuture(new ProfileResult(null));
+        }
 
         return CompletableFuture.supplyAsync(() -> {
             try {
 
-                ProfileResult res = service.hasJoinedServer(username, serverId, address);
+                ProfileResult res = service.hasJoinedServer(connection.username(), serverId, connection.address());
                 if (res == null) {
-                    handler.disconnect(Component.translate("multiplayer.disconnect.unverified_username"));
+                    connection.disconnect(ProtocolPhase.LOGIN, Component.translate("multiplayer.disconnect.unverified_username"));
                     return null;
                 }
 
                 return res;
 
             } catch (AuthenticationUnavailableException ex) {
-                handler.disconnect(Component.translate("multiplayer.disconnect.authservers_down"));
+                connection.disconnect(ProtocolPhase.LOGIN, Component.translate("multiplayer.disconnect.authservers_down"));
                 return null;
             }
         }, executor);

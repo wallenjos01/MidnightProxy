@@ -40,16 +40,10 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
         if(redirect && !conn.canTransfer()) {
             return TestResult.NOT_ENOUGH_INFO;
         }
-        if(requirement != null) {
-            if ((requirement.requiresAuth() && !conn.authenticated()) ||
-                    (requirement.requiresCookies() && !conn.cookiesAvailable()) ||
-                    (requirement.requiresLocale() && !conn.localeAvailable())) {
 
-                return TestResult.NOT_ENOUGH_INFO;
-            }
-        }
+        if(requirement == null) return TestResult.PASS;
 
-        return (requirement == null || requirement.check(conn)) ? TestResult.PASS : TestResult.FAIL;
+        return requirement.check(conn);
     }
 
 }

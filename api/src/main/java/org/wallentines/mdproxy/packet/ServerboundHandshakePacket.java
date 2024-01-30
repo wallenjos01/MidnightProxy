@@ -33,9 +33,11 @@ public record ServerboundHandshakePacket(int protocolVersion, String address, in
         int proto = PacketBufferUtil.readVarInt(buffer);
         String addr = PacketBufferUtil.readUtf(buffer, 255).toLowerCase(Locale.ROOT);
         int port = buffer.readUnsignedShort();
-        Intent intent = Intent.byId(PacketBufferUtil.readVarInt(buffer));
+
+        int intentId = PacketBufferUtil.readVarInt(buffer);
+        Intent intent = Intent.byId(intentId);
         if(intent == null) {
-            throw new IllegalStateException("Client sent handshake with invalid intent!");
+            throw new IllegalStateException("Client sent handshake with invalid intent! (" + intentId + ")");
         }
 
         return new ServerboundHandshakePacket(proto, addr, port, intent);

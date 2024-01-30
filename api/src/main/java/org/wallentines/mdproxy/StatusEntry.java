@@ -4,19 +4,19 @@ import org.jetbrains.annotations.NotNull;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mcore.text.ModernSerializer;
-import org.wallentines.mdcfg.serializer.NumberSerializer;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
 import java.util.Collection;
+import java.util.List;
 
 public record StatusEntry(int priority, Integer playersOverride, Integer maxPlayersOverride,
-                          Component message, Collection<PlayerInfo> playerSample, boolean secureChat,
-                          boolean previewChat, String passthroughHost, int passthroughPort,
-                          WrappedRequirement requirement) implements Comparable<StatusEntry> {
+                          Collection<PlayerInfo> playerSample, Component message, String icon, Boolean secureChat,
+                          Boolean previewChat, String passthrough, WrappedRequirement requirement) implements Comparable<StatusEntry> {
 
     public boolean shouldPassthrough() {
-        return passthroughHost != null;
+        return passthrough != null;
     }
 
     @Override
@@ -24,16 +24,71 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
         return o.priority - priority;
     }
 
+    public StatusMessage create(GameVersion version, int onlinePlayers, int maxPlayers) {
+
+        if(playersOverride != null) onlinePlayers = playersOverride;
+        if(maxPlayersOverride != null) maxPlayers = maxPlayersOverride;
+
+        return new StatusMessage(version, onlinePlayers, maxPlayers,
+                playerSample == null ? List.of() : playerSample,
+                message == null ? Component.empty() : message,
+                null,
+                secureChat != null && secureChat,
+                previewChat != null && previewChat);
+    }
+
+    public ConfigSection resolve(ConfigSection other, IconCache cache) {
+
+        GameVersion ver = GameVersion.MAX;
+        if(other.hasSection("version")) {
+            ConfigSection version = other.getSection("version");
+            ver = new GameVersion(version.getString("name"), version.getInt("protocol"));
+        }
+
+        ConfigSection out = other.copy();
+        if(playersOverride != null) {
+            out.getOrCreateSection("players").set("online", playersOverride);
+        }
+        if(maxPlayersOverride != null) {
+            out.getOrCreateSection("players").set("max", maxPlayersOverride);
+        }
+        if(playerSample != null) {
+            out.getOrCreateSection("players").set("sample", playerSample, PlayerInfo.SERIALIZER.listOf());
+        }
+        if(message != null) {
+            out.set("description", message, ModernSerializer.INSTANCE.forContext(ver));
+        }
+        if(icon != null) {
+            String iconB64 = cache.getIconB64(icon);
+            if(iconB64 != null) {
+                out.set("favicon", iconB64);
+            }
+        }
+        if(secureChat != null) {
+            out.set("enforcesSecureChat", secureChat);
+        }
+        if(previewChat != null) {
+            out.set("previewsChat", previewChat);
+        }
+
+        return out;
+    }
+
+    public boolean canUse(ClientConnection conn) {
+
+        return requirement == null || requirement.check(conn) == TestResult.PASS;
+    }
+
     public static final Serializer<StatusEntry> SERIALIZER = ObjectSerializer.create(
             Serializer.INT.entry("priority", StatusEntry::priority).orElse(0),
             Serializer.INT.entry("players_override", StatusEntry::playersOverride).optional(),
             Serializer.INT.entry("max_players_override", StatusEntry::maxPlayersOverride).optional(),
-            ModernSerializer.INSTANCE.forContext(GameVersion.MAX).entry("message", StatusEntry::message).optional(),
             PlayerInfo.SERIALIZER.listOf().entry("player_sample", StatusEntry::playerSample).optional(),
-            Serializer.BOOLEAN.entry("secure_chat", StatusEntry::secureChat).orElse(false),
-            Serializer.BOOLEAN.entry("preview_chat", StatusEntry::previewChat).orElse(false),
-            Serializer.STRING.entry("passthrough_hostname", StatusEntry::passthroughHost).optional(),
-            NumberSerializer.forInt(1,65535).entry("passthrough_port", StatusEntry::passthroughPort).optional(),
+            ModernSerializer.INSTANCE.forContext(GameVersion.MAX).entry("message", StatusEntry::message).optional(),
+            Serializer.STRING.entry("icon", StatusEntry::icon).optional(),
+            Serializer.BOOLEAN.entry("secure_chat", StatusEntry::secureChat).optional(),
+            Serializer.BOOLEAN.entry("preview_chat", StatusEntry::previewChat).optional(),
+            Serializer.STRING.entry("passthrough", StatusEntry::passthrough).optional(),
             WrappedRequirement.SERIALIZER.entry("requirement", StatusEntry::requirement).optional(),
             StatusEntry::new
     );

@@ -2,10 +2,10 @@ package org.wallentines.mdproxy;
 
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdproxy.command.CommandExecutor;
+import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface Proxy {
 
@@ -19,7 +19,11 @@ public interface Proxy {
 
     void reload();
 
-    List<Backend> getBackends();
+    RegistryBase<String, Backend> getBackends();
+
+    List<StatusEntry> getStatusEntries();
+
+    IconCache getIconCache();
 
     StringRegistry<CommandExecutor> getCommands();
 

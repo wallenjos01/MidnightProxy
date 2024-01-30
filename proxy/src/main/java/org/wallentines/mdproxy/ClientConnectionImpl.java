@@ -1,38 +1,51 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.mcore.GameVersion;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.LocaleHolder;
+import org.wallentines.mcore.text.Component;
+import org.wallentines.mcore.text.ComponentResolver;
+import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.config.ClientboundConfigKickPacket;
+import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("ClientConnectionImpl");
+
+    private final Channel channel;
     private final int protocolVersion;
     private final String hostname;
     private final int port;
-    private final PlayerInfo playerInfo;
-    private final boolean auth;
-    private final boolean transferable;
-    private final Map<Identifier, byte[]> cookies;
-    private final String locale;
+    private PlayerInfo playerInfo;
+    private boolean auth;
+    private boolean cookiesAvailable;
+    private boolean transferable;
+    private String locale;
+    private BackendConnectionImpl backend;
+    private final Map<Identifier, byte[]> cookies = new HashMap<>();
 
-    public ClientConnectionImpl(int protocolVersion, String hostname, int port) {
-        this(protocolVersion, hostname, port, null, false, null, false, null);
-    }
 
-    private ClientConnectionImpl(int protocolVersion, String hostname, int port, PlayerInfo info, boolean auth, Map<Identifier, byte[]> cookies, boolean transferable, String locale) {
+
+    public ClientConnectionImpl(Channel channel, int protocolVersion, String hostname, int port) {
+        this.channel = channel;
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
-        this.playerInfo = info;
-        this.auth = auth;
-        this.cookies = cookies;
-        this.transferable = transferable;
-        this.locale = locale;
     }
 
     @Override
@@ -47,7 +60,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public boolean cookiesAvailable() {
-        return cookies != null;
+        return cookiesAvailable;
     }
 
     @Override
@@ -61,6 +74,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
+    public InetAddress address() {
+        return ((InetSocketAddress) channel.remoteAddress()).getAddress();
+    }
+
+    @Override
     public TestResult bypassesPlayerLimit(Proxy server) {
 
         if(server.getPlayerLimit() == -1) {
@@ -70,7 +88,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
             return TestResult.NOT_ENOUGH_INFO;
         }
 
-        return TestResult.FAIL;
+        return server.bypassesPlayerLimit(playerInfo) ? TestResult.PASS : TestResult.FAIL;
     }
 
     @Override
@@ -90,7 +108,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public String username() {
-        return playerInfo == null ? null : playerInfo.username();
+        return playerInfo == null ? channel.remoteAddress().toString() : playerInfo.username();
     }
 
     @Override
@@ -105,7 +123,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public byte[] getCookie(Identifier id) {
-        return cookies == null ? null : cookies.get(id);
+        return cookies.get(id);
     }
 
     @Override
@@ -123,24 +141,98 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         return new ServerboundLoginPacket(playerInfo.username(), playerInfo.uuid());
     }
 
-    public ClientConnectionImpl withPlayerInfo(PlayerInfo info) {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, info, true, cookies, transferable, locale);
+    @Override
+    public boolean isConnected() {
+        return backend != null;
     }
 
-    public ClientConnectionImpl withAuth() {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, playerInfo, true, cookies, transferable, locale);
+    @Override
+    public BackendConnection getBackendConnection() {
+        return backend;
     }
 
-    public ClientConnectionImpl withCookies(Map<Identifier, byte[]> cookies) {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, playerInfo, auth, cookies, transferable, locale);
+    public void setPlayerInfo(PlayerInfo playerInfo) {
+        this.playerInfo = playerInfo;
     }
 
-    public ClientConnectionImpl withTransferable() {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, playerInfo, auth, cookies, true, locale);
+    public void setAuthenticated(boolean auth) {
+        this.auth = auth;
     }
 
-    public ClientConnectionImpl withLocale(String locale) {
-        return new ClientConnectionImpl(protocolVersion, hostname, port, playerInfo, auth, cookies, transferable, locale);
+    public void setTransferable(boolean transferable) {
+        this.transferable = transferable;
+    }
+
+    public void setCookiesAvailable() {
+        this.cookiesAvailable = true;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
+
+    public void setCookie(Identifier id, byte[] data) {
+        this.cookies.put(id, data);
+    }
+
+    public void setBackend(BackendConnectionImpl backend) {
+        this.backend = backend;
+    }
+
+    public void send(Packet<ClientboundPacketHandler> packet) {
+
+        send(packet, null);
+    }
+
+    public void send(Packet<ClientboundPacketHandler> packet, ChannelFutureListener listener) {
+
+        if(backend != null) {
+            LOGGER.warn("Attempt to send packet to player {} after they connected to a backend!", username());
+            return;
+        }
+
+        if(channel.eventLoop().inEventLoop()) {
+            doSend(packet, listener);
+        } else {
+            channel.eventLoop().execute(() -> doSend(packet, listener));
+        }
+    }
+
+    private void doSend(Packet<ClientboundPacketHandler> packet, ChannelFutureListener listener) {
+
+        try {
+            ChannelFuture future = channel.writeAndFlush(packet);
+
+            if (listener != null) {
+                future.addListener(listener);
+            }
+        } catch (Exception ex) {
+            LOGGER.error("An exception occurred while sending a packet!", ex);
+            channel.close();
+        }
+    }
+
+    public void disconnect(ProtocolPhase phase, Component component) {
+
+        Component cmp = ComponentResolver.resolveComponent(component, this);
+
+        LOGGER.info("Disconnecting player {}: {}", username(), cmp.allText());
+
+        if(backend == null) {
+            Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
+            channel.writeAndFlush(p).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            channel.close();
+        }
+    }
+
+    public void disconnect() {
+        LOGGER.info("Disconnecting player {}", username());
+        channel.close();
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 
     @Override

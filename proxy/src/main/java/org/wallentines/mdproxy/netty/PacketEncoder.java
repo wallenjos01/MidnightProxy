@@ -13,6 +13,12 @@ public class PacketEncoder<T> extends MessageToByteEncoder<Packet<T>> {
 
     private PacketRegistry<T> registry;
 
+    public PacketEncoder() { }
+
+    public PacketEncoder(PacketRegistry<T> registry) {
+        this.registry = registry;
+    }
+
     public void setRegistry(PacketRegistry<T> registry) {
         this.registry = registry;
     }
