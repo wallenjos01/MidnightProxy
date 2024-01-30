@@ -6,3 +6,5 @@ rootProject.name = "midnightproxy"
 
 include("api")
 include("proxy")
+
+include("plugin-test")

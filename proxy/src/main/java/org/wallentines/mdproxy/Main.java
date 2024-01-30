@@ -14,6 +14,7 @@ import org.wallentines.mdcfg.codec.FileCodecRegistry;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdproxy.plugin.PluginLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +49,12 @@ public class Main {
         File configFile = new File("config.json");
         FileWrapper<ConfigObject> config = new FileWrapper<>(ConfigContext.INSTANCE, JSONCodec.fileCodec(), configFile, StandardCharsets.UTF_8, DEFAULT_CONFIG);
 
+        if(configFile.isFile()) {
+            config.load();
+        }
+        config.save();
+
+
         File langDir = new File("lang");
         if(!langDir.isDirectory() && !langDir.mkdirs()) {
             throw new IllegalStateException("Unable to create lang directory!");
@@ -66,13 +73,14 @@ public class Main {
         LangManager manager = new LangManager(defaults, langDir, reg, PlaceholderManager.INSTANCE);
         manager.saveLanguageDefaults("en_us", defaults);
 
-        if(configFile.isFile()) {
-            config.load();
+
+        File pluginDir = new File("plugins");
+        if(!pluginDir.isDirectory() && !pluginDir.mkdirs()) {
+            throw new IllegalStateException("Unable to create plugins directory!");
         }
+        PluginLoader loader = new PluginLoader(pluginDir);
 
-        config.save();
-
-        ProxyServer ps = new ProxyServer(config, manager);
+        ProxyServer ps = new ProxyServer(config, manager, loader);
 
         try {
             ps.start();

@@ -12,6 +12,7 @@ import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
 import org.wallentines.mdproxy.netty.ConnectionManager;
+import org.wallentines.mdproxy.plugin.PluginLoader;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
@@ -35,7 +36,8 @@ public class ProxyServer implements Proxy {
     private final HashMap<UUID, ClientConnectionImpl> connected = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
-    private final LangManager manager;
+    private final LangManager langManager;
+    private final PluginLoader pluginLoader;
 
     private final int port;
     private final int clientTimeout;
@@ -44,10 +46,11 @@ public class ProxyServer implements Proxy {
     private boolean requireAuth;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
-    public ProxyServer(FileWrapper<ConfigObject> config, LangManager manager) {
+    public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
 
         this.config = config;
-        this.manager = manager;
+        this.langManager = langManager;
+        this.pluginLoader = pluginLoader;
         reload();
 
         this.port = getConfig().getInt("port");
@@ -66,6 +69,8 @@ public class ProxyServer implements Proxy {
     }
 
     public void start() {
+
+        this.pluginLoader.loadAll(this);
 
         this.listener.startup();
         console.start();
@@ -94,7 +99,7 @@ public class ProxyServer implements Proxy {
     @Override
     public void reload() {
         config.load();
-        manager.reload();
+        langManager.reload();
 
         this.requireAuth = getConfig().getBoolean("online_mode");
         this.backendTimeout = getConfig().getInt("backend_timeout");
@@ -200,6 +205,6 @@ public class ProxyServer implements Proxy {
     }
 
     public LangManager getLangManager() {
-        return manager;
+        return langManager;
     }
 }
