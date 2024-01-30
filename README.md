@@ -102,7 +102,7 @@ available in status requests.
 valid locales. Not available in status requests.
 
 *Note: If the highest priority backend server has no requirement, or a connecting player can fulfill its requirement 
-without signing in, the server will **not** attempt to authenticate them. It is expected that backend servers are in
+without signing in, the proxy will **not** attempt to authenticate them. It is expected that backend servers are in
 online mode. An option to always force authentication will be added in the future.*
 
 ## Lang
@@ -127,15 +127,20 @@ As of now, the plugin API is pretty limited. Plugins can pretty much only add co
 
 ## Differences From Typical Proxy Software
 *i.e. What makes this different from other Minecraft proxies such as Velocity or BungeeCord?*
-</br>
-While accomplishing the same goal, this proxy operates in a fundamentally different way. This proxy is more similar to 
-general-purpose reverse proxies such as HAProxy, but specifically tailored to Minecraft servers. A typical Minecraft
-proxy will establish an encrypted connection with the player, and another to the backend server, then route packets 
-accordingly. Server switching is done by utilizing the configuration phase, or sending respawn packets. In MidnightProxy,
-as soon as a connection is routed properly, *all* traffic is passed through directly to the backend server. This has a 
-number of benefits, including: end-to-end encryption between the player and the backend server, allowing the proxy to
-work with unmodified vanilla servers in online mode, and a proper login phase for each server connection. However, there
-are also some drawbacks.
+
+While it is accomplishing the same goal, this proxy operates in a fundamentally different way. This proxy is more 
+similar to general-purpose reverse proxies such as HAProxy, but specifically tailored to Minecraft servers. 
+
+A typical Minecraft proxy will establish an encrypted connection with the player, and another to the backend server, 
+then route packets accordingly. Server switching is done by utilizing the configuration phase, or sending respawn 
+packets. This system gives the proxy a lot of control over communication between client and server, and makes proxying
+multiple servers trivial.
+
+In MidnightProxy, as soon as a connection is routed properly, *all* traffic is passed through directly to the 
+backend server. This has a number of benefits, including: end-to-end encryption between the player and the backend 
+server, allowing the proxy to work with unmodified vanilla servers in online mode. Or allowing for a proper login phase 
+for each server connection, so mods which utilize custom login query packets work properly out of the box. However, 
+there are also some drawbacks:
 
 ### Limitations
 - Because the connection is end-to-end encrypted, the proxy cannot send or intercept packets, or declare commands, so 
