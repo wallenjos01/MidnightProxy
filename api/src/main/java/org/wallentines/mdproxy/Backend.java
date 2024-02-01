@@ -10,7 +10,7 @@ import org.wallentines.midnightlib.registry.Identifier;
 import java.util.Collection;
 import java.util.List;
 
-public record Backend(String hostname, int port, int priority, @Nullable WrappedRequirement requirement, boolean redirect) implements Comparable<Backend> {
+public record Backend(String hostname, int port, int priority, @Nullable ConnectionRequirement requirement, boolean redirect) implements Comparable<Backend> {
 
     @Override
     public int compareTo(@NotNull Backend o) {
@@ -21,7 +21,7 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
             Serializer.STRING.entry("hostname", Backend::hostname),
             NumberSerializer.forInt(1, 65535).entry("port", Backend::port).orElse(25565),
             Serializer.INT.entry("priority", Backend::priority).orElse(0),
-            WrappedRequirement.SERIALIZER.entry("requirement", Backend::requirement).optional(),
+            ConnectionRequirement.SERIALIZER.entry("requirement", Backend::requirement).optional(),
             Serializer.BOOLEAN.entry("redirect", Backend::redirect).orElse(false),
             Backend::new
     );
@@ -43,7 +43,7 @@ public record Backend(String hostname, int port, int priority, @Nullable Wrapped
 
         if(requirement == null) return TestResult.PASS;
 
-        return requirement.check(conn);
+        return requirement.test(conn);
     }
 
 }

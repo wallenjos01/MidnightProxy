@@ -31,7 +31,7 @@ dependencies {
 
     implementation("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
     implementation("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    implementation("org.wallentines:midnightlib:1.5.0-SNAPSHOT")
+    implementation("org.wallentines:midnightlib:1.6.0-SNAPSHOT")
 
     implementation("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
 

@@ -221,6 +221,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         if(backend == null) {
             Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
             channel.writeAndFlush(p).addListener(ChannelFutureListener.CLOSE);
+            channel.config().setAutoRead(false);
         } else {
             channel.close();
         }
