@@ -29,11 +29,11 @@ dependencies {
 
     implementation(project(":api"))
 
-    implementation("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
-    implementation("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    implementation("org.wallentines:midnightlib:1.5.0-SNAPSHOT")
+    implementation("org.wallentines:midnightcfg-api:2.0.0")
+    implementation("org.wallentines:midnightcfg-codec-json:2.0.0")
+    implementation("org.wallentines:midnightlib:1.5.0")
 
-    implementation("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
+    implementation("org.wallentines:midnightcore-common:2.0.0-pre6")
 
     implementation("io.netty:netty-all:4.1.105.Final")
 

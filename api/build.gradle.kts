@@ -15,12 +15,12 @@ repositories {
 
 dependencies {
 
-    api("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightcfg-codec-nbt:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightlib:1.5.0-SNAPSHOT")
+    api("org.wallentines:midnightcfg-api:2.0.0")
+    api("org.wallentines:midnightcfg-codec-json:2.0.0")
+    api("org.wallentines:midnightcfg-codec-nbt:2.0.0")
+    api("org.wallentines:midnightlib:1.5.0")
 
-    api("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
+    api("org.wallentines:midnightcore-common:2.0.0-pre6")
 
     api("io.netty:netty-codec:4.1.105.Final")
     api("io.netty:netty-buffer:4.1.105.Final")
