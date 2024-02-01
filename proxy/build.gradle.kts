@@ -29,22 +29,24 @@ dependencies {
 
     implementation(project(":api"))
 
-    implementation("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
-    implementation("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    implementation("org.wallentines:midnightlib:1.6.0-SNAPSHOT")
+    implementation(libs.midnight.cfg)
+    implementation(libs.midnight.cfg.json)
+    implementation(libs.midnight.cfg.nbt)
 
-    implementation("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
+    implementation(libs.midnight.lib)
 
-    implementation("io.netty:netty-all:4.1.105.Final")
+    implementation(libs.midnight.core)
 
-    implementation("org.slf4j:slf4j-api:2.0.9")
-    implementation("org.slf4j:slf4j-simple:2.0.9")
+    implementation(libs.netty.all)
 
-    implementation("com.mojang:authlib:6.0.52")
-    implementation("com.google.guava:guava:33.0.0-jre")
+    implementation(libs.mojang.authlib)
 
-    testImplementation(platform("org.junit:junit-bom:5.9.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    implementation(libs.google.guava)
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.simple)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {

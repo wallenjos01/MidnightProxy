@@ -15,23 +15,24 @@ repositories {
 
 dependencies {
 
-    api("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightcfg-codec-json:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightcfg-codec-nbt:2.0.0-SNAPSHOT")
-    api("org.wallentines:midnightlib:1.6.0-SNAPSHOT")
+    api(libs.midnight.cfg)
+    api(libs.midnight.cfg.json)
+    api(libs.midnight.cfg.nbt)
 
-    api("org.wallentines:midnightcore-common:2.0.0-SNAPSHOT")
+    api(libs.midnight.lib)
 
-    api("io.netty:netty-codec:4.1.105.Final")
-    api("io.netty:netty-buffer:4.1.105.Final")
+    api(libs.midnight.core)
 
-    api("com.mojang:authlib:6.0.52")
-    api("com.google.guava:guava:33.0.0-jre")
+    api(libs.netty.codec)
+    api(libs.netty.buffer)
 
-    api("org.slf4j:slf4j-api:2.0.9")
+    api(libs.mojang.authlib)
 
-    testImplementation(platform("org.junit:junit-bom:5.10.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    api(libs.google.guava)
+    api(libs.slf4j.api)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
