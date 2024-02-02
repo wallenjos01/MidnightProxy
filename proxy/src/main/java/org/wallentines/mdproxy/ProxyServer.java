@@ -46,6 +46,7 @@ public class ProxyServer implements Proxy {
     private int playerLimit;
     private boolean onlineMode;
     private boolean requireAuth;
+    private boolean haproxy;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
@@ -106,6 +107,7 @@ public class ProxyServer implements Proxy {
         this.backendTimeout = getConfig().getInt("backend_timeout");
         this.playerLimit = getConfig().getInt("player_limit");
         this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
+        this.haproxy = getConfig().getBoolean("haproxy_protocol");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -220,5 +222,9 @@ public class ProxyServer implements Proxy {
 
     public LangManager getLangManager() {
         return langManager;
+    }
+
+    public boolean useHAProxyProtocol() {
+        return haproxy;
     }
 }

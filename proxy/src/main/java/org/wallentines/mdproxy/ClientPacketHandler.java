@@ -264,7 +264,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         server.addPlayer(conn);
 
 
-        BackendConnectionImpl bconn = new BackendConnectionImpl(b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout(), false);
+        BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
         bconn.connect(channel.eventLoop()).addListener(future -> {
             if(future.isSuccess()) {
 
@@ -296,12 +296,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     disconnect(server.getLangManager().component("error.server_full"));
                     return;
                 }
-                case PASS -> {
-                    // Ignore
-                }
-                case NOT_ENOUGH_INFO -> {
-                    canConnectImmediately = false;
-                }
+                case NOT_ENOUGH_INFO -> canConnectImmediately = false;
             }
         }
 

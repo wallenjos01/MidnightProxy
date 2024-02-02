@@ -33,7 +33,7 @@ public class StatusResponder implements ClientboundPacketHandler {
                 throw new IllegalStateException("Unable to find backend " + backendName + "!");
             }
 
-            backend = new BackendConnectionImpl(b, playerVersion, server.getBackendTimeout(), false);
+            backend = new BackendConnectionImpl(conn, b, playerVersion, server.getBackendTimeout());
             backend.connect(conn.getChannel().eventLoop()).addListener(future -> {
                 if(future.isSuccess()) {
                     backend.setupStatus(this);
