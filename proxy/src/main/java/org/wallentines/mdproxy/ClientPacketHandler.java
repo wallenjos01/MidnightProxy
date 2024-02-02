@@ -35,10 +35,7 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
@@ -56,7 +53,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private StatusResponder statusResponder;
 
     private final Random rand = new Random();
-    private final PriorityQueue<Backend> backendQueue;
+    private final Queue<Route> routeQueue;
     private final HashSet<Identifier> requiredCookies = new HashSet<>();
 
 
@@ -67,10 +64,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.encrypted = false;
         this.phase = ProtocolPhase.HANDSHAKE;
 
-        this.backendQueue = new PriorityQueue<>();
-        for(Backend backend : server.getBackends()) {
-            this.backendQueue.add(backend);
-        }
+        this.routeQueue = new ArrayDeque<>(server.getRoutes());
 
     }
 
@@ -117,7 +111,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginPacket login) {
 
 
-        if (backendQueue.isEmpty()) {
+        if (routeQueue.isEmpty()) {
             disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
         }
@@ -171,7 +165,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginFinishedPacket finished) {
 
         changePhase(ProtocolPhase.CONFIG);
-        conn.setTransferable(true);
     }
 
     @Override
@@ -231,8 +224,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         if(requiredCookies.isEmpty()) {
-
-            conn.setCookiesAvailable();
             conn.send(new ClientboundLoginFinishedPacket(profile));
         }
 
@@ -350,9 +341,9 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        backendQueue.removeIf(b -> b.canUse(conn) == TestResult.FAIL);
+        routeQueue.removeIf(r -> r.canUse(new ConnectionContext(conn)) == TestResult.FAIL);
 
-        for (Backend b : backendQueue) {
+        for (Route b : routeQueue) {
             requiredCookies.addAll(b.getRequiredCookies());
         }
 
@@ -373,15 +364,17 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private Backend findBackend() {
 
-        backendQueue.removeIf(b -> b.canUse(conn) == TestResult.FAIL);
-        if(backendQueue.isEmpty()) return null;
+        routeQueue.removeIf(b -> b.canUse(new ConnectionContext(conn)) == TestResult.FAIL);
+        if(routeQueue.isEmpty()) return null;
 
-        for(Backend b : backendQueue) {
-            TestResult res = b.canUse(conn);
+        for(Route r : routeQueue) {
+            ConnectionContext ctx = new ConnectionContext(conn);
+            TestResult res = r.canUse(ctx);
             if(res == TestResult.NOT_ENOUGH_INFO) {
                 return null;
             } else if (res == TestResult.PASS) {
-                return b;
+
+                return r.resolveBackend(ctx, server.getBackends());
             }
         }
 
@@ -475,6 +468,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.send(new ClientboundTransferPacket(host, port));
 
         channel.config().setAutoRead(false);
+        channel.deregister();
     }
 
 

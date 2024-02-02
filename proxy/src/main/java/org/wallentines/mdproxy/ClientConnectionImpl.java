@@ -33,8 +33,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final int port;
     private PlayerInfo playerInfo;
     private boolean auth;
-    private boolean cookiesAvailable;
-    private boolean transferable;
     private String locale;
     private BackendConnectionImpl backend;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
@@ -56,21 +54,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public boolean authenticated() {
         return auth;
-    }
-
-    @Override
-    public boolean cookiesAvailable() {
-        return cookiesAvailable;
-    }
-
-    @Override
-    public boolean canTransfer() {
-        return transferable;
-    }
-
-    @Override
-    public boolean localeAvailable() {
-        return locale != null;
     }
 
     @Override
@@ -157,14 +140,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void setAuthenticated(boolean auth) {
         this.auth = auth;
-    }
-
-    public void setTransferable(boolean transferable) {
-        this.transferable = transferable;
-    }
-
-    public void setCookiesAvailable() {
-        this.cookiesAvailable = true;
     }
 
     public void setLocale(String locale) {

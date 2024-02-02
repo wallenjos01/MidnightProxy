@@ -15,9 +15,6 @@ public interface ClientConnection {
 
     boolean playerInfoAvailable();
     boolean authenticated();
-    boolean cookiesAvailable();
-    boolean canTransfer();
-    boolean localeAvailable();
 
     InetAddress address();
     String hostname();

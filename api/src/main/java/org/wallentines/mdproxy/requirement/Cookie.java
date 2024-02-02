@@ -2,7 +2,7 @@ package org.wallentines.mdproxy.requirement;
 
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
-import org.wallentines.mdproxy.ClientConnection;
+import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.requirement.StringCheck;
 
@@ -14,7 +14,7 @@ public class Cookie extends ConnectionCheck {
     private final Set<String> values;
 
     public Cookie(Identifier cookie, Collection<String> values) {
-        super(true, true, false, Set.of(cookie));
+        super(true, Set.of(cookie));
         this.cookie = cookie;
         this.values = Set.copyOf(values);
     }
@@ -26,8 +26,8 @@ public class Cookie extends ConnectionCheck {
     );
 
     @Override
-    public boolean test(ClientConnection conn) {
-        byte[] c = conn.getCookie(cookie);
+    public boolean test(ConnectionContext conn) {
+        byte[] c = conn.getConnection().getCookie(cookie);
         String str = c == null ? "" : new String(c);
         return values.contains(str);
     }

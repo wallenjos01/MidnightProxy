@@ -32,6 +32,7 @@ public class ProxyServer implements Proxy {
     private final FileWrapper<ConfigObject> config;
     private final StringRegistry<CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
+    private final List<Route> routes = new ArrayList<>();
     private final HashMap<UUID, ClientConnectionImpl> connected = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
@@ -58,7 +59,6 @@ public class ProxyServer implements Proxy {
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
-        this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
         this.commands = new StringRegistry<>();
 
         this.commands.register("stop", new StopCommand());
@@ -103,6 +103,7 @@ public class ProxyServer implements Proxy {
         this.requireAuth = getConfig().getBoolean("online_mode");
         this.backendTimeout = getConfig().getInt("backend_timeout");
         this.playerLimit = getConfig().getInt("player_limit");
+        this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -116,6 +117,9 @@ public class ProxyServer implements Proxy {
 
         this.statusEntries.clear();
         this.statusEntries.addAll(getConfig().getListFiltered("status", StatusEntry.SERIALIZER, LOGGER::warn));
+
+        this.routes.clear();
+        this.routes.addAll(getConfig().getListFiltered("routes", Route.SERIALIZER, LOGGER::warn));
     }
 
     @Override
@@ -131,6 +135,11 @@ public class ProxyServer implements Proxy {
     @Override
     public List<StatusEntry> getStatusEntries() {
         return statusEntries;
+    }
+
+    @Override
+    public List<Route> getRoutes() {
+        return routes;
     }
 
     @Override

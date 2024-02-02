@@ -22,6 +22,7 @@ public interface Proxy {
     RegistryBase<String, Backend> getBackends();
 
     List<StatusEntry> getStatusEntries();
+    List<Route> getRoutes();
 
     IconCache getIconCache();
 

@@ -2,8 +2,7 @@ package org.wallentines.mdproxy.requirement;
 
 
 import org.wallentines.mdcfg.serializer.Serializer;
-import org.wallentines.mdproxy.ClientConnection;
-import org.wallentines.mdproxy.ConnectionRequirement;
+import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.requirement.CompositeCheck;
@@ -18,7 +17,7 @@ public class Composite extends ConnectionCheck {
     private final List<ConnectionRequirement> values;
 
     public Composite(Range<Integer> range, Collection<ConnectionRequirement> values) {
-        super(false, false, false, null);
+        super(false, null);
         this.range = range;
         this.values = List.copyOf(values);
     }
@@ -26,13 +25,6 @@ public class Composite extends ConnectionCheck {
     public boolean requiresAuth() {
         for(ConnectionRequirement r : values) {
             if(r.requiresAuth()) return true;
-        }
-        return false;
-    }
-    @Override
-    public boolean requiresCookies() {
-        for(ConnectionRequirement r : values) {
-            if(r.requiresCookies()) return true;
         }
         return false;
     }
@@ -46,14 +38,7 @@ public class Composite extends ConnectionCheck {
         return out;
     }
     @Override
-    public boolean requiresLocale() {
-        for(ConnectionRequirement r : values) {
-            if(r.requiresLocale()) return true;
-        }
-        return false;
-    }
-    @Override
-    public boolean test(ClientConnection conn) {
+    public boolean test(ConnectionContext conn) {
         return CompositeCheck.checkAll(range, values, conn);
     }
 

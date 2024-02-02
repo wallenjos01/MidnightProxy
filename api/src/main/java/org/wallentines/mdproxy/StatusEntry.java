@@ -7,6 +7,7 @@ import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdproxy.requirement.ConnectionRequirement;
 
 import java.util.Collection;
 import java.util.List;
@@ -76,7 +77,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
 
     public boolean canUse(ClientConnection conn) {
 
-        return requirement == null || requirement.test(conn) == TestResult.PASS;
+        return requirement == null || requirement.test(new ConnectionContext(conn)) == TestResult.PASS;
     }
 
     public static final Serializer<StatusEntry> SERIALIZER = ObjectSerializer.create(
