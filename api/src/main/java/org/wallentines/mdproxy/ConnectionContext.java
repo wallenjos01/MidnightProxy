@@ -8,10 +8,12 @@ import java.util.UUID;
 public class ConnectionContext {
 
     private final ClientConnection connection;
+    private final Proxy proxy;
     private final Map<String, String> meta;
 
-    public ConnectionContext(ClientConnection connection) {
+    public ConnectionContext(ClientConnection connection, Proxy proxy) {
         this.connection = connection;
+        this.proxy = proxy;
         this.meta = new HashMap<>();
     }
 
@@ -47,4 +49,7 @@ public class ConnectionContext {
         return connection.uuid();
     }
 
+    public Proxy getProxy() {
+        return proxy;
+    }
 }

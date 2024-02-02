@@ -2,6 +2,7 @@ package org.wallentines.mdproxy;
 
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdproxy.command.CommandExecutor;
+import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
@@ -35,5 +36,7 @@ public interface Proxy {
     int getPlayerLimit();
 
     boolean bypassesPlayerLimit(PlayerInfo info);
+
+    PluginManager getPluginManager();
 
 }

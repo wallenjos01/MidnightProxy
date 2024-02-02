@@ -75,9 +75,9 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
         return out;
     }
 
-    public boolean canUse(ClientConnection conn) {
+    public boolean canUse(ConnectionContext ctx) {
 
-        return requirement == null || requirement.test(new ConnectionContext(conn)) == TestResult.PASS;
+        return requirement == null || requirement.test(ctx) == TestResult.PASS;
     }
 
     public static final Serializer<StatusEntry> SERIALIZER = ObjectSerializer.create(

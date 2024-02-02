@@ -13,6 +13,7 @@ import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
 import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.plugin.PluginLoader;
+import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
@@ -179,6 +180,11 @@ public class ProxyServer implements Proxy {
     @Override
     public boolean bypassesPlayerLimit(PlayerInfo info) {
         return false;
+    }
+
+    @Override
+    public PluginManager getPluginManager() {
+        return pluginLoader;
     }
 
     public void addPlayer(ClientConnectionImpl conn) {

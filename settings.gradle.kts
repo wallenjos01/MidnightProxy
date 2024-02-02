@@ -8,3 +8,4 @@ include("api")
 include("proxy")
 
 include("plugin-test")
+include("plugin-jwt")

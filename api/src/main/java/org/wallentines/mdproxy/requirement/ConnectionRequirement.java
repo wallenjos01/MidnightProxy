@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.wallentines.mdcfg.serializer.Serializer;
-import org.wallentines.mdproxy.ClientConnection;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.TestResult;
 import org.wallentines.midnightlib.registry.Identifier;

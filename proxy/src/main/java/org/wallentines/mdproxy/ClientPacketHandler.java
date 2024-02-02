@@ -87,7 +87,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         PriorityQueue<StatusEntry> ent = new PriorityQueue<>(server.getStatusEntries());
         for(StatusEntry e : ent) {
-            if(e.canUse(conn)) {
+            if(e.canUse(new ConnectionContext(conn, server))) {
 
                 statusResponder = new StatusResponder(conn, server, e);
                 statusResponder.status(new GameVersion("MidnightProxy", conn.protocolVersion()));
@@ -338,7 +338,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        routeQueue.removeIf(r -> r.canUse(new ConnectionContext(conn)) == TestResult.FAIL);
+        routeQueue.removeIf(r -> r.canUse(new ConnectionContext(conn, server)) == TestResult.FAIL);
 
         for (Route b : routeQueue) {
             requiredCookies.addAll(b.getRequiredCookies());
@@ -361,11 +361,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private Backend findBackend() {
 
-        routeQueue.removeIf(b -> b.canUse(new ConnectionContext(conn)) == TestResult.FAIL);
+        routeQueue.removeIf(b -> b.canUse(new ConnectionContext(conn, server)) == TestResult.FAIL);
         if(routeQueue.isEmpty()) return null;
 
         for(Route r : routeQueue) {
-            ConnectionContext ctx = new ConnectionContext(conn);
+            ConnectionContext ctx = new ConnectionContext(conn, server);
             TestResult res = r.canUse(ctx);
             if(res == TestResult.NOT_ENOUGH_INFO) {
                 return null;
