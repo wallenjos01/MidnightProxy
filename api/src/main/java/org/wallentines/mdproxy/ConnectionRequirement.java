@@ -1,13 +1,12 @@
 package org.wallentines.mdproxy;
 
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdproxy.requirement.*;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.MultiRequirement;
+import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.requirement.Requirement;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 public class ConnectionRequirement extends Requirement<ClientConnection, ConnectionCheck> {
 
@@ -44,7 +43,19 @@ public class ConnectionRequirement extends Requirement<ClientConnection, Connect
         return check(conn) ? TestResult.PASS : TestResult.FAIL;
     }
 
+    public static final Registry<Serializer<ConnectionCheck>> REGISTRY = new Registry<>("mdp");
 
-    public static final Serializer<ConnectionRequirement> SERIALIZER = Requirement.serializer(ConnectionCheck.REGISTRY, ConnectionRequirement::new);
+    public static final Serializer<ConnectionRequirement> SERIALIZER = Requirement.serializer(REGISTRY, ConnectionRequirement::new);
+
+    public static final Serializer<ConnectionCheck> HOSTNAME = REGISTRY.register("hostname", ConnectionCheck.forClass(ConnectionString.class, ConnectionString.serializer(ClientConnection::hostname, false, false)));
+    public static final Serializer<ConnectionCheck> ADDRESS = REGISTRY.register("ip_address", ConnectionCheck.forClass(ConnectionString.class, ConnectionString.serializer(conn -> conn.address().getHostAddress(), false, false)));
+    public static final Serializer<ConnectionCheck> PORT = REGISTRY.register("port", ConnectionCheck.forClass(ConnectionInt.class, ConnectionInt.serializer(ClientConnection::port, false)));
+    public static final Serializer<ConnectionCheck> USERNAME = REGISTRY.register("username", ConnectionCheck.forClass(ConnectionString.class, ConnectionString.serializer(ClientConnection::username, true, false)));
+    public static final Serializer<ConnectionCheck> UUID = REGISTRY.register("uuid", ConnectionCheck.forClass(ConnectionString.class, ConnectionString.serializer(conn -> conn.uuid().toString(), true, false)));
+    public static final Serializer<ConnectionCheck> LOCALE = REGISTRY.register("locale", ConnectionCheck.forClass(ConnectionString.class, ConnectionString.serializer(ClientConnection::locale, true, true)));
+    public static final Serializer<ConnectionCheck> COOKIE = REGISTRY.register("cookie", ConnectionCheck.forClass(Cookie.class, Cookie.SERIALIZER));
+    public static final Serializer<ConnectionCheck> COMPOSITE = REGISTRY.register("composite", Composite.serializer(SERIALIZER));
+
+
 
 }

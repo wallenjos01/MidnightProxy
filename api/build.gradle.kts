@@ -31,6 +31,8 @@ dependencies {
     api(libs.google.guava)
     api(libs.slf4j.api)
 
+    api(libs.auth0.jwt)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
 }

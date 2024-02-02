@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.simple)
 
+    implementation(libs.auth0.jwt)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
 }

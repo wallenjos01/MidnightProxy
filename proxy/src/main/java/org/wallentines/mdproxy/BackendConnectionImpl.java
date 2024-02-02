@@ -7,10 +7,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.netty.*;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketRegistry;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.*;
 
 public class BackendConnectionImpl implements BackendConnection {
 
@@ -84,7 +81,8 @@ public class BackendConnectionImpl implements BackendConnection {
     public void changePhase(ProtocolPhase phase) {
 
         this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
-        this.channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
+        PacketDecoder<ClientboundPacketHandler> dec = this.channel.pipeline().get(PacketDecoder.class);
+        if(dec != null) dec.setRegistry(PacketRegistry.getClientbound(version, phase));
     }
 
     public Channel getChannel() {

@@ -1,5 +1,9 @@
 package org.wallentines.mdproxy;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.Channel;
@@ -20,7 +24,6 @@ import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
-import org.wallentines.mdproxy.util.StringUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import javax.crypto.SecretKey;
@@ -30,6 +33,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -174,26 +179,45 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(cookie.key().equals(RECONNECT_COOKIE)) {
 
-            String id = cookie.data().map(bytes -> new String(cookie.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
-            ClientConnectionImpl newConn = id == null ? null : server.getReconnectCache().get(id);
-
-            if(newConn == null) {
+            if(cookie.data().isEmpty()) {
+                LOGGER.warn("Client did not have a reconnect cookie");
                 startLogin();
                 return;
             }
 
-            if(!newConn.username().equals(conn.username()) || !newConn.uuid().equals(conn.uuid())) {
+            String jwt = cookie.data().map(bytes -> new String(cookie.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
+            JWTVerifier verifier = JWT.require(CryptUtil.getAlgorithm(server.getKeyPair()))
+                    .withIssuer("midnightproxy")
+                    .acceptExpiresAt(86400L) // Expired cookies shouldn't cause the player to be kicked
+                    .withClaim("hostname", conn.hostname())
+                    .withClaim("port", conn.port())
+                    .withClaim("username", conn.username())
+                    .withClaim("uuid", conn.uuid().toString())
+                    .withClaim("protocol", conn.protocolVersion())
+                    .build();
+
+            try {
+
+                DecodedJWT decoded = verifier.verify(jwt);
+                if(decoded.getExpiresAtAsInstant().isBefore(Instant.now())) {
+                    // Token expired, continue with login
+                    LOGGER.warn("Client's reconnect token was expired");
+                    startLogin();
+                    return;
+                }
+
+                Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
+                if(b == null) {
+                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                    return;
+                }
+
+                connectToBackend(b);
+
+            } catch (JWTVerificationException ex) {
+
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
-            }
-
-            server.getReconnectCache().clear(id);
-            conn = newConn;
-
-            LOGGER.info("User {} reconnected with UUID {}", getUsername(), conn.uuid());
-
-            if(!tryConnectBackend()) {
-                disconnect(server.getLangManager().component("error.no_valid_backends", conn));
             }
 
             return;
@@ -436,14 +460,21 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         String host = b.redirect() ? b.hostname() : conn.hostname();
         int port = b.redirect() ? b.port() : conn.port();
 
-        String id = StringUtil.randomId(16);
+        String str = JWT.create()
+                .withClaim("hostname", host)
+                .withClaim("port", port)
+                .withClaim("protocol", conn.protocolVersion())
+                .withClaim("username", conn.username())
+                .withClaim("uuid", conn.uuid().toString())
+                .withClaim("backend", server.getBackends().getId(b))
+                .withExpiresAt(Instant.now().plus(server.getReconnectTimeout(), ChronoUnit.MILLIS))
+                .withIssuer("midnightproxy")
+                .sign(CryptUtil.getAlgorithm(server.getKeyPair()));
 
-        conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
+        conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));
 
         channel.config().setAutoRead(false);
-
-        server.getReconnectCache().set(id, conn);
     }
 
 

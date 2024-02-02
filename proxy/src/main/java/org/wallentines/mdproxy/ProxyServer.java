@@ -30,7 +30,6 @@ public class ProxyServer implements Proxy {
     private final KeyPair keyPair;
     private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
-    private final ReconnectCache reconnectCache;
     private final StringRegistry<CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final HashMap<UUID, ClientConnectionImpl> connected = new HashMap<>();
@@ -41,6 +40,7 @@ public class ProxyServer implements Proxy {
 
     private final int port;
     private final int clientTimeout;
+    private int reconnectTimeout;
     private int backendTimeout;
     private int playerLimit;
     private boolean requireAuth;
@@ -58,7 +58,7 @@ public class ProxyServer implements Proxy {
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
-        this.reconnectCache = new ReconnectCache(getConfig().getInt("reconnect_threads"), getConfig().getInt("reconnect_timeout"));
+        this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
         this.commands = new StringRegistry<>();
 
         this.commands.register("stop", new StopCommand());
@@ -87,7 +87,6 @@ public class ProxyServer implements Proxy {
         listener.shutdown();
 
         authenticator.close();
-        reconnectCache.close();
 
     }
 
@@ -184,8 +183,8 @@ public class ProxyServer implements Proxy {
         }
     }
 
-    public ReconnectCache getReconnectCache() {
-        return reconnectCache;
+    public int getReconnectTimeout() {
+        return reconnectTimeout;
     }
 
     public KeyPair getKeyPair() {

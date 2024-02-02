@@ -9,6 +9,7 @@ jbr-anno = "24.0.1"
 auth = "6.0.52"
 guava = "33.0.0-jre"
 shadow = "8.1.1"
+jwt = "4.4.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -26,6 +27,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref="jbr-anno" }
 google-guava = { module = "com.google.guava:guava", version.ref="guava" }
+auth0-jwt = { module = "com.auth0:java-jwt", version.ref="jwt" }
 
 [plugins]
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
