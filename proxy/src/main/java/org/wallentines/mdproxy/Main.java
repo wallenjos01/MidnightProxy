@@ -31,6 +31,7 @@ public class Main {
             .with("backends", new ConfigList())
             .with("status", new ConfigList())
             .with("online_mode", true)
+            .with("force_authentication", true)
             .with("reconnect_threads", 4)
             .with("auth_threads", 4)
             .with("reconnect_timeout", 3000)

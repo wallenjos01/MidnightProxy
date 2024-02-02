@@ -11,6 +11,8 @@ public interface Proxy {
 
     int getPort();
 
+    boolean isOnlineMode();
+
     boolean requiresAuth();
 
     ConfigSection getConfig();

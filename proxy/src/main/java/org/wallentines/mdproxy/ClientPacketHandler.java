@@ -110,7 +110,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundLoginPacket login) {
 
-
         if (routeQueue.isEmpty()) {
             disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
@@ -149,7 +148,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Encryption unsuccessful!");
         }
 
-        if (server.requiresAuth()) {
+        if (server.isOnlineMode()) {
 
             LOGGER.info("Starting authentication for {}", conn.username());
 
@@ -288,7 +287,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void startLogin() {
 
         boolean canConnectImmediately = true;
-        if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
+
+        if(server.requiresAuth()) {
+            canConnectImmediately = false;
+        } else if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
             switch (conn.bypassesPlayerLimit(server)) {
                 case FAIL -> {
                     disconnect(server.getLangManager().component("error.server_full"));
@@ -313,7 +315,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         challenge = Ints.toByteArray(rand.nextInt());
-        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
+        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.isOnlineMode()));
     }
 
     private boolean tryConnectBackend() {

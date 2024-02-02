@@ -44,6 +44,7 @@ public class ProxyServer implements Proxy {
     private int reconnectTimeout;
     private int backendTimeout;
     private int playerLimit;
+    private boolean onlineMode;
     private boolean requireAuth;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
@@ -100,7 +101,8 @@ public class ProxyServer implements Proxy {
         config.load();
         langManager.reload();
 
-        this.requireAuth = getConfig().getBoolean("online_mode");
+        this.onlineMode = getConfig().getBoolean("online_mode");
+        this.requireAuth = getConfig().getBoolean("force_authentication");
         this.backendTimeout = getConfig().getInt("backend_timeout");
         this.playerLimit = getConfig().getInt("player_limit");
         this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
@@ -147,6 +149,10 @@ public class ProxyServer implements Proxy {
         return null;
     }
 
+    @Override
+    public boolean isOnlineMode() {
+        return onlineMode;
+    }
 
     @Override
     public boolean requiresAuth() {
