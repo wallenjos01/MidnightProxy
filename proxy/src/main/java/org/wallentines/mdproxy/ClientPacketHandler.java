@@ -40,7 +40,7 @@ import java.util.*;
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
-    private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rid");
+    private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
 
     private final ProxyServer server;
     private final Channel channel;
@@ -171,13 +171,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(cookie.key().equals(RECONNECT_COOKIE)) {
 
-            if(cookie.data().isEmpty()) {
-                LOGGER.warn("Client did not have a reconnect cookie");
+            String jwt = cookie.data().map(bytes -> new String(cookie.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
+            if(jwt == null || jwt.isEmpty()) {
                 startLogin();
                 return;
             }
 
-            String jwt = cookie.data().map(bytes -> new String(cookie.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
             JWTVerifier verifier = JWT.require(CryptUtil.getAlgorithm(server.getKeyPair()))
                     .withIssuer("midnightproxy")
                     .acceptExpiresAt(86400L) // Expired cookies shouldn't cause the player to be kicked
@@ -193,7 +192,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 DecodedJWT decoded = verifier.verify(jwt);
                 if(decoded.getExpiresAtAsInstant().isBefore(Instant.now())) {
                     // Token expired, continue with login
-                    LOGGER.warn("Client's reconnect token was expired");
                     startLogin();
                     return;
                 }
@@ -239,6 +237,9 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.setLocale(settings.locale());
 
         Backend b = findBackend();
+        if(conn.hasDisconnected()) {
+            return;
+        }
 
         if(b == null) {
             LOGGER.warn("Unable to find any backend server for {} after login!", getUsername());
@@ -254,6 +255,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     private void connectToBackend(Backend b) {
+
+        if(conn.hasDisconnected()) return;
 
         prepareForwarding();
 
@@ -301,6 +304,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         if(canConnectImmediately && tryConnectBackend()) {
+            return;
+        }
+
+        if(conn.hasDisconnected()) {
             return;
         }
 
@@ -365,6 +372,9 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         if(routeQueue.isEmpty()) return null;
 
         for(Route r : routeQueue) {
+
+            if(!channel.isActive()) return null;
+
             ConnectionContext ctx = new ConnectionContext(conn, server);
             TestResult res = r.canUse(ctx);
             if(res == TestResult.NOT_ENOUGH_INFO) {

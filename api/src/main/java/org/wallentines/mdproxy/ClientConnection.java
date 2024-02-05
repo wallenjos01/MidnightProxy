@@ -35,7 +35,9 @@ public interface ClientConnection {
 
     ServerboundLoginPacket loginPacket();
 
-    boolean isConnected();
+    boolean isForwarding();
+
+    boolean hasDisconnected();
 
     BackendConnection getBackendConnection();
 

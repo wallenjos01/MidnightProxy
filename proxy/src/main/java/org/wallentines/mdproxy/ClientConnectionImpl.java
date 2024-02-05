@@ -35,6 +35,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private boolean auth;
     private String locale;
     private BackendConnectionImpl backend;
+    private boolean disconnected = false;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
 
 
@@ -125,8 +126,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isForwarding() {
         return backend != null;
+    }
+
+    @Override
+    public boolean hasDisconnected() {
+        return disconnected || !channel.isActive();
     }
 
     @Override
@@ -161,6 +167,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void send(Packet<ClientboundPacketHandler> packet, ChannelFutureListener listener) {
 
+        if(disconnected) {
+            LOGGER.warn("Attempt to send packet to player {} after they disconnected!", username());
+            return;
+        }
+
         if(backend != null) {
             LOGGER.warn("Attempt to send packet to player {} after they connected to a backend!", username());
             return;
@@ -189,9 +200,14 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void disconnect(ProtocolPhase phase, Component component) {
 
+        if(disconnected) {
+            return;
+        }
+
         Component cmp = ComponentResolver.resolveComponent(component, this);
 
         LOGGER.info("Disconnecting player {}: {}", username(), cmp.allText());
+        disconnected = true;
 
         if(backend == null) {
             Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
@@ -203,8 +219,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     public void disconnect() {
+        if(disconnected) {
+            return;
+        }
+
         LOGGER.info("Disconnecting player {}", username());
         channel.close();
+        disconnected = true;
     }
 
     public Channel getChannel() {

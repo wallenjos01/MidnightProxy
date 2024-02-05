@@ -22,6 +22,7 @@ tasks.test {
 }
 
 
+
 tasks.withType<ProcessResources>() {
     filesMatching("plugin.json") {
         expand(mapOf(
