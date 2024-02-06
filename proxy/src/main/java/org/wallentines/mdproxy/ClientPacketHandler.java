@@ -53,7 +53,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private StatusResponder statusResponder;
 
     private final Random rand = new Random();
-    private final Queue<Route> routeQueue;
     private final HashSet<Identifier> requiredCookies = new HashSet<>();
 
 
@@ -63,9 +62,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.channel = channel;
         this.encrypted = false;
         this.phase = ProtocolPhase.HANDSHAKE;
-
-        this.routeQueue = new ArrayDeque<>(server.getRoutes());
-
     }
 
     @Override
@@ -110,7 +106,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundLoginPacket login) {
 
-        if (routeQueue.isEmpty()) {
+        if (server.getRoutes().isEmpty()) {
             disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
         }
@@ -345,9 +341,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        routeQueue.removeIf(r -> r.canUse(new ConnectionContext(conn, server)) == TestResult.FAIL);
-
-        for (Route b : routeQueue) {
+        for (Route b : server.getRoutes()) {
             requiredCookies.addAll(b.getRequiredCookies());
         }
 
@@ -368,12 +362,15 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private Backend findBackend() {
 
-        routeQueue.removeIf(b -> b.canUse(new ConnectionContext(conn, server)) == TestResult.FAIL);
-        if(routeQueue.isEmpty()) return null;
+        if(server.getRoutes().isEmpty()) {
+            return null;
+        }
 
-        for(Route r : routeQueue) {
+        for(Route r : server.getRoutes()) {
 
-            if(!channel.isActive()) return null;
+            if(!channel.isActive()) {
+                return null;
+            }
 
             ConnectionContext ctx = new ConnectionContext(conn, server);
             TestResult res = r.canUse(ctx);
@@ -429,6 +426,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void setupForwarding(Channel forward) {
 
+        LOGGER.info("User {} connected to backend {}", conn.username(), server.getBackends().getId(conn.getBackendConnection().getBackend()));
         channel.pipeline().addLast("forward", new PacketForwarder(forward));
         channel.config().setAutoRead(true);
     }

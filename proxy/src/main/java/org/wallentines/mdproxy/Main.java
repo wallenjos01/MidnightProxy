@@ -48,6 +48,8 @@ public class Main {
 
         MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.set(Path.of("config"));
 
+        ClientConnection.registerPlaceholders(PlaceholderManager.INSTANCE);
+
         FileCodecRegistry reg = MidnightCoreAPI.FILE_CODEC_REGISTRY;
         reg.registerFileCodec(JSONCodec.fileCodec());
 

@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy.requirement;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.TestResult;
@@ -10,6 +12,8 @@ import org.wallentines.midnightlib.requirement.Requirement;
 import java.util.Collection;
 
 public class ConnectionRequirement extends Requirement<ConnectionContext, ConnectionCheck> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("ConnectionRequirement");
 
     public ConnectionRequirement(Serializer<ConnectionCheck> serializer, ConnectionCheck check, boolean invert) {
         super(serializer, check, invert);
@@ -30,7 +34,12 @@ public class ConnectionRequirement extends Requirement<ConnectionContext, Connec
             return TestResult.NOT_ENOUGH_INFO;
         }
 
-        return check(conn) ? TestResult.PASS : TestResult.FAIL;
+        try {
+            return check(conn) ? TestResult.PASS : TestResult.FAIL;
+        } catch (Throwable ex) {
+            LOGGER.error("An error occurred while checking a requirement!", ex);
+            return TestResult.FAIL;
+        }
     }
 
     public static final Registry<Serializer<ConnectionCheck>> REGISTRY = new Registry<>("mdp");

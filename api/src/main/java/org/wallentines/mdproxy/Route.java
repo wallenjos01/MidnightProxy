@@ -1,6 +1,8 @@
 package org.wallentines.mdproxy;
 
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.requirement.ConnectionRequirement;
@@ -11,6 +13,8 @@ import java.util.Collection;
 import java.util.List;
 
 public record Route(String backend, @Nullable ConnectionRequirement requirement) {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("Route");
 
     public Collection<Identifier> getRequiredCookies() {
 
@@ -32,13 +36,17 @@ public record Route(String backend, @Nullable ConnectionRequirement requirement)
         String resolvedId = backend;
         if(backend.length() > 2 && backend.charAt(0) == '%' && backend.charAt(backend.length() - 1) == '%') {
 
-            String placeholder = backend.substring(1,backend.length() - 2);
+            String placeholder = backend.substring(1, backend.length() - 1);
             resolvedId = ctx.getMetaProperty(placeholder);
-
             if(resolvedId == null) return null;
 
         }
-        return backends.get(resolvedId);
+
+        Backend out = backends.get(resolvedId);
+        if(out == null) {
+            LOGGER.warn("No backend with ID {} was found!", resolvedId);
+        }
+        return out;
     }
 
     public static final Serializer<Route> SERIALIZER = ObjectSerializer.create(

@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy.test;
+package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;

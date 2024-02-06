@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy.test;
+package org.wallentines.mdproxy.jwt;
 
 import java.io.*;
 import java.util.HashMap;

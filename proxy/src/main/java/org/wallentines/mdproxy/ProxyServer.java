@@ -55,7 +55,6 @@ public class ProxyServer implements Proxy {
         this.config = config;
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
-        reload();
 
         this.port = getConfig().getInt("port");
         this.clientTimeout = getConfig().getInt("client_timeout");
@@ -69,11 +68,14 @@ public class ProxyServer implements Proxy {
 
         this.listener = new ConnectionManager(this);
         this.console = new ConsoleHandler(this);
+
+        this.pluginLoader.loadAll(this);
+
+        reload();
+
     }
 
     public void start() {
-
-        this.pluginLoader.loadAll(this);
 
         this.listener.startup();
         console.start();
