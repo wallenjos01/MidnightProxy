@@ -210,8 +210,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-
-        LOGGER.warn("Received cookie " + cookie.key() + ": " + cookie.data().length);
         if(requestedCookies.remove(cookie.key())) {
             conn.setCookie(cookie.key(), cookie.data());
         } else {
@@ -226,7 +224,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundPluginMessagePacket message) {
-
+        LOGGER.warn("Received plugin message in channel {}", message.channel());
     }
 
     @Override
@@ -352,7 +350,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 for (Identifier id : current.getRequiredCookies()) {
                     if (conn.getCookie(id) == null) {
                         requestedCookies.add(id);
-                        LOGGER.warn("Requested cookie " + id);
                         conn.send(new ClientboundCookieRequestPacket(id));
                     }
                 }

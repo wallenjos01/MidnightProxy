@@ -31,7 +31,9 @@ public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) i
 
     public static ServerboundPluginMessagePacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
-        return new ServerboundPluginMessagePacket(id, buf);
+        ServerboundPluginMessagePacket out = new ServerboundPluginMessagePacket(id, buf.retainedSlice());
+        buf.skipBytes(buf.readableBytes());
+        return out;
     }
 
 }
