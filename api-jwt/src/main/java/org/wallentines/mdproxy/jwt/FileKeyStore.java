@@ -55,7 +55,7 @@ public class FileKeyStore implements KeyStore {
 
                 byte[] buffer = new byte[HMAC_LENGTH];
                 int read;
-                while((read = fis.read(buffer)) != 0) {
+                while((read = fis.read(buffer)) > -1) {
                     bos.write(buffer, 0, read);
                 }
                 value = bos.toByteArray();
