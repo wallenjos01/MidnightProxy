@@ -4,7 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.DecodeException;
 import org.wallentines.mdcfg.codec.JSONCodec;
-import org.wallentines.mdcfg.serializer.*;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,18 +13,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Random;
 
 public class JWESerializer {
 
     private final KeyCodec<?, ?> keyCodec;
     private final CryptCodec<?> contentCodec;
-    private final Random random;
 
-    public JWESerializer(KeyCodec<?, ?> keyCodec, CryptCodec<?> cryptCodec, Random random) {
+    public JWESerializer(KeyCodec<?, ?> keyCodec, CryptCodec<?> cryptCodec) {
         this.keyCodec = keyCodec;
         this.contentCodec = cryptCodec;
-        this.random = random;
     }
 
     public @NotNull SerializeResult<String> writeString(JWT jwt) {
@@ -55,8 +53,7 @@ public class JWESerializer {
         out.append(".").append(encoder.encodeToString(keyCodec.encode(contentCodec.getEncodedKey())));
 
         // Initialization Vector
-        byte[] iv = new byte[16];
-        random.nextBytes(iv);
+        byte[] iv = contentCodec.getIV();
         out.append(".").append(encoder.encodeToString(iv));
 
         // Payload
@@ -69,7 +66,7 @@ public class JWESerializer {
         } catch(IOException ex) {
             return SerializeResult.failure("An error occurred while writing JWE ciphertext!");
         }
-        output = contentCodec.encrypt(payload, iv, headerB64.getBytes(StandardCharsets.US_ASCII));
+        output = contentCodec.encrypt(payload, headerB64.getBytes(StandardCharsets.US_ASCII));
 
         out.append(".").append(encoder.encodeToString(output.cipherText()));
 
@@ -116,27 +113,29 @@ public class JWESerializer {
             return SerializeResult.failure("Encryption algorithm " + header.getString("enc") + " not found!");
         }
 
+        // Decode IV
+        byte[] iv = decoder.decode(values[2]);
+
         // Find the CEK
         KeyCodec<?,?> codec;
         CryptCodec<?> crypt;
         if(keyAlg == KeyCodec.Algorithm.DIRECT) {
             codec = KeyCodec.direct();
-            crypt = cryptAlg.createCodec(header, supp);
+            crypt = cryptAlg.createCodec(header, supp, iv);
         } else {
             codec = keyAlg.createCodec(header, supp);
-            crypt = cryptAlg.createCodec(codec.decode(decoder.decode(values[1])));
+            crypt = cryptAlg.createCodec(codec.decode(decoder.decode(values[1])), iv);
         }
 
         // Decode other parts
-        byte[] iv = decoder.decode(values[2]);
         byte[] cipherText = decoder.decode(values[3]);
         byte[] auth = decoder.decode(values[4]);
 
         // Decrypt the payload
-        byte[] payloadBytes = crypt.decrypt(cipherText, iv);
+        byte[] payloadBytes = crypt.decrypt(cipherText);
 
         // Verify authentication tag
-        byte[] newAuth = crypt.encrypt(payloadBytes, iv, values[0].getBytes(StandardCharsets.US_ASCII)).authTag();
+        byte[] newAuth = crypt.encrypt(payloadBytes, values[0].getBytes(StandardCharsets.US_ASCII)).authTag();
 
         if(!Arrays.equals(newAuth, auth)) {
             return SerializeResult.failure("The JWE authentication tag could not be verified!");
@@ -155,11 +154,15 @@ public class JWESerializer {
 
     public record JWE(KeyCodec<?,?> decodeKeyCodec, CryptCodec<?> cryptCodec, ConfigSection header, ConfigSection payload) implements JWT {
 
-        public SerializeResult<String> asString(KeyCodec<?,?> encryptionCodec, Random random) {
+        public SerializeResult<String> asString() {
+            return asString(decodeKeyCodec);
+        }
+
+        public SerializeResult<String> asString(KeyCodec<?,?> encryptionCodec) {
             if(!encryptionCodec.canEncode()) {
                 return SerializeResult.failure("Unable to encode JWE with this codec!");
             }
-            return new JWESerializer(encryptionCodec, cryptCodec, random).writeString(this);
+            return new JWESerializer(encryptionCodec, cryptCodec).writeString(this);
         }
 
         @Override

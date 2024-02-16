@@ -7,7 +7,6 @@ import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdcfg.serializer.SerializeException;
 import org.wallentines.mdproxy.Proxy;
-import org.wallentines.midnightlib.module.ModuleManager;
 
 import java.io.File;
 import java.io.IOException;

@@ -4,7 +4,10 @@ import org.wallentines.mdproxy.command.ArgumentParser;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;
 
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.util.Set;
 
 public class JWTCommand implements CommandExecutor {

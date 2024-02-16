@@ -1,5 +1,6 @@
 plugins {
     id("proxy-build")
+    id("proxy-publish")
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17

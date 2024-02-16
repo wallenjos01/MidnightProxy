@@ -29,7 +29,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Random;
+import java.util.UUID;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
@@ -463,8 +466,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .withClaim("backend", server.getBackends().getId(b))
                 .expiresIn(server.getReconnectTimeout() / 1000)
                 .issuedBy("midnightproxy")
-                .encrypted(rsa, CryptCodec.A128CBC_HS256(random))
-                .asString(rsa, random).getOrThrow();
+                .encrypted(rsa, CryptCodec.A128CBC_HS256())
+                .asString().getOrThrow();
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));

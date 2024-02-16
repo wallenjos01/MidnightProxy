@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;
 
-import java.io.IOException;
 import java.util.Scanner;
 
 public class ConsoleHandler implements CommandSender {

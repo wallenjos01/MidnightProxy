@@ -15,10 +15,8 @@ public class TestJWE {
 
         KeyPair pair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
 
-        Random rand = new Random();
-
         KeyCodec<PublicKey, PrivateKey> codec = KeyCodec.RSA_OAEP(pair);
-        CryptCodec<CryptCodec.CompoundKey> crypt = CryptCodec.A128CBC_HS256(rand);
+        CryptCodec<CryptCodec.CompoundKey> crypt = CryptCodec.A128CBC_HS256();
 
         Instant issued = Instant.now();
         JWESerializer.JWE jwe = new JWTBuilder()
@@ -26,7 +24,7 @@ public class TestJWE {
                 .issuedBy("test")
                 .encrypted(codec, crypt);
 
-        String encoded = jwe.asString(codec, rand).getOrThrow();
+        String encoded = jwe.asString(codec).getOrThrow();
         JWT decrypted = JWESerializer.read(encoded, KeySupplier.of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType())).getOrThrow();
 
         Assertions.assertEquals(KeyCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
@@ -48,7 +46,7 @@ public class TestJWE {
         rand.nextBytes(aes);
 
         KeyCodec<SecretKey, SecretKey> codec = KeyCodec.A128KW(aes);
-        CryptCodec<CryptCodec.CompoundKey> crypt = CryptCodec.A128CBC_HS256(rand);
+        CryptCodec<CryptCodec.CompoundKey> crypt = CryptCodec.A128CBC_HS256();
 
         Instant issued = Instant.now();
         JWESerializer.JWE jwe = new JWTBuilder()
@@ -56,7 +54,7 @@ public class TestJWE {
                 .issuedBy("test")
                 .encrypted(codec, crypt);
 
-        String encoded = jwe.asString(codec, rand).getOrThrow();
+        String encoded = jwe.asString(codec).getOrThrow();
         JWT decrypted = JWESerializer.read(encoded, KeySupplier.of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType())).getOrThrow();
 
         Assertions.assertEquals(KeyCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));

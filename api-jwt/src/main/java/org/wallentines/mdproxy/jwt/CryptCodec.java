@@ -12,29 +12,64 @@ import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Random;
 
 public class CryptCodec<T> {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger LOGGER = LoggerFactory.getLogger("CryptCodec");
     protected final Algorithm<T> algorithm;
     protected final T key;
+    protected final byte[] iv;
+    protected final SecureRandom random;
 
-    protected CryptCodec(Algorithm<T> algorithm, T key) {
+    public CryptCodec(Algorithm<T> algorithm, T key) {
         this.algorithm = algorithm;
         this.key = key;
+        this.random = RANDOM;
+
+        this.iv = new byte[algorithm.ivLength];
+        RANDOM.nextBytes(iv);
+    }
+
+    public CryptCodec(Algorithm<T> algorithm, T key, byte[] iv) {
+        this.algorithm = algorithm;
+        this.key = key;
+        this.iv = iv;
+        this.random = RANDOM;
+    }
+
+    public CryptCodec(Algorithm<T> algorithm, T key, SecureRandom random) {
+        this.algorithm = algorithm;
+        this.key = key;
+        this.random = random;
+
+        this.iv = new byte[algorithm.ivLength];
+        random.nextBytes(iv);
+    }
+
+
+    public CryptCodec(Algorithm<T> algorithm, T key, byte[] iv, SecureRandom random) {
+        this.algorithm = algorithm;
+        this.key = key;
+        this.iv = iv;
+        this.random = random;
+    }
+
+    public byte[] getIV() {
+        return iv;
     }
 
     public Algorithm<T> getAlgorithm() {
         return algorithm;
     }
 
-    public CryptOutput encrypt(byte[] data, byte[] iv, byte[] aad) {
+    public CryptOutput encrypt(byte[] data, byte[] aad) {
         return algorithm.encode(key, data, iv, aad);
     }
 
-    public byte[] decrypt(byte[] data, byte[] iv) {
+    public byte[] decrypt(byte[] data) {
         return algorithm.decode(key, data, iv);
     }
 
@@ -46,10 +81,10 @@ public class CryptCodec<T> {
         return algorithm.keyType.serialize(key).getOrThrow();
     }
 
-    public static CryptCodec<CompoundKey> A128CBC_HS256(Random random) {
+    public static CryptCodec<CompoundKey> A128CBC_HS256() {
 
         byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
+        RANDOM.nextBytes(bytes);
         CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
         return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
@@ -59,10 +94,10 @@ public class CryptCodec<T> {
         return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, key);
     }
 
-    public static CryptCodec<CompoundKey> A192CBC_HS384(Random random) {
+    public static CryptCodec<CompoundKey> A192CBC_HS384() {
 
         byte[] bytes = new byte[48];
-        random.nextBytes(bytes);
+        RANDOM.nextBytes(bytes);
         CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
         return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
@@ -72,10 +107,10 @@ public class CryptCodec<T> {
         return new CryptCodec<>(AES_CBC_HMAC_SHA2.A192CBC_HS384, key);
     }
 
-    public static CryptCodec<CompoundKey> A256CBC_HS512(Random random) {
+    public static CryptCodec<CompoundKey> A256CBC_HS512() {
 
         byte[] bytes = new byte[64];
-        random.nextBytes(bytes);
+        RANDOM.nextBytes(bytes);
         CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
         return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
@@ -90,11 +125,13 @@ public class CryptCodec<T> {
     public static abstract class Algorithm<T> {
 
         protected final int keyLength;
+        protected final int ivLength;
         protected final KeyType<T> keyType;
 
-        protected Algorithm(int keyLength, KeyType<T> keyType) {
+        protected Algorithm(int keyLength, int ivLength, KeyType<T> keyType) {
             this.keyLength = keyLength;
             this.keyType = keyType;
+            this.ivLength = ivLength;
         }
 
         public KeyType<T> getKeyType() {
@@ -115,20 +152,28 @@ public class CryptCodec<T> {
             return new CryptCodec<>(this, key);
         }
 
+        public CryptCodec<T> createCodec(ConfigSection header, KeySupplier supp, byte[] iv) {
+            return new CryptCodec<>(this, supp.getKey(header, keyType), iv);
+        }
+
+
         public CryptCodec<T> createCodec(ConfigSection header, KeySupplier supp) {
             return new CryptCodec<>(this, supp.getKey(header, keyType));
+        }
+
+        public CryptCodec<T> createCodec(byte[] encodedKey, byte[] iv) {
+            return new CryptCodec<>(this, keyType.create(encodedKey).getOrThrow(), iv);
         }
 
         public CryptCodec<T> createCodec(byte[] encodedKey) {
             return new CryptCodec<>(this, keyType.create(encodedKey).getOrThrow());
         }
-
     }
 
     private static class AES_CBC_HMAC_SHA2 extends Algorithm<CompoundKey> {
 
-        public AES_CBC_HMAC_SHA2(int keyLength, HashCodec.Algorithm hashAlg) {
-            super(keyLength, CompoundKey.type(keyLength, KeyType.AES, hashAlg));
+        public AES_CBC_HMAC_SHA2(int keyLength, HashCodec.Algorithm<?> hashAlg) {
+            super(keyLength, 16, CompoundKey.type(keyLength, KeyType.AES, hashAlg));
         }
 
         @Override

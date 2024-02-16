@@ -2,8 +2,6 @@ package org.wallentines.mdproxy.util;
 
 import javax.crypto.Cipher;
 import java.security.*;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 
 public class CryptUtil {
 
