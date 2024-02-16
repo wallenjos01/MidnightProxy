@@ -17,10 +17,8 @@ public class FileKeyStore implements KeyStore {
     private final File keyFolder;
 
     public static final Map<KeyType<?>, String> DEFAULT_TYPES = Map.of(
+            KeyType.HMAC, "key",
             KeyType.AES, "aes",
-            KeyType.HMAC256, "key",
-            KeyType.HMAC384, "key",
-            KeyType.HMAC512, "key",
             KeyType.RSA_PUBLIC, "pub",
             KeyType.RSA_PRIVATE, "rsa"
     );

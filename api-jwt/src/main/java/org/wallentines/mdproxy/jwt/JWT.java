@@ -15,6 +15,14 @@ public interface JWT {
         return payload().get(claim);
     }
 
+    default String getClaimAsString(String claim) {
+        ConfigObject obj = getClaim(claim);
+        if(obj == null) return null;
+        if(obj.isString()) return obj.asString();
+        if(obj.isPrimitive()) return obj.asPrimitive().getValue().toString();
+        return null;
+    }
+
     default String getIssuer() {
         return payload().getOrDefault("iss", (String) null);
     }

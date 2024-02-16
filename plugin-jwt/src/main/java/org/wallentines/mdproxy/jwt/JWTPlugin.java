@@ -30,7 +30,7 @@ public class JWTPlugin implements Plugin {
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
-        keyStore = new KeyStore(new File(configFolder, config.getRoot().asSection().getString("key_store_path")));
+        keyStore = new FileKeyStore(new File(configFolder, config.getRoot().asSection().getString("key_store_path")), FileKeyStore.DEFAULT_TYPES);
 
         proxy.getCommands().register("jwt", new JWTCommand());
         ConnectionRequirement.REGISTRY.register("jwt", ConnectionCheck.forClass(JWTCheck.class, JWTCheck.SERIALIZER));

@@ -28,6 +28,7 @@ configurations.shadow {
 dependencies {
 
     implementation(project(":api"))
+    implementation(project(":api-jwt"))
 
     implementation(libs.midnight.cfg)
     implementation(libs.midnight.cfg.json)
@@ -44,8 +45,6 @@ dependencies {
     implementation(libs.google.guava)
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.simple)
-
-    implementation(libs.auth0.jwt)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

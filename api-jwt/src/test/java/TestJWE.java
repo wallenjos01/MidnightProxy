@@ -56,10 +56,7 @@ public class TestJWE {
                 .issuedBy("test")
                 .encrypted(codec, crypt);
 
-        System.out.println("AES Encode Start");
         String encoded = jwe.asString(codec, rand).getOrThrow();
-
-        System.out.println("AES Decode Start");
         JWT decrypted = JWESerializer.read(encoded, KeySupplier.of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType())).getOrThrow();
 
         Assertions.assertEquals(KeyCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));

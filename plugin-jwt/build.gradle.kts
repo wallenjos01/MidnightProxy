@@ -15,6 +15,7 @@ repositories {
 dependencies {
 
     compileOnly(project(":api"))
+    compileOnly(project(":api-jwt"))
 }
 
 tasks.test {

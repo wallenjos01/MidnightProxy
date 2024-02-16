@@ -1,38 +1,87 @@
 package org.wallentines.mdproxy.jwt;
 
+import org.wallentines.mdproxy.command.ArgumentParser;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;
 
+import java.security.*;
 import java.util.Set;
 
 public class JWTCommand implements CommandExecutor {
 
     private final Set<String> subcommands = Set.of("genKey", "clearKey");
+    private final SecureRandom rand = new SecureRandom();
+
+    private final ArgumentParser parser = new ArgumentParser()
+            .addOption("type", 't', "hmac")
+            .addOption("length", 'l', "32");
 
     @Override
     public void execute(CommandSender sender, String[] args) {
 
-        if(args.length != 3 || !subcommands.contains(args[1])) {
-            sender.sendMessage("Usage: " + args[0] + " [genKey/clearKey] <keyName>");
+        ArgumentParser.ParseResult res = parser.parse(args);
+        if(res.isError()) {
+            sender.sendMessage(res.getError());
             return;
         }
 
-        String key = args[2];
-        KeyStore store = sender.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore();
+        ArgumentParser.Parsed parsed = res.getOutput();
 
-        switch (args[1]) {
-            case "genKey":
-
-                store.generateKey(args[2]);
-                sender.sendMessage("New key " + key + " generated");
-
-                break;
-            case "clearKey":
-
-                store.clearKey(args[2]);
-                sender.sendMessage("Key " + key + " cleared");
+        String subcommand;
+        if(parsed.getPositionalArgumentCount() < 3 || !subcommands.contains((subcommand = parsed.getPositionalArgument(1)))) {
+            sender.sendMessage("Usage: " + args[0] + " genKey/clearKey <keyName> [-t hmac/aes/rsa] [-l <keyLength>]");
+            return;
         }
 
+        String name = parsed.getPositionalArgument(2);
+        KeyStore store = sender.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore();
 
+        switch (subcommand) {
+            case "genKey":
+
+                int keyLength = Integer.parseInt(parsed.getValue("length"));
+                switch (parsed.getValue("type")) {
+                    case "hmac" -> {
+                        byte[] keyData = new byte[keyLength];
+                        rand.nextBytes(keyData);
+
+                        store.setKey(name, KeyType.HMAC, KeyType.HMAC.create(keyData).getOrThrow());
+                    }
+                    case "aes" -> {
+                        byte[] keyData = new byte[keyLength];
+                        rand.nextBytes(keyData);
+
+                        store.setKey(name, KeyType.AES, KeyType.AES.create(keyData).getOrThrow());
+                    }
+                    case "rsa" -> {
+                        try {
+                            KeyPairGenerator factory = KeyPairGenerator.getInstance("RSA");
+                            KeyPair kp = factory.generateKeyPair();
+
+                            store.setKey(name, KeyType.RSA_PUBLIC, kp.getPublic());
+                            store.setKey(name, KeyType.RSA_PRIVATE, kp.getPrivate());
+                        } catch (GeneralSecurityException ex) {
+                            sender.sendMessage("Unable to generate RSA key!");
+                            throw new IllegalStateException(ex);
+                        }
+                    }
+                }
+
+                sender.sendMessage("New key " + name + " generated");
+                break;
+
+            case "clearKey":
+
+                switch (parsed.getValue("type")) {
+                    case "hmac" -> store.clearKey(name, KeyType.HMAC);
+                    case "aes" -> store.clearKey(name, KeyType.AES);
+                    case "rsa" -> {
+                        store.clearKey(name, KeyType.RSA_PUBLIC);
+                        store.clearKey(name, KeyType.RSA_PRIVATE);
+                    }
+                }
+
+                sender.sendMessage("Key " + name + " cleared");
+        }
     }
 }

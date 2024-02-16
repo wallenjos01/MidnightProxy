@@ -55,9 +55,18 @@ public interface KeyType<T> {
 
 
     Secret AES = new Secret("AES");
-    Secret HMAC256 = new Secret("HmacSHA256");
-    Secret HMAC384 = new Secret("HmacSHA384");
-    Secret HMAC512 = new Secret("HmacSHA512");
+    Raw HMAC = new Raw();
+
+    class Raw implements KeyType<byte[]> {
+        @Override
+        public SerializeResult<byte[]> create(byte[] bytes) {
+            return SerializeResult.success(bytes);
+        }
+        @Override
+        public SerializeResult<byte[]> serialize(byte[] key) {
+            return SerializeResult.success(key);
+        }
+    }
 
     class Secret implements KeyType<SecretKey> {
         private final String algorithm;

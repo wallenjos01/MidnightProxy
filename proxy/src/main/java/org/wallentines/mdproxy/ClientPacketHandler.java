@@ -1,9 +1,5 @@
 package org.wallentines.mdproxy;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.common.primitives.Ints;
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.Channel;
@@ -11,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdproxy.jwt.*;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
@@ -30,11 +28,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.security.*;
 import java.util.*;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
@@ -52,7 +46,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
 
-    private final Random rand = new Random();
+    private final Random random = new SecureRandom();
     private final HashSet<Identifier> requiredCookies = new HashSet<>();
 
 
@@ -173,39 +167,40 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
-            JWTVerifier verifier = JWT.require(CryptUtil.getAlgorithm(server.getKeyPair()))
-                    .withIssuer("midnightproxy")
-                    .acceptExpiresAt(86400L) // Expired cookies shouldn't cause the player to be kicked
-                    .withClaim("hostname", conn.hostname())
-                    .withClaim("port", conn.port())
-                    .withClaim("username", conn.username())
-                    .withClaim("uuid", conn.uuid().toString())
-                    .withClaim("protocol", conn.protocolVersion())
-                    .build();
-
-            try {
-
-                DecodedJWT decoded = verifier.verify(jwt);
-                if(decoded.getExpiresAtAsInstant().isBefore(Instant.now())) {
-                    // Token expired, continue with login
-                    startLogin();
-                    return;
-                }
-
-                Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
-                if(b == null) {
-                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
-                    return;
-                }
-
-                connectToBackend(b);
-
-            } catch (JWTVerificationException ex) {
+            SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
+            if(!jwtRes.isComplete()) {
 
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
 
+            JWT decoded = jwtRes.getOrThrow();
+            if(decoded.isExpired()) {
+                startLogin();
+                return;
+            }
+
+            // Verify claims
+            JWTVerifier verifier = new JWTVerifier()
+                    .requireEncrypted()
+                    .withClaim("hostname", conn.hostname())
+                    .withClaim("port", conn.port())
+                    .withClaim("username", conn.username())
+                    .withClaim("uuid", conn.uuid().toString())
+                    .withClaim("protocol", conn.protocolVersion());
+
+            if(!verifier.verify(decoded)) {
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                return;
+            }
+
+            Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
+            if(b == null) {
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                return;
+            }
+
+            connectToBackend(b);
             return;
         }
 
@@ -312,7 +307,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        challenge = Ints.toByteArray(rand.nextInt());
+        challenge = Ints.toByteArray(random.nextInt());
         conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.isOnlineMode()));
     }
 
@@ -458,16 +453,18 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         String host = b.redirect() ? b.hostname() : conn.hostname();
         int port = b.redirect() ? b.port() : conn.port();
 
-        String str = JWT.create()
+        KeyCodec<PublicKey, PrivateKey> rsa = KeyCodec.RSA_OAEP(server.getReconnectKeyPair());
+        String str = new JWTBuilder()
                 .withClaim("hostname", host)
                 .withClaim("port", port)
                 .withClaim("protocol", conn.protocolVersion())
                 .withClaim("username", conn.username())
                 .withClaim("uuid", conn.uuid().toString())
                 .withClaim("backend", server.getBackends().getId(b))
-                .withExpiresAt(Instant.now().plus(server.getReconnectTimeout(), ChronoUnit.MILLIS))
-                .withIssuer("midnightproxy")
-                .sign(CryptUtil.getAlgorithm(server.getKeyPair()));
+                .expiresIn(server.getReconnectTimeout() / 1000)
+                .issuedBy("midnightproxy")
+                .encrypted(rsa, CryptCodec.A128CBC_HS256(random))
+                .asString(rsa, random).getOrThrow();
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));

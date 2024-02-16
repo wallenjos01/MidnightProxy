@@ -1,7 +1,5 @@
 package org.wallentines.mdproxy.util;
 
-import com.auth0.jwt.algorithms.Algorithm;
-
 import javax.crypto.Cipher;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
@@ -59,13 +57,6 @@ public class CryptUtil {
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to hash data!", ex);
         }
-    }
-
-    public static Algorithm getAlgorithm(KeyPair pair) {
-
-        RSAPrivateKey key = (RSAPrivateKey) pair.getPrivate();
-        RSAPublicKey pubKey = (RSAPublicKey) pair.getPublic();
-        return Algorithm.RSA256(pubKey, key);
     }
 
 }

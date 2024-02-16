@@ -20,7 +20,7 @@ public interface KeySupplier {
         };
     }
 
-    static KeySupplier fromHeader(FileKeyStore store) {
+    static KeySupplier fromHeader(KeyStore store) {
 
         return new KeySupplier() {
             @Override

@@ -1,11 +1,11 @@
 package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.mdcfg.Functions;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.GeneralSecurityException;
 
 public class HashCodec<T> {
@@ -35,28 +35,16 @@ public class HashCodec<T> {
     }
 
 
-    public static HashCodec<SecretKey> HS256(byte[] secret) {
-        return new HashCodec<>(HMAC.HS256, KeyType.HMAC256.create(secret).getOrThrow());
+    public static HashCodec<byte[]> HS256(byte[] secret) {
+        return HMAC.HS256.createCodec(secret);
     }
 
-    public static HashCodec<SecretKey> HS256(SecretKey key) {
-        return new HashCodec<>(HMAC.HS256, key);
+    public static HashCodec<byte[]> HS384(byte[] secret) {
+        return HMAC.HS384.createCodec(secret);
     }
 
-    public static HashCodec<SecretKey> HS384(byte[] secret) {
-        return new HashCodec<>(HMAC.HS384, KeyType.HMAC384.create(secret).getOrThrow());
-    }
-
-    public static HashCodec<SecretKey> HS384(SecretKey key) {
-        return new HashCodec<>(HMAC.HS384, key);
-    }
-
-    public static HashCodec<SecretKey> HS512(byte[] secret) {
-        return new HashCodec<>(HMAC.HS512, KeyType.HMAC512.create(secret).getOrThrow());
-    }
-
-    public static HashCodec<SecretKey> HS512(SecretKey key) {
-        return new HashCodec<>(HMAC.HS512, key);
+    public static HashCodec<byte[]> HS512(byte[] secret) {
+        return HMAC.HS512.createCodec(secret);
     }
 
 
@@ -102,24 +90,25 @@ public class HashCodec<T> {
 
     }
 
-    public static class HMAC extends Algorithm<SecretKey> {
+    public static class HMAC extends Algorithm<byte[]> {
 
         private final Mac mac;
 
-        protected HMAC(KeyType.Secret keyType) {
+        protected HMAC(String alg, KeyType<byte[]> keyType) {
             super(keyType);
             try {
-                this.mac = Mac.getInstance(keyType.getAlgorithm());
+                this.mac = Mac.getInstance(alg);
             } catch (GeneralSecurityException ex) {
-                throw new IllegalStateException("Unable to find HMAC algorithm: " + keyType.getAlgorithm());
+                throw new IllegalStateException("Unable to find HMAC algorithm: " + alg);
             }
         }
 
         @Override
-        public byte[] hash(SecretKey key, byte[]... input) {
+        public byte[] hash(byte[] key, byte[]... input) {
 
+            SecretKey secret = new SecretKeySpec(key, mac.getAlgorithm());
             try {
-                mac.init(key);
+                mac.init(secret);
             } catch (GeneralSecurityException ex) {
                 throw new IllegalStateException("Unable to initialize HMAC!");
             }
@@ -130,9 +119,9 @@ public class HashCodec<T> {
             return mac.doFinal();
         }
 
-        public static final HMAC HS256 = Algorithm.register("HS256", new HMAC(KeyType.HMAC256));
-        public static final HMAC HS384 = Algorithm.register("HS384", new HMAC(KeyType.HMAC256));
-        public static final HMAC HS512 = Algorithm.register("HS512", new HMAC(KeyType.HMAC256));
+        public static final HMAC HS256 = Algorithm.register("HS256", new HMAC("HmacSHA256", KeyType.HMAC));
+        public static final HMAC HS384 = Algorithm.register("HS384", new HMAC("HmacSHA384", KeyType.HMAC));
+        public static final HMAC HS512 = Algorithm.register("HS512", new HMAC("HmacSHA512", KeyType.HMAC));
     }
 
 }

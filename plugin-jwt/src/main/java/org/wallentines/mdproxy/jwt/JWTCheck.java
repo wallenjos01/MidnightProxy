@@ -1,15 +1,11 @@
 package org.wallentines.mdproxy.jwt;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.Claim;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.PlaceholderContext;
 import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
@@ -25,7 +21,6 @@ public class JWTCheck extends ConnectionCheck {
     private final String key;
     private final List<String> outputClaims;
     private final Map<String, UnresolvedComponent> expectClaims;
-    private Algorithm alg;
 
     protected JWTCheck(boolean requireAuth, Identifier cookie, String key, Collection<String> outputClaims, Map<String, UnresolvedComponent> expectClaims) {
         super(requireAuth, Set.of(cookie));
@@ -37,16 +32,6 @@ public class JWTCheck extends ConnectionCheck {
 
     @Override
     public boolean test(ConnectionContext ctx) {
-        
-        if(alg == null) {
-            byte[] keyData = ctx.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore().getSecret(key);
-            if(keyData == null) {
-                LOGGER.error("Unable to find key " + key + "! You can generate it with the command: jwt genKey " + key);
-                return false;
-            }
-
-            alg = Algorithm.HMAC256(keyData);
-        }
 
         byte[] data = ctx.getConnection().getCookie(cookie);
         if(data == null) {
@@ -62,35 +47,29 @@ public class JWTCheck extends ConnectionCheck {
             require.put(cmp.getKey(), cmp.getValue().resolveFlat(placeholderContext));
         }
 
+        KeyStore store = ctx.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore();
+
         String str = new String(data);
-        DecodedJWT jwt;
-        try {
-            jwt = JWT.require(alg).build().verify(str);
-        } catch (JWTVerificationException ex) {
-            LOGGER.warn("JWT decoding failed for user {} ", ctx.username());
+        SerializeResult<JWT> jwtRes = JWTReader.readAny(str, KeySupplier.fromHeader(store));
+        if(!jwtRes.isComplete()) {
+            LOGGER.warn("Unable to parse JWT! " + jwtRes.getError());
+            return false;
+        }
+
+        JWT jwt = jwtRes.getOrThrow();
+        if(jwt.isExpired()) {
             return false;
         }
 
         for(String s : outputClaims) {
-            Claim c = jwt.getClaim(s);
-            if(c == null || c.isNull() || c.isMissing()) {
-                return false;
-            }
 
-            String claimStr = c.asString();
-            if(claimStr == null) claimStr = c.toString();
-
+            String claimStr = jwt.getClaimAsString(s);
             ctx.setMetaProperty("jwt." + s, claimStr);
         }
 
         for(String s : require.keySet()) {
-            Claim c = jwt.getClaim(s);
-            if(c == null || c.isNull() || c.isMissing()) {
-                return false;
-            }
 
-            String claimStr = c.asString();
-            if(claimStr == null) claimStr = c.toString();
+            String claimStr = jwt.getClaimAsString(s);
 
             if(!claimStr.equals(require.get(s))) {
                 LOGGER.warn("User {} gave wrong expected claim {}. Expected {}, was {}", ctx.username(), s, require.get(s), claimStr);

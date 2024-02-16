@@ -2,7 +2,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wallentines.mdproxy.jwt.*;
 
-import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Random;
 
@@ -16,7 +15,7 @@ public class TestJWS {
         byte[] key = new byte[32];
         rand.nextBytes(key);
 
-        HashCodec<SecretKey> codec = HashCodec.HS256(key);
+        HashCodec<byte[]> codec = HashCodec.HS256(key);
 
         Instant issued = Instant.now();
         JWSSerializer.JWS jws = new JWTBuilder()

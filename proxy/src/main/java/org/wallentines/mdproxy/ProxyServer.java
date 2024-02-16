@@ -29,6 +29,7 @@ public class ProxyServer implements Proxy {
     private static final Logger LOGGER = LoggerFactory.getLogger("ProxyServer");
 
     private final KeyPair keyPair;
+    private final KeyPair reconnectKeyPair;
     private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
     private final StringRegistry<CommandExecutor> commands;
@@ -60,6 +61,7 @@ public class ProxyServer implements Proxy {
         this.clientTimeout = getConfig().getInt("client_timeout");
 
         this.keyPair = CryptUtil.generateKeyPair();
+        this.reconnectKeyPair = CryptUtil.generateKeyPair();
         this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
         this.commands = new StringRegistry<>();
 
@@ -214,6 +216,10 @@ public class ProxyServer implements Proxy {
 
     public KeyPair getKeyPair() {
         return keyPair;
+    }
+
+    public KeyPair getReconnectKeyPair() {
+        return reconnectKeyPair;
     }
 
     public Authenticator getAuthenticator() {
