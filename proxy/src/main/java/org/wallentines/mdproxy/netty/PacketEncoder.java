@@ -32,13 +32,13 @@ public class PacketEncoder<T> extends MessageToByteEncoder<Packet<T>> {
 
         int id = registry.getId(packet);
         if(id == -1) {
-            throw new EncoderException("Attempt to send an unregistered packet with id " + packet.getType().getId(registry.getVersion()) + "!");
+            throw new EncoderException("Attempt to send an unregistered packet with id " + packet.getType().getId(registry.getVersion(), registry.getPhase()) + "!");
         }
 
         PacketBufferUtil.writeVarInt(byteBuf, registry.getId(packet));
 
         try {
-            packet.write(registry.getVersion(), byteBuf);
+            packet.write(registry.getVersion(), registry.getPhase(), byteBuf);
         } catch (Exception ex) {
             throw new EncoderException("An exception occurred while sending a packet!", ex);
         }

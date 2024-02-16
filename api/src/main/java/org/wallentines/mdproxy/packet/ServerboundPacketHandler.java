@@ -2,7 +2,7 @@ package org.wallentines.mdproxy.packet;
 
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.config.ServerboundSettingsPacket;
-import org.wallentines.mdproxy.packet.login.ServerboundCookiePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundCookiePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundEncryptionPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginFinishedPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;

@@ -1,19 +1,18 @@
-package org.wallentines.mdproxy.packet.login;
+package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
-import java.util.Optional;
-
-public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) implements Packet<ServerboundPacketHandler> {
+public record ServerboundCookiePacket(Identifier key, byte[] data) implements Packet<ServerboundPacketHandler> {
 
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(4, ServerboundCookiePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> phase == ProtocolPhase.LOGIN ? 4 : 1, ServerboundCookiePacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {
@@ -21,10 +20,10 @@ public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) imp
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) {
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
 
         PacketBufferUtil.writeUtf(buf, key.toString());
-        PacketBufferUtil.writeOptional(buf, data.orElse(null), ByteBuf::writeBytes);
+        PacketBufferUtil.writeOptional(buf, data, ByteBuf::writeBytes);
     }
 
     @Override
@@ -32,16 +31,17 @@ public record ServerboundCookiePacket(Identifier key, Optional<byte[]> data) imp
         handler.handle(this);
     }
 
-    public static ServerboundCookiePacket read(GameVersion ver, ByteBuf buf) {
+    public static ServerboundCookiePacket read(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
 
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
-        Optional<byte[]> data = PacketBufferUtil.readOptional(buf, buf1 -> {
+        byte[] data = PacketBufferUtil.readOptional(buf, buf1 -> {
 
             byte[] out = new byte[PacketBufferUtil.readVarInt(buf1)];
             buf1.readBytes(out);
 
             return out;
-        });
+
+        }).orElse(new byte[0]);
 
         return new ServerboundCookiePacket(id, data);
     }

@@ -5,10 +5,11 @@ import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 
 public record ClientboundPingPacket(long value) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE =  PacketType.of(1, (ver, buf) -> new ClientboundPingPacket(buf.readLong()));
+    public static final PacketType<ClientboundPacketHandler> TYPE =  PacketType.of(1, (ver, phase, buf) -> new ClientboundPingPacket(buf.readLong()));
 
     @Override
     public PacketType<ClientboundPacketHandler> getType() {
@@ -21,7 +22,7 @@ public record ClientboundPingPacket(long value) implements Packet<ClientboundPac
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) {
+    public void write(GameVersion version, ProtocolPhase phase,  ByteBuf buf) {
         buf.writeLong(value);
     }
 }

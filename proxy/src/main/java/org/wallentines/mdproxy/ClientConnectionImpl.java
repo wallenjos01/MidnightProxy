@@ -12,8 +12,7 @@ import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
-import org.wallentines.mdproxy.packet.config.ClientboundConfigKickPacket;
-import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
+import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -208,8 +207,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         LOGGER.info("Disconnecting player {}: {}", username(), cmp.allText());
 
         if(backend == null) {
-            Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
-            send(p);
+            send(new ClientboundKickPacket(cmp));
         }
         channel.close().awaitUninterruptibly();
     }

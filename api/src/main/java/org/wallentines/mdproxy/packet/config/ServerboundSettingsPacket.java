@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
@@ -16,14 +17,14 @@ public record ServerboundSettingsPacket(String locale, byte renderDistance, Chat
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) { }
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) { }
 
     @Override
     public void handle(ServerboundPacketHandler handler) {
         handler.handle(this);
     }
 
-    public static ServerboundSettingsPacket read(GameVersion version, ByteBuf buf) {
+    public static ServerboundSettingsPacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
 
         String locale = PacketBufferUtil.readUtf(buf);
         byte renderDistance = buf.readByte();

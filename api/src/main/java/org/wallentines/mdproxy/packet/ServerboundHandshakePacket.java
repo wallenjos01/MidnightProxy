@@ -16,7 +16,7 @@ public record ServerboundHandshakePacket(int protocolVersion, String address, in
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) {
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeVarInt(buf, protocolVersion);
         PacketBufferUtil.writeUtf(buf, address);
         buf.writeShort(port);
@@ -28,7 +28,7 @@ public record ServerboundHandshakePacket(int protocolVersion, String address, in
         handler.handle(this);
     }
 
-    public static ServerboundHandshakePacket read(GameVersion version, ByteBuf buffer) {
+    public static ServerboundHandshakePacket read(GameVersion version, ProtocolPhase phase,ByteBuf buffer) {
 
         int proto = PacketBufferUtil.readVarInt(buffer);
         String addr = PacketBufferUtil.readUtf(buffer, 255).toLowerCase(Locale.ROOT);
