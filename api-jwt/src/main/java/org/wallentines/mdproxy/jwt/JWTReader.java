@@ -12,6 +12,11 @@ public class JWTReader {
 
     public static SerializeResult<JWT> readAny(String s, KeySupplier keySupplier) {
 
+        int firstPeriod = s.indexOf('.');
+        if(firstPeriod == -1) {
+            return SerializeResult.failure("Found malformed JWT!");
+        }
+
         Base64.Decoder decoder = Base64.getUrlDecoder();
         JSONCodec json = JSONCodec.minified();
 

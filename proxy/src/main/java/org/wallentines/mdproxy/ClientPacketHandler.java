@@ -47,7 +47,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private final Random random = new SecureRandom();
     private final Queue<Route> routes;
-    private final HashSet<Identifier> requiredCookies = new HashSet<>();
+    private final HashSet<Identifier> requestedCookies = new HashSet<>();
 
 
     public ClientPacketHandler(Channel channel, ProxyServer server) {
@@ -207,13 +207,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
 
-        if(requiredCookies.remove(cookie.key())) {
+        if(requestedCookies.remove(cookie.key())) {
             conn.setCookie(cookie.key(), cookie.data());
         } else {
             LOGGER.warn("Received unsolicited cookie with ID {} from user {}!", cookie.key(), getUsername());
         }
 
-        if(requiredCookies.isEmpty()) {
+        if(requestedCookies.isEmpty()) {
             tryNextServer();
         }
 
@@ -228,7 +228,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
-
+        tryNextServer();
 
     }
 
@@ -343,25 +343,25 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         while(!routes.isEmpty()) {
 
             Route current = routes.peek();
-
-            if (conn.hasDisconnected()) {
-                return;
-            }
-
             if (conn.authenticated() || current.requirement() != null && !current.requirement().requiresAuth()) {
                 for (Identifier id : current.getRequiredCookies()) {
                     if (conn.getCookie(id) == null) {
-                        requiredCookies.add(id);
+                        requestedCookies.add(id);
                         conn.send(new ClientboundCookieRequestPacket(id));
                     }
                 }
-                if(!requiredCookies.isEmpty()) {
+                if(!requestedCookies.isEmpty()) {
                     return;
                 }
             }
 
             ConnectionContext ctx = new ConnectionContext(conn, server);
             TestResult res = current.canUse(ctx);
+
+            if (conn.hasDisconnected()) {
+                return;
+            }
+
             if(res == TestResult.NOT_ENOUGH_INFO) {
                 startAuthentication();
                 return;
@@ -373,10 +373,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
 
             routes.remove();
-        }
-
-        if(conn.hasDisconnected()) {
-            return;
         }
 
         if(toUse == null) {

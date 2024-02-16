@@ -34,7 +34,7 @@ public class JWTCheck extends ConnectionCheck {
     public boolean test(ConnectionContext ctx) {
 
         byte[] data = ctx.getConnection().getCookie(cookie);
-        if(data == null) {
+        if(data.length == 0) {
             return false;
         }
 
