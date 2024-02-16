@@ -471,9 +471,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));
-
-        channel.config().setAutoRead(false);
-        channel.deregister();
     }
 
 

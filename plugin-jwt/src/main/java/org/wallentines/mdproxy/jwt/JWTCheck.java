@@ -27,9 +27,8 @@ public class JWTCheck extends ConnectionCheck {
     private final Map<String, UnresolvedComponent> expectClaims;
     private Algorithm alg;
 
-
-    protected JWTCheck(Identifier cookie, String key, Collection<String> outputClaims, Map<String, UnresolvedComponent> expectClaims) {
-        super(true, Set.of(cookie));
+    protected JWTCheck(boolean requireAuth, Identifier cookie, String key, Collection<String> outputClaims, Map<String, UnresolvedComponent> expectClaims) {
+        super(requireAuth, Set.of(cookie));
         this.cookie = cookie;
         this.key = key;
         this.outputClaims = List.copyOf(outputClaims);
@@ -103,6 +102,7 @@ public class JWTCheck extends ConnectionCheck {
     }
 
     public static final Serializer<JWTCheck> SERIALIZER = ObjectSerializer.create(
+            Serializer.BOOLEAN.<JWTCheck>entry("require_auth", ConnectionCheck::requiresAuth).orElse(true),
             Identifier.serializer("minecraft").entry("cookie", check -> check.cookie),
             Serializer.STRING.<JWTCheck>entry("key", check -> check.key).orElse("default"),
             Serializer.STRING.listOf().entry("output_claims", check -> check.outputClaims),
