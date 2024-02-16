@@ -32,7 +32,7 @@ public class PacketDecoder<T> extends ByteToMessageDecoder {
         Packet<T> p = registry.read(id, bytes);
         if(p == null) {
             LOGGER.warn("Found unknown packet with id " + id);
-            bytes.clear();
+            bytes.release();
             return;
         }
 

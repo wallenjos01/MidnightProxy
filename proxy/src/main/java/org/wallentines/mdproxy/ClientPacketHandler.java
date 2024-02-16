@@ -111,6 +111,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
 
+            LOGGER.warn("Requested reconnect cookie");
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
@@ -172,6 +173,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
             if(!jwtRes.isComplete()) {
 
+                LOGGER.warn("Unable to parse reconnect cookie! {}", jwtRes.getError());
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
@@ -192,12 +194,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     .withClaim("protocol", conn.protocolVersion());
 
             if(!verifier.verify(decoded)) {
+                LOGGER.warn("Unable to verify reconnect cookie!");
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
 
             Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
             if(b == null) {
+                LOGGER.warn("Unable to find requested reconnect backend {}!", decoded.getClaimAsString("backend"));
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
@@ -207,6 +211,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
 
+        LOGGER.warn("Received cookie " + cookie.key() + ": " + cookie.data().length);
         if(requestedCookies.remove(cookie.key())) {
             conn.setCookie(cookie.key(), cookie.data());
         } else {
@@ -241,6 +246,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         if(conn.hasDisconnected()) return;
         if(conn.authenticated()) {
             reconnect(b);
+            return;
         }
 
         prepareForwarding();
@@ -250,7 +256,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             server.removePlayer(uuid);
         });
         server.addPlayer(conn);
-
 
         BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
         bconn.connect(channel.eventLoop()).addListener(future -> {
@@ -347,6 +352,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 for (Identifier id : current.getRequiredCookies()) {
                     if (conn.getCookie(id) == null) {
                         requestedCookies.add(id);
+                        LOGGER.warn("Requested cookie " + id);
                         conn.send(new ClientboundCookieRequestPacket(id));
                     }
                 }
@@ -465,7 +471,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .withClaim("username", conn.username())
                 .withClaim("uuid", conn.uuid().toString())
                 .withClaim("backend", server.getBackends().getId(b))
-                .expiresIn(server.getReconnectTimeout() / 1000)
+                .expiresIn(server.getReconnectTimeout())
                 .issuedBy("midnightproxy")
                 .encrypted(rsa, CryptCodec.A128CBC_HS256())
                 .asString().getOrThrow();

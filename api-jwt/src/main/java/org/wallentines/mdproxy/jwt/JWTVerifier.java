@@ -1,19 +1,25 @@
 package org.wallentines.mdproxy.jwt;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigPrimitive;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 
 public class JWTVerifier {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("JWTVerifier");
     private final Map<String, ConfigObject> verify;
     private boolean allowExpired;
     private boolean allowUnprotected;
     private boolean requireEncrypted;
+    private final Clock clock;
 
     public JWTVerifier() {
+        this.clock = Clock.systemUTC();
         this.verify = new HashMap<>();
     }
 
@@ -54,7 +60,7 @@ public class JWTVerifier {
 
     public boolean verify(JWT jwt) {
 
-        if(!allowExpired && (jwt.isExpired() || !jwt.isValid())) {
+        if(!allowExpired && (jwt.isExpired(clock) || !jwt.isValid(clock))) {
             return false;
         }
 
@@ -72,7 +78,7 @@ public class JWTVerifier {
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
 }

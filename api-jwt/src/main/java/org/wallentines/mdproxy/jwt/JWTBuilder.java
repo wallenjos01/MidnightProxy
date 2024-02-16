@@ -2,11 +2,14 @@ package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdcfg.ConfigSection;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 public class JWTBuilder {
 
     private final ConfigSection payload = new ConfigSection();
+    private final Clock clock = Clock.systemUTC();
 
     public JWTBuilder withClaim(String claim, String value) {
         payload.set(claim, value);
@@ -26,7 +29,7 @@ public class JWTBuilder {
     }
 
     public JWTBuilder issuedNow() {
-        return issuedAt(Instant.now());
+        return issuedAt(clock.instant().truncatedTo(ChronoUnit.SECONDS));
     }
 
     public JWTBuilder issuedAt(Instant instant) {
@@ -34,7 +37,7 @@ public class JWTBuilder {
     }
 
     public JWTBuilder expiresIn(long seconds) {
-        return expiresAt(Instant.now().plusSeconds(seconds));
+        return expiresAt(clock.instant().truncatedTo(ChronoUnit.SECONDS).plusSeconds(seconds));
     }
 
     public JWTBuilder expiresAt(Instant instant) {
@@ -42,7 +45,7 @@ public class JWTBuilder {
     }
 
     public JWTBuilder validIn(long seconds) {
-        return validAt(Instant.now().plusSeconds(seconds));
+        return validAt(clock.instant().truncatedTo(ChronoUnit.SECONDS).plusSeconds(seconds));
     }
 
     public JWTBuilder validAt(Instant instant) {

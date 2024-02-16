@@ -4,7 +4,9 @@ import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 public interface JWT {
 
@@ -23,9 +25,11 @@ public interface JWT {
         return null;
     }
 
+
     default String getIssuer() {
         return payload().getOrDefault("iss", (String) null);
     }
+
 
     default Instant getIssuedAt() {
         return payload().getOptional("iat", Serializer.LONG).map(Instant::ofEpochSecond).orElse(null);
@@ -40,13 +44,21 @@ public interface JWT {
     }
 
     default boolean isValid() {
+        return isValid(Clock.systemUTC());
+    }
+
+    default boolean isValid(Clock clock) {
         Instant valid = getValidAt();
-        return valid == null || valid.isBefore(Instant.now());
+        return valid == null || valid.isAfter(clock.instant().truncatedTo(ChronoUnit.SECONDS));
     }
 
     default boolean isExpired() {
+        return isExpired(Clock.systemUTC());
+    }
+
+    default boolean isExpired(Clock clock) {
         Instant expires = getExpiresAt();
-        return expires == null || expires.isAfter(Instant.now());
+        return expires == null || expires.isBefore(clock.instant().truncatedTo(ChronoUnit.SECONDS));
     }
 
     boolean isEncrypted();

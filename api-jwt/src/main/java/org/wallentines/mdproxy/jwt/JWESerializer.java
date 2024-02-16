@@ -76,6 +76,11 @@ public class JWESerializer {
         return SerializeResult.success(out.toString());
     }
 
+
+    public static SerializeResult<JWT> read(String jwe, KeyCodec<?, ?> codec) {
+        return read(jwe, KeySupplier.of(codec));
+    }
+
     public static SerializeResult<JWT> read(String jwe, KeySupplier supp) {
 
         // Split into parts

@@ -2,9 +2,24 @@ package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdcfg.ConfigSection;
 
+import java.security.Key;
+
 public interface KeySupplier {
 
     <T> T getKey(ConfigSection joseHeader, KeyType<T> type);
+
+
+    static <T> KeySupplier of(HashCodec<T> codec) {
+        return of(codec.getKey(), codec.getAlgorithm().getKeyType());
+    }
+
+    static <T> KeySupplier of(CryptCodec<T> codec) {
+        return of(codec.getKey(), codec.getAlgorithm().getKeyType());
+    }
+
+    static <D extends Key, E extends Key> KeySupplier of(KeyCodec<D, E> codec) {
+        return of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType());
+    }
 
 
     static <T> KeySupplier of(T key, KeyType<T> type) {

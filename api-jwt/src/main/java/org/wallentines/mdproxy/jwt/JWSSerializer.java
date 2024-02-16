@@ -53,6 +53,10 @@ public class JWSSerializer {
     }
 
 
+    public static @NotNull SerializeResult<JWT> read(String jws, HashCodec<?> codec) {
+        return read(jws, KeySupplier.of(codec));
+    }
+
     public static @NotNull SerializeResult<JWT> read(String jws, KeySupplier keySupplier) {
 
         String[] parts = jws.split("\\.", 3);
