@@ -21,14 +21,6 @@ dependencies {
 
     api(libs.midnight.lib)
 
-    api(libs.midnight.core)
-
-    api(libs.netty.codec)
-    api(libs.netty.buffer)
-
-    api(libs.mojang.authlib)
-
-    api(libs.google.guava)
     api(libs.slf4j.api)
 
     testImplementation(platform(libs.junit.bom))

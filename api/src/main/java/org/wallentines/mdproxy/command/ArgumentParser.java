@@ -148,7 +148,7 @@ public class ArgumentParser {
         }
 
         public String getValue(String argument) {
-            return values.get(argument);
+            return values.getOrDefault(argument, typesByName.get(argument).defaultValue);
         }
 
         public int getPositionalArgumentCount() {
@@ -171,15 +171,11 @@ public class ArgumentParser {
 
                 if(t.isFlag()) {
 
-                    out.set(t.name, flags.contains(t.name));
+                    out.set(t.name, hasFlag(t.name));
 
                 } else {
 
-                    if(values.containsKey(t.name)) {
-                        out.set(t.name, values.get(t.name));
-                    } else if(t.defaultValue != null) {
-                        out.set(t.name, t.defaultValue);
-                    }
+                    out.set(t.name, getValue(t.name));
                 }
             }
             return out;

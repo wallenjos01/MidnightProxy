@@ -42,8 +42,10 @@ public class JWTCommand implements CommandExecutor {
         switch (subcommand) {
             case "genKey":
 
-                int keyLength = Integer.parseInt(parsed.getValue("length"));
-                switch (parsed.getValue("type")) {
+                String lenStr = parsed.getValue("length");
+                int keyLength = lenStr == null || lenStr.isEmpty() ? 32 : Integer.parseInt(lenStr);
+                String type = parsed.getValue("type");
+                switch (type) {
                     case "hmac" -> {
                         byte[] keyData = new byte[keyLength];
                         rand.nextBytes(keyData);
@@ -67,6 +69,10 @@ public class JWTCommand implements CommandExecutor {
                             sender.sendMessage("Unable to generate RSA key!");
                             throw new IllegalStateException(ex);
                         }
+                    }
+                    default -> {
+                        sender.sendMessage("Key type " + type + " unknown!");
+                        return;
                     }
                 }
 
