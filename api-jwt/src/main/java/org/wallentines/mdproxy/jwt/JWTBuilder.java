@@ -1,6 +1,7 @@
 package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdcfg.ConfigSection;
+import org.wallentines.mdcfg.serializer.Serializer;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -21,6 +22,11 @@ public class JWTBuilder {
     }
     public JWTBuilder withClaim(String claim, Number value) {
         payload.set(claim, value);
+        return this;
+    }
+
+    public <T> JWTBuilder withClaim(String claim, T value, Serializer<T> serializer) {
+        payload.set(claim, value, serializer);
         return this;
     }
 

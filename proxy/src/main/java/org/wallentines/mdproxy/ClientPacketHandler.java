@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.jwt.*;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.PacketRegistry;
@@ -186,6 +187,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             // Verify claims
             JWTVerifier verifier = new JWTVerifier()
                     .requireEncrypted()
+                    .enforceSingleUse(server.getTokenCache())
                     .withClaim("hostname", conn.hostname())
                     .withClaim("port", conn.port())
                     .withClaim("username", conn.username())
@@ -467,6 +469,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .withClaim("username", conn.username())
                 .withClaim("uuid", conn.uuid().toString())
                 .withClaim("backend", server.getBackends().getId(b))
+                .withClaim(server.getTokenCache().getIdClaim(), UUID.randomUUID(), Serializer.UUID)
                 .expiresIn(server.getReconnectTimeout())
                 .issuedBy("midnightproxy")
                 .encrypted(rsa, CryptCodec.A128CBC_HS256())

@@ -11,6 +11,7 @@ import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
+import org.wallentines.mdproxy.jwt.UsedTokenCache;
 import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.plugin.PluginLoader;
 import org.wallentines.mdproxy.plugin.PluginManager;
@@ -40,6 +41,7 @@ public class ProxyServer implements Proxy {
     private final ConsoleHandler console;
     private final LangManager langManager;
     private final PluginLoader pluginLoader;
+    private final UsedTokenCache reconnectTokenCache;
 
     private final int port;
     private final int clientTimeout;
@@ -56,6 +58,7 @@ public class ProxyServer implements Proxy {
         this.config = config;
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
+        this.reconnectTokenCache = new UsedTokenCache("rcid");
 
         this.port = getConfig().getInt("port");
         this.clientTimeout = getConfig().getInt("client_timeout");
@@ -224,6 +227,10 @@ public class ProxyServer implements Proxy {
 
     public Authenticator getAuthenticator() {
         return authenticator;
+    }
+
+    public UsedTokenCache getTokenCache() {
+        return reconnectTokenCache;
     }
 
     public int getClientTimeout() {

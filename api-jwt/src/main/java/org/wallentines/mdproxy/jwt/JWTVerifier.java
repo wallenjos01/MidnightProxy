@@ -12,11 +12,12 @@ import java.util.Map;
 public class JWTVerifier {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("JWTVerifier");
+    private final Clock clock;
     private final Map<String, ConfigObject> verify;
     private boolean allowExpired;
     private boolean allowUnprotected;
     private boolean requireEncrypted;
-    private final Clock clock;
+    private UsedTokenCache oneTimeCache;
 
     public JWTVerifier() {
         this.clock = Clock.systemUTC();
@@ -58,27 +59,33 @@ public class JWTVerifier {
         return this;
     }
 
+    public JWTVerifier enforceSingleUse(UsedTokenCache cache) {
+        this.oneTimeCache = cache;
+        return this;
+    }
+
     public boolean verify(JWT jwt) {
 
         if(!allowExpired && (jwt.isExpired(clock) || !jwt.isValid(clock))) {
-            LOGGER.warn("Found expired JWT");
             return false;
         }
 
         if(!allowUnprotected && jwt.isUnprotected()) {
-            LOGGER.warn("Found unprotected JWT");
             return false;
         }
 
         if(requireEncrypted && !jwt.isEncrypted()) {
-            LOGGER.warn("Found unencrypted JWT");
+            return false;
+        }
+
+        if(oneTimeCache != null && !oneTimeCache.validate(jwt)) {
+            LOGGER.warn("Found reused one-time token! {}", oneTimeCache.getIdClaim());
             return false;
         }
 
         for(Map.Entry<String, ConfigObject> ent : verify.entrySet()) {
             ConfigObject obj = jwt.getClaim(ent.getKey());
             if(obj == null || !obj.equals(ent.getValue())) {
-                LOGGER.warn("Found missing claim {}: {}", ent.getKey(), ent.getValue());
                 return false;
             }
         }
