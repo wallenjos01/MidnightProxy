@@ -11,6 +11,7 @@ import java.security.*;
 
 public class KeyCodec<E extends Key, D extends Key> {
 
+    public static final StringRegistry<Algorithm<?,?>> ALGORITHMS = new StringRegistry<>();;
     private static final Logger LOGGER = LoggerFactory.getLogger("KeyCodec");
 
     private final E encKey;
@@ -47,20 +48,20 @@ public class KeyCodec<E extends Key, D extends Key> {
 
     public static KeyCodec<DummyKey, DummyKey> direct() {
         DummyKey value = new DummyKey();
-        return new KeyCodec<>(Algorithm.DIRECT, value, value);
+        return new KeyCodec<>(ALG_DIRECT, value, value);
     }
 
 
     public static KeyCodec<PublicKey, PrivateKey> RSA_OAEP(KeyPair kp) {
-        return new KeyCodec<>(Algorithm.RSA_OAEP, kp.getPublic(), kp.getPrivate());
+        return new KeyCodec<>(ALG_RSA_OAEP, kp.getPublic(), kp.getPrivate());
     }
 
     public static KeyCodec<PublicKey, PrivateKey> RSA_OAEP(PublicKey key) {
-        return new KeyCodec<>(Algorithm.RSA_OAEP, key, null);
+        return new KeyCodec<>(ALG_RSA_OAEP, key, null);
     }
 
     public static KeyCodec<PublicKey, PrivateKey> RSA_OAEP(PrivateKey key) {
-        return new KeyCodec<>(Algorithm.RSA_OAEP, null, key);
+        return new KeyCodec<>(ALG_RSA_OAEP, null, key);
     }
 
     public static KeyCodec<SecretKey, SecretKey> A128KW(byte[] key) {
@@ -68,7 +69,7 @@ public class KeyCodec<E extends Key, D extends Key> {
     }
 
     public static KeyCodec<SecretKey, SecretKey> A128KW(SecretKey key) {
-        return new KeyCodec<>(Algorithm.A128KW, key, key);
+        return new KeyCodec<>(ALG_A128KW, key, key);
     }
 
     public static KeyCodec<SecretKey, SecretKey> A192KW(byte[] key) {
@@ -76,7 +77,7 @@ public class KeyCodec<E extends Key, D extends Key> {
     }
 
     public static KeyCodec<SecretKey, SecretKey> A192KW(SecretKey key) {
-        return new KeyCodec<>(Algorithm.A192KW, key, key);
+        return new KeyCodec<>(ALG_A192KW, key, key);
     }
 
     public static KeyCodec<SecretKey, SecretKey> A256KW(byte[] key) {
@@ -84,7 +85,7 @@ public class KeyCodec<E extends Key, D extends Key> {
     }
 
     public static KeyCodec<SecretKey, SecretKey> A256KW(SecretKey key) {
-        return new KeyCodec<>(Algorithm.A256KW, key, key);
+        return new KeyCodec<>(ALG_A256KW, key, key);
     }
 
 
@@ -147,27 +148,29 @@ public class KeyCodec<E extends Key, D extends Key> {
             D decKey = supp.getKey(header, decKeyType);
             return new KeyCodec<>(this, encKey, decKey);
         }
+    }
 
-        public static final StringRegistry<Algorithm<?,?>> REGISTRY = new StringRegistry<>();
-        private static <E extends Key, D extends Key> Algorithm<E,D> register(String key, Algorithm<E,D> alg) {
-            REGISTRY.register(key, alg);
-            return alg;
+
+    public static final Algorithm<PublicKey, PrivateKey> ALG_RSA_OAEP = new Algorithm<>(KeyType.RSA_PUBLIC, KeyType.RSA_PRIVATE, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+    public static final Algorithm<SecretKey, SecretKey> ALG_A128KW = new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap");
+    public static final Algorithm<SecretKey, SecretKey> ALG_A192KW = new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap");
+    public static final Algorithm<SecretKey, SecretKey> ALG_A256KW = new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap");
+    public static final Algorithm<DummyKey, DummyKey> ALG_DIRECT = new Algorithm<>(null,null,null) {
+        @Override
+        public byte[] encode(DummyKey key, byte[] data) {
+            return new byte[0];
         }
+        @Override
+        public byte[] decode(DummyKey key, byte[] data) {
+            return new byte[0];
+        }
+    };
 
-        public static final Algorithm<PublicKey, PrivateKey> RSA_OAEP = register("RSA-OAEP", new Algorithm<>(KeyType.RSA_PUBLIC, KeyType.RSA_PRIVATE, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
-        public static final Algorithm<SecretKey, SecretKey> A128KW = register("A128KW", new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap"));
-        public static final Algorithm<SecretKey, SecretKey> A192KW = register("A192KW", new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap"));
-        public static final Algorithm<SecretKey, SecretKey> A256KW = register("A256KW", new Algorithm<>(KeyType.AES, KeyType.AES, "AESWrap"));
-        public static final Algorithm<DummyKey, DummyKey> DIRECT = register("dir", new Algorithm<>(null,null,null) {
-            @Override
-            public byte[] encode(DummyKey key, byte[] data) {
-                return new byte[0];
-            }
-            @Override
-            public byte[] decode(DummyKey key, byte[] data) {
-                return new byte[0];
-            }
-        });
-
+    static {
+        ALGORITHMS.register("RSA-OAEP", ALG_RSA_OAEP);
+        ALGORITHMS.register("A128KW", ALG_A128KW);
+        ALGORITHMS.register("A192KW", ALG_A192KW);
+        ALGORITHMS.register("A256KW", ALG_A256KW);
+        ALGORITHMS.register("dir", ALG_DIRECT);
     }
 }

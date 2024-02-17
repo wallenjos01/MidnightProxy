@@ -26,7 +26,7 @@ public class TestJWS {
         String encoded = jws.asString().getOrThrow();
         JWT decrypted = JWSSerializer.read(encoded, KeySupplier.of(codec.getKey(), codec.getAlgorithm().getKeyType())).getOrThrow();
 
-        Assertions.assertEquals(HashCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
+        Assertions.assertEquals(HashCodec.ALGORITHMS.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
         Assertions.assertEquals("JWT", decrypted.header().getString("typ"));
         Assertions.assertEquals("test", decrypted.getIssuer());
         Assertions.assertEquals(issued.getEpochSecond(), decrypted.getIssuedAt().getEpochSecond());

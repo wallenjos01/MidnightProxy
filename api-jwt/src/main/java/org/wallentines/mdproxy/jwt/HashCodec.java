@@ -10,6 +10,7 @@ import java.security.GeneralSecurityException;
 
 public class HashCodec<T> {
 
+    public static final StringRegistry<Algorithm<?>> ALGORITHMS = new StringRegistry<>();
     private final Algorithm<T> alg;
     private final T key;
 
@@ -31,20 +32,20 @@ public class HashCodec<T> {
     }
 
     public static HashCodec<Void> none() {
-        return new HashCodec<>(Algorithm.NONE, null);
+        return new HashCodec<>(ALG_NONE, null);
     }
 
 
     public static HashCodec<byte[]> HS256(byte[] secret) {
-        return HMAC.HS256.createCodec(secret);
+        return ALG_HS256.createCodec(secret);
     }
 
     public static HashCodec<byte[]> HS384(byte[] secret) {
-        return HMAC.HS384.createCodec(secret);
+        return ALG_HS384.createCodec(secret);
     }
 
     public static HashCodec<byte[]> HS512(byte[] secret) {
-        return HMAC.HS512.createCodec(secret);
+        return ALG_HS512.createCodec(secret);
     }
 
 
@@ -72,21 +73,6 @@ public class HashCodec<T> {
         public KeyType<T> getKeyType() {
             return keyType;
         }
-
-        public static final StringRegistry<Algorithm<?>> REGISTRY = new StringRegistry<>();
-
-        private static <T, A extends Algorithm<T>> A register(String key, A alg) {
-            REGISTRY.register(key, alg);
-            return alg;
-        }
-
-        public static final Algorithm<Void> NONE = new Algorithm<>(null) {
-            @Override
-            public byte[] hash(Void key, byte[]... inputs) {
-                return new byte[0];
-            }
-        };
-
 
     }
 
@@ -118,10 +104,21 @@ public class HashCodec<T> {
 
             return mac.doFinal();
         }
-
-        public static final HMAC HS256 = Algorithm.register("HS256", new HMAC("HmacSHA256", KeyType.HMAC));
-        public static final HMAC HS384 = Algorithm.register("HS384", new HMAC("HmacSHA384", KeyType.HMAC));
-        public static final HMAC HS512 = Algorithm.register("HS512", new HMAC("HmacSHA512", KeyType.HMAC));
     }
+    public static final Algorithm<Void> ALG_NONE = new Algorithm<>(null) {
+        @Override
+        public byte[] hash(Void key, byte[]... inputs) {
+            return new byte[0];
+        }
+    };
+    public static final HMAC ALG_HS256 = new HMAC("HmacSHA256", KeyType.HMAC);
+    public static final HMAC ALG_HS384 = new HMAC("HmacSHA384", KeyType.HMAC);
+    public static final HMAC ALG_HS512 = new HMAC("HmacSHA512", KeyType.HMAC);
 
+    static {
+        ALGORITHMS.register("none", ALG_NONE);
+        ALGORITHMS.register("HS256", ALG_HS256);
+        ALGORITHMS.register("HS384", ALG_HS384);
+        ALGORITHMS.register("HS512", ALG_HS512);
+    }
 }

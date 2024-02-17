@@ -39,11 +39,9 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        int startIndex = bytes.readerIndex();
         int id = PacketBufferUtil.readVarInt(bytes);
         if(registry.getPacketType(id) == null) {
-            bytes.readerIndex(startIndex);
-            ctx.fireChannelRead(bytes);
+            bytes.clear();
             return;
         }
 

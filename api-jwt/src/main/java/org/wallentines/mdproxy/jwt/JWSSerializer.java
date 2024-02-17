@@ -31,7 +31,7 @@ public class JWSSerializer {
         try(ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             json.encode(
                     ConfigContext.INSTANCE,
-                    jwt.header().with("alg", HashCodec.Algorithm.REGISTRY.getId(signCodec.getAlgorithm())),
+                    jwt.header().with("alg", HashCodec.ALGORITHMS.getId(signCodec.getAlgorithm())),
                     bos);
             out.append(encoder.encodeToString(bos.toByteArray()));
         } catch (IOException ex) {
@@ -79,7 +79,7 @@ public class JWSSerializer {
         }
 
         String algStr = header.getString("alg");
-        HashCodec.Algorithm<?> alg = HashCodec.Algorithm.REGISTRY.get(algStr);
+        HashCodec.Algorithm<?> alg = HashCodec.ALGORITHMS.get(algStr);
         if(alg == null) {
             return SerializeResult.failure("No such hash algorithm named " + algStr + "exists!");
         }
@@ -103,7 +103,7 @@ public class JWSSerializer {
 
         @Override
         public boolean isUnprotected() {
-            return signCodec.getAlgorithm() == HashCodec.Algorithm.NONE;
+            return signCodec.getAlgorithm() == HashCodec.ALG_NONE;
         }
 
         public SerializeResult<String> asString() {

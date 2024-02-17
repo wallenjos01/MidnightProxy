@@ -61,20 +61,24 @@ public class JWTVerifier {
     public boolean verify(JWT jwt) {
 
         if(!allowExpired && (jwt.isExpired(clock) || !jwt.isValid(clock))) {
+            LOGGER.warn("Found expired JWT");
             return false;
         }
 
         if(!allowUnprotected && jwt.isUnprotected()) {
+            LOGGER.warn("Found unprotected JWT");
             return false;
         }
 
         if(requireEncrypted && !jwt.isEncrypted()) {
+            LOGGER.warn("Found unencrypted JWT");
             return false;
         }
 
         for(Map.Entry<String, ConfigObject> ent : verify.entrySet()) {
             ConfigObject obj = jwt.getClaim(ent.getKey());
             if(obj == null || !obj.equals(ent.getValue())) {
+                LOGGER.warn("Found missing claim {}: {}", ent.getKey(), ent.getValue());
                 return false;
             }
         }

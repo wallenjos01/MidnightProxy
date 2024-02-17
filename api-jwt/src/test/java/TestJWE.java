@@ -27,8 +27,8 @@ public class TestJWE {
         String encoded = jwe.asString(codec).getOrThrow();
         JWT decrypted = JWESerializer.read(encoded, KeySupplier.of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType())).getOrThrow();
 
-        Assertions.assertEquals(KeyCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
-        Assertions.assertEquals(CryptCodec.Algorithm.REGISTRY.getId(crypt.getAlgorithm()), decrypted.header().getString("enc"));
+        Assertions.assertEquals(KeyCodec.ALGORITHMS.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
+        Assertions.assertEquals(CryptCodec.ALGORITHMS.getId(crypt.getAlgorithm()), decrypted.header().getString("enc"));
         Assertions.assertEquals("JWT", decrypted.header().getString("typ"));
         Assertions.assertEquals("test", decrypted.getIssuer());
         Assertions.assertEquals(issued.getEpochSecond(), decrypted.getIssuedAt().getEpochSecond());
@@ -57,8 +57,8 @@ public class TestJWE {
         String encoded = jwe.asString(codec).getOrThrow();
         JWT decrypted = JWESerializer.read(encoded, KeySupplier.of(codec.getDecryptionKey(), codec.getAlgorithm().getDecryptionKeyType())).getOrThrow();
 
-        Assertions.assertEquals(KeyCodec.Algorithm.REGISTRY.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
-        Assertions.assertEquals(CryptCodec.Algorithm.REGISTRY.getId(crypt.getAlgorithm()), decrypted.header().getString("enc"));
+        Assertions.assertEquals(KeyCodec.ALGORITHMS.getId(codec.getAlgorithm()), decrypted.header().getString("alg"));
+        Assertions.assertEquals(CryptCodec.ALGORITHMS.getId(crypt.getAlgorithm()), decrypted.header().getString("enc"));
         Assertions.assertEquals("JWT", decrypted.header().getString("typ"));
         Assertions.assertEquals("test", decrypted.getIssuer());
         Assertions.assertEquals(issued.getEpochSecond(), decrypted.getIssuedAt().getEpochSecond());

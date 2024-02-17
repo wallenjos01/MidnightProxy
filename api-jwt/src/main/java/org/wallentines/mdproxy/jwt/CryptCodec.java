@@ -19,6 +19,9 @@ public class CryptCodec<T> {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Logger LOGGER = LoggerFactory.getLogger("CryptCodec");
+
+    public static final StringRegistry<Algorithm<?>> ALGORITHMS = new StringRegistry<>();
+
     protected final Algorithm<T> algorithm;
     protected final T key;
     protected final byte[] iv;
@@ -85,38 +88,38 @@ public class CryptCodec<T> {
 
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
-        CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
+        CompoundKey ck = ALG_A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
+        return new CryptCodec<>(ALG_A128CBC_HS256, ck);
     }
 
     public static CryptCodec<CompoundKey> A128CBC_HS256(CompoundKey key) {
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, key);
+        return new CryptCodec<>(ALG_A128CBC_HS256, key);
     }
 
     public static CryptCodec<CompoundKey> A192CBC_HS384() {
 
         byte[] bytes = new byte[48];
         RANDOM.nextBytes(bytes);
-        CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
+        CompoundKey ck = ALG_A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
+        return new CryptCodec<>(ALG_A128CBC_HS256, ck);
     }
 
     public static CryptCodec<CompoundKey> A192CBC_HS384(CompoundKey key) {
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A192CBC_HS384, key);
+        return new CryptCodec<>(ALG_A192CBC_HS384, key);
     }
 
     public static CryptCodec<CompoundKey> A256CBC_HS512() {
 
         byte[] bytes = new byte[64];
         RANDOM.nextBytes(bytes);
-        CompoundKey ck = AES_CBC_HMAC_SHA2.A128CBC_HS256.keyType.create(bytes).getOrThrow();
+        CompoundKey ck = ALG_A128CBC_HS256.keyType.create(bytes).getOrThrow();
 
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A128CBC_HS256, ck);
+        return new CryptCodec<>(ALG_A128CBC_HS256, ck);
     }
     public static CryptCodec<CompoundKey> A256CBC_HS512(CompoundKey key) {
-        return new CryptCodec<>(AES_CBC_HMAC_SHA2.A256CBC_HS512, key);
+        return new CryptCodec<>(ALG_A256CBC_HS512, key);
     }
 
     public record CryptOutput(byte[] cipherText, byte[] authTag) { }
@@ -141,12 +144,7 @@ public class CryptCodec<T> {
         public abstract CryptOutput encode(T key, byte[] bytes, byte[] iv, byte[] aac);
         public abstract byte[] decode(T key, byte[] bytes, byte[] iv);
 
-        public static final StringRegistry<Algorithm<?>> REGISTRY = new StringRegistry<>();
 
-        private static <T, A extends Algorithm<T>> A register(String key, A alg) {
-            REGISTRY.register(key, alg);
-            return alg;
-        }
 
         public CryptCodec<T> createCodec(T key) {
             return new CryptCodec<>(this, key);
@@ -168,6 +166,8 @@ public class CryptCodec<T> {
         public CryptCodec<T> createCodec(byte[] encodedKey) {
             return new CryptCodec<>(this, keyType.create(encodedKey).getOrThrow());
         }
+
+
     }
 
     private static class AES_CBC_HMAC_SHA2 extends Algorithm<CompoundKey> {
@@ -208,10 +208,6 @@ public class CryptCodec<T> {
                 throw new IllegalArgumentException("Unable to decrypt data!", ex);
             }
         }
-
-        public static final AES_CBC_HMAC_SHA2 A128CBC_HS256 = Algorithm.register("A128CBC-HS256", new AES_CBC_HMAC_SHA2(32, HashCodec.HMAC.HS256));
-        public static final AES_CBC_HMAC_SHA2 A192CBC_HS384 = Algorithm.register("A192CBC-HS384", new AES_CBC_HMAC_SHA2(48, HashCodec.HMAC.HS384));
-        public static final AES_CBC_HMAC_SHA2 A256CBC_HS512 = Algorithm.register("A256CBC-HS512", new AES_CBC_HMAC_SHA2(64, HashCodec.HMAC.HS512));
     }
 
     public record CompoundKey(byte[] rawKey, SecretKey crypt, HashCodec<?> hash) {
@@ -235,6 +231,17 @@ public class CryptCodec<T> {
                 }
             };
         }
+    }
+
+
+    public static final Algorithm<CompoundKey> ALG_A128CBC_HS256 = new AES_CBC_HMAC_SHA2(32, HashCodec.ALG_HS256);
+    public static final Algorithm<CompoundKey> ALG_A192CBC_HS384 = new AES_CBC_HMAC_SHA2(48, HashCodec.ALG_HS384);
+    public static final Algorithm<CompoundKey> ALG_A256CBC_HS512 = new AES_CBC_HMAC_SHA2(64, HashCodec.ALG_HS512);
+
+    static {
+        ALGORITHMS.register("A128CBC-HS256", ALG_A128CBC_HS256);
+        ALGORITHMS.register("A192CBC-HS384", ALG_A192CBC_HS384);
+        ALGORITHMS.register("A256CBC-HS512", ALG_A256CBC_HS512);
     }
 
 }

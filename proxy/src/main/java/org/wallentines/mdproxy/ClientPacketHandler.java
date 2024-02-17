@@ -111,7 +111,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
 
-            LOGGER.warn("Requested reconnect cookie");
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
@@ -224,7 +223,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundPluginMessagePacket message) {
-        LOGGER.warn("Received plugin message in channel {}", message.channel());
+        LOGGER.info("Received plugin message in channel {}", message.channel());
     }
 
     @Override

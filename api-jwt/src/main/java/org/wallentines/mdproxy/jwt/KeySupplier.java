@@ -37,13 +37,23 @@ public interface KeySupplier {
 
     static KeySupplier fromHeader(KeyStore store) {
 
+        return fromHeader(store, null, null);
+    }
+
+    static KeySupplier fromHeader(KeyStore store, KeyType<?> requiredType, String name) {
+
         return new KeySupplier() {
             @Override
             public <T> T getKey(ConfigSection joseHeader, KeyType<T> type) {
 
-                String kid = joseHeader.getOrDefault("kid", "default");
+                if(requiredType != null && requiredType != type) {
+                    return null;
+                }
 
-                KeyCodec.Algorithm<?,?> alg = KeyCodec.Algorithm.REGISTRY.get(joseHeader.getString("alg"));
+                String kid = name;
+                if(kid == null) kid = joseHeader.getOrDefault("kid", "default");
+
+                KeyCodec.Algorithm<?,?> alg = KeyCodec.ALGORITHMS.get(joseHeader.getString("alg"));
                 if(alg == null) return null;
 
                 if(alg.getDecryptionKeyType() != type) return null;

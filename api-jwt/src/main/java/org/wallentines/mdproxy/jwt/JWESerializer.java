@@ -38,8 +38,8 @@ public class JWESerializer {
         try(ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
 
             JSONCodec.minified().encode(ConfigContext.INSTANCE, jwt.header()
-                    .with("alg", KeyCodec.Algorithm.REGISTRY.getId(keyCodec.getAlgorithm()))
-                    .with("enc", CryptCodec.Algorithm.REGISTRY.getId(contentCodec.getAlgorithm())),
+                    .with("alg", KeyCodec.ALGORITHMS.getId(keyCodec.getAlgorithm()))
+                    .with("enc", CryptCodec.ALGORITHMS.getId(contentCodec.getAlgorithm())),
                     bos,
                     StandardCharsets.UTF_8
             );
@@ -108,14 +108,20 @@ public class JWESerializer {
         }
 
         // Find relevant algorithms
-        KeyCodec.Algorithm<?,?> keyAlg = KeyCodec.Algorithm.REGISTRY.get(header.getString("alg"));
+        KeyCodec.Algorithm<?,?> keyAlg = KeyCodec.ALGORITHMS.get(header.getString("alg"));
         if(keyAlg == null) {
             return SerializeResult.failure("Key encryption algorithm " + header.getString("alg") + " not found!");
         }
 
-        CryptCodec.Algorithm<?> cryptAlg = CryptCodec.Algorithm.REGISTRY.get(header.getString("enc"));
+        CryptCodec.Algorithm<?> cryptAlg = CryptCodec.ALGORITHMS.get(header.getString("enc"));
         if(cryptAlg == null) {
-            return SerializeResult.failure("Encryption algorithm " + header.getString("enc") + " not found!");
+
+            StringBuilder bld = new StringBuilder("Encryption algorithm " + header.getString("enc") + " not found! Valid Algorithms:");
+            for(String s : CryptCodec.ALGORITHMS.getIds()) {
+                bld.append("\n - ").append(s);
+            }
+
+            return SerializeResult.failure(bld.toString());
         }
 
         // Decode IV
@@ -124,7 +130,7 @@ public class JWESerializer {
         // Find the CEK
         KeyCodec<?,?> codec;
         CryptCodec<?> crypt;
-        if(keyAlg == KeyCodec.Algorithm.DIRECT) {
+        if(keyAlg == KeyCodec.ALG_DIRECT) {
             codec = KeyCodec.direct();
             crypt = cryptAlg.createCodec(header, supp, iv);
         } else {
