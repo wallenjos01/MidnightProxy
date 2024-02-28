@@ -223,4 +223,4 @@ modified backend server set a cookie before transferring the player.
 - By default, all connections to backend servers will look like they are coming from the proxy. This breaks IP-banning,
 and prevents servers from enabling `prevent-proxy-connections` in the `server.properties` file. 
   - This can be fixed by enabling the `haproxy` option for backend servers, and installing [Fabric-HAProxy](https://github.com/wallenjos01/fabric-haproxy)
-  on the backend servers. This only works  on Fabric backends at the moment.
+  on the backend servers. This only works on Fabric backends at the moment.
