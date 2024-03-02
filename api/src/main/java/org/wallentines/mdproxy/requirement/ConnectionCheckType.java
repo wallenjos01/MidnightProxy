@@ -2,13 +2,10 @@ package org.wallentines.mdproxy.requirement;
 
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
-import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.requirement.Check;
 import org.wallentines.midnightlib.requirement.CheckType;
-import org.wallentines.midnightlib.requirement.CompositeCheck;
-import org.wallentines.midnightlib.requirement.Requirement;
 
 public abstract class ConnectionCheckType implements CheckType<ConnectionContext> {
 
