@@ -1,29 +1,45 @@
 package org.wallentines.mdproxy.requirement;
 
+import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
+import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.requirement.Check;
 import org.wallentines.midnightlib.requirement.NumberCheck;
+import org.wallentines.midnightlib.requirement.StringCheck;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.function.Function;
 
-public class ConnectionInt extends ConnectionCheck {
+public class ConnectionInt extends NumberCheck<ConnectionContext, Integer> implements ConnectionCheck{
 
-    private final Range<Integer> valid;
-    private final Function<ConnectionContext, Integer> getter;
+    private final boolean requireAuth;
 
     public ConnectionInt(Function<ConnectionContext, Integer> getter, Range<Integer> valid, boolean requireAuth) {
-        super(requireAuth, null);
-        this.valid = valid;
-        this.getter = getter;
+        super(Range.INTEGER, getter, valid);
+        this.requireAuth = requireAuth;
     }
 
     @Override
-    public boolean test(ConnectionContext conn) {
-        return valid.isWithin(getter.apply(conn));
+    public boolean requiresAuth() {
+        return requireAuth;
     }
 
-    public static Serializer<ConnectionInt> serializer(Function<ConnectionContext, Integer> getter, boolean requireAuth) {
-        return NumberCheck.serializer(Range.INTEGER, prt -> prt.valid, valid -> new ConnectionInt(getter, valid, requireAuth));
+    @Override
+    public @NotNull Collection<Identifier> getRequiredCookies() {
+        return Collections.emptyList();
+    }
+
+    public static ConnectionCheckType type(Function<ConnectionContext, Integer> getter, boolean requireAuth) {
+        return new ConnectionCheckType() {
+            @Override
+            protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
+                return Range.INTEGER.fieldOf("value").deserialize(ctx, value).flatMap(str -> new ConnectionInt(getter, str, requireAuth));
+            }
+        };
     }
 }

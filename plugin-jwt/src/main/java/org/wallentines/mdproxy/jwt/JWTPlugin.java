@@ -9,8 +9,7 @@ import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
-import org.wallentines.mdproxy.requirement.ConnectionCheck;
-import org.wallentines.mdproxy.requirement.ConnectionRequirement;
+import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 
 import java.io.File;
 
@@ -33,7 +32,7 @@ public class JWTPlugin implements Plugin {
         keyStore = new FileKeyStore(new File(configFolder, config.getRoot().asSection().getString("key_store_path")), FileKeyStore.DEFAULT_TYPES);
 
         proxy.getCommands().register("jwt", new JWTCommand());
-        ConnectionRequirement.REGISTRY.register("jwt", ConnectionCheck.forClass(JWTCheck.class, JWTCheck.SERIALIZER));
+        ConnectionCheckType.REGISTRY.register("jwt", JWTCheck.TYPE);
 
         LOGGER.info("JWT Plugin enabled!");
     }

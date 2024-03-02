@@ -1,6 +1,9 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wallentines.mdproxy.jwt.*;
+import org.wallentines.mdproxy.jwt.HashCodec;
+import org.wallentines.mdproxy.jwt.JWSSerializer;
+import org.wallentines.mdproxy.jwt.JWT;
+import org.wallentines.mdproxy.jwt.JWTBuilder;
 
 public class TestExpiration {
 

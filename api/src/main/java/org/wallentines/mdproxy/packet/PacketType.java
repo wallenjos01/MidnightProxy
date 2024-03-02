@@ -4,9 +4,6 @@ import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdcfg.Functions;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 public interface PacketType<T> {
 
     int getId(GameVersion version, ProtocolPhase phase);

@@ -112,9 +112,9 @@ public class ProxyServer implements Proxy {
 
         this.onlineMode = getConfig().getBoolean("online_mode");
         this.requireAuth = getConfig().getBoolean("force_authentication");
-        this.backendTimeout = getConfig().getInt("backend_timeout");
+        this.backendTimeout = getConfig().getInt("backend_timeout_ms");
         this.playerLimit = getConfig().getInt("player_limit");
-        this.reconnectTimeout = getConfig().getInt("reconnect_timeout");
+        this.reconnectTimeout = getConfig().getInt("reconnect_timeout_sec");
         this.haproxy = getConfig().getBoolean("haproxy_protocol");
 
         StringRegistry<Backend> backends = new StringRegistry<>();

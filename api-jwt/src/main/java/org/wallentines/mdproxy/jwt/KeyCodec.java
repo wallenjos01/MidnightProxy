@@ -11,7 +11,7 @@ import java.security.*;
 
 public class KeyCodec<E extends Key, D extends Key> {
 
-    public static final StringRegistry<Algorithm<?,?>> ALGORITHMS = new StringRegistry<>();;
+    public static final StringRegistry<Algorithm<?,?>> ALGORITHMS = new StringRegistry<>();
     private static final Logger LOGGER = LoggerFactory.getLogger("KeyCodec");
 
     private final E encKey;

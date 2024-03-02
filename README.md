@@ -14,16 +14,14 @@ configuring.
 - `player_limit`: The maximum number of players allowed to connect to the proxy. Set to -1 to disable.
 
 ### Advanced options
-- `reconnect_timeout`: How many milliseconds a player has to reconnect after being transferred
-- `reconnect_threads`: How many threads should be used to await reconnections
+- `reconnect_timeout_sec`: How many seconds a player has to reconnect after being transferred
+- `backend_timeout_ms`: How many milliseconds the proxy should wait while attempting to connect to a backend server before assuming it is offline.
 - `auth_threads`: How many threads should be available for authentication requests
-- `backend_timeout`: The maximum number of milliseconds for a backend server to connect
-- `client_timeout`: The maximum number of milliseconds for a client to connect to the server
+- `force_authentication`: Whether the proxy should always attempt to authenticate connecting players, even if routing could be done without it
 
 ### Backends
-The `backends` section of the configuration file is used to define the backend servers and their connection precedence.
-The proxy can route players to different backends depending on a variety of factors. Each backend at minimum needs a
-name and address. A minimal backend configuration would look something like the following:
+The `backends` section of the configuration file is used to define the backend servers.
+Each backend at minimum needs a name and address. A minimal backend configuration would look something like the following:
 ```json
 "backends": { 
     "main": {
@@ -34,11 +32,28 @@ name and address. A minimal backend configuration would look something like the 
 Valid options for backends include:
 - `port`: The port the backend server is listening on.
 - `priority`: Backend servers with higher priority will be checked first.
-- `redirect`: If this is set, the player will be sent a transfer packet with the backend's hostname and port, rather
+- `redirect`: If this is set to `true`, the player will be sent a transfer packet with the backend's hostname and port, rather
 than having the proxy handle the connection
-- `requirement`: A requirement the connecting player will have to fulfill in order to connect to this backend. This is 
-the primary method of routing connections. If the requirement fails, the server with the next-highest priority will be 
-attempted. There are a number of requirement types, see below.
+- `haproxy`: If this is set to `true`, a HAProxy PROXY protocol message will be sent to backend servers when players connect to them.
+This can allow for IP forwarding to backend servers, but only if the backend server is modified to support it.
+
+### Routes
+The `routes` section of the configuration file is used to define how the proxy should route connections.
+Route precedence is determined by their index into the `routes` array. A minimal routes configuration would look something like the following:
+```json
+"routes": [
+    {
+        "backend": "main"    
+    }
+]
+```
+The proxy can route players to different backends depending on a variety of factors, all defined via requirements.
+To define a requirement, use the `requirement` key in a route configuration. If a player fulfills the requirement for the \
+route with the highest precedence, they will be routed to that backend.
+
+*Note: If the highest priority route has no requirement, or a connecting player can fulfill its requirement
+without signing in, the proxy will **not** attempt to authenticate them. It is expected that backend servers are in
+online mode. Set `force_authentication` to `true` if you want players to always be authenticated.*
 
 ### Status
 The `status` section of the configuration file defines how the server should respond to status requests. Status requests
@@ -76,9 +91,9 @@ way as backends.
   - Note: Because server status requests only have access to the player's protocol version, IP address, and the hostname 
   and port used to connect to the server, not all requirement types can be used.
 
-### Requirements
-Backend servers and status entries use requirements to route connections. Each connection needs a type and a value. 
-There are a number of requirement types, and the value is dependent on the type. A minimal requirement which checks the
+## Requirements
+Routes and status entries use requirements to route connections. Each connection needs a type and a value. 
+There are a number of requirement types, and the configuration keys are dependent on the type. A minimal requirement which checks the
 hostname used to connect would look something like the following:
 ```json
 "requirement": {
@@ -86,24 +101,78 @@ hostname used to connect would look something like the following:
     "value": "hub.example.com"
 }
 ```
-Valid requirement types and their value syntax are as follows:
-- `hostname`: Checks the hostname a player used to connect to the server. The value should be a string or list of strings
-  defining valid hostnames
-- `port`: Checks the port a player used to connect to the server. The value should be an integer or list of integers
-  defining valid ports
-- `username`: Checks the player's username. The value should be a string or list of strings defining valid usernames.
-Not available in status requests.
-- `uuid`: Checks the player's uuid. The value should be a string or list of strings defining valid uuids. Not available 
-in status requests.
-- `cookie`: Checks for a specified cookie saved on the client. The value should be an object containing a value `cookie`,
-defining which cookie should be queried, and a value `values`, a list of strings defining valid cookie values. Not 
-available in status requests.
-- `locale`: Checks the player's locale information (i.e. en_us). The value should be a string or list of strings defining
-valid locales. Not available in status requests.
 
-*Note: If the highest priority backend server has no requirement, or a connecting player can fulfill its requirement 
-without signing in, the proxy will **not** attempt to authenticate them. It is expected that backend servers are in
-online mode. An option to always force authentication will be added in the future.*
+### Inversion
+Requirements with `invert` set to true will have their check inverted. i.e. A check that will normally only pass when a condition
+is met will instead pass in all cases *unless* that condition is met.
+
+### Requirement Types
+Valid requirement types and their configuration syntax are as follows:
+- `hostname`: Checks the hostname a player used to connect to the server. It should have a `value` key, which is a string or list of strings
+  defining valid hostnames
+- `port`: Checks the port a player used to connect to the server. It should have a `value` key, which is an integer or list of integers
+  defining valid ports
+- `ip_address`: Checks the player's IP address. It should have a `value` key, which is a string or list of strings representing valid IP addresses.
+- `username`: Checks the player's username. It should have a `value` key, which is a string or list of strings defining valid usernames.
+Not available in status requests.
+- `uuid`: Checks the player's uuid. It should have a `value` key, which is a string or list of strings defining valid uuids. Not available 
+in status requests.
+- `cookie`: Checks for a specified cookie saved on the client. It should have a `cookie` key,
+defining which cookie should be queried, and a `value` key, which contains a list of strings defining valid cookie 
+values. Not available in status requests.
+- `locale`: Checks the player's locale information (i.e. en_us). It should have a `value` key, which is a string or list of strings defining
+valid locales. Not available in status requests.
+- `composite`: Combines multiple requirements into one. It should have the following keys:
+  - `count`: The number of requirements which need to be completed, or a range in one of the following formats:
+    - `"all"`: The player must fulfill all requirements (default)
+    - `N`: The player must fulfill exactly N requirements
+    - `">N"`: The player must fulfill more than N requirements
+    - `"<N"`: The player must fulfill less than N requirements
+    - `">=N"`: The player must fulfill at least N requirements
+    - `"<=N"`: The player must fulfill at most N requirements
+    - `"[N,M]"`: The player must fulfill between N and M requirements (inclusive)
+    - `"(N,M)"`: The player must fulfill between N and M requirements (exclusive)
+    - `"{N,M,O}"`: The player must fulfill exactly N, M, or O requirements
+  - `values`: A list of requirements which must be fulfilled
+
+### Outputs
+Some requirements (Such as [`mdp:jwt`](plugin-jwt/README.md)) may output values when successfully checked. These values can be accessed in a route's
+`backend` field, by typing the name of the output between `%` characters.
+
+### Examples
+Requirement which routes players based on hostname:
+```json
+"routes": [
+    {
+        "backend": "hub",
+        "requirement": {
+            "type": "hostname",
+            "value": ["hub.server.net"]
+        }
+    },
+    {
+        "backend": "survival",
+        "requirement": {
+            "type": "hostname",
+            "value": ["survival.server.net"]
+        }
+    }
+]
+```
+A requirement which denies players based on their username:
+```json
+"routes": [
+    {
+        "backend": "main",
+        "requirement": {
+            "type": "username",
+            "invert": true,
+            "value": ["Player1", "Player2"]
+        }
+    }
+]
+```
+
 
 ## Lang
 Language files are stored in the `lang` directory. Configurable messages include those that are sent to clients when 
@@ -149,10 +218,9 @@ version 24w04a, with the /transfer command, but is limited without additional mo
 - The backend queue will be run through on each server-switch, as if the player connected for the first time, so each 
 server will need some way to differentiate itself. Some ways to do this would be through hostnames, or by having a 
 modified backend server set a cookie before transferring the player.
-  - I plan to release a Fabric mod / Spigot plugin which facilitates server-switching through JWT cookies, and adds a
-/server command to individual servers, in order to work around this issue.
-- As of now, all connections to backend servers will look like they are coming from the proxy. This breaks IP-banning,
-and prevents servers from enabling `prevent-proxy-connections` in the `server.properties` file.
-  - In the future, I plan to add an `ip_address` requirement type to allow proxy-wide IP bans.
-  - I also plan on adding an option to send HAProxy's PROXY v2 packets to backend servers to facilitate IP forwarding, 
-  along with a companion Fabric mod (and *maybe* Spigot plugin) which allows servers to properly read those packets.
+  - This can be fixed by installing and configuring the [JWT plugin](plugin-jwt/README.md) on the proxy, and [ServerSwitcher](https://github.com/wallenjos01/serverswitcher)
+  on each backend server. This only works on Fabric backends at the moment.
+- By default, all connections to backend servers will look like they are coming from the proxy. This breaks IP-banning,
+and prevents servers from enabling `prevent-proxy-connections` in the `server.properties` file. 
+  - This can be fixed by enabling the `haproxy` option for backend servers, and installing [Fabric-HAProxy](https://github.com/wallenjos01/fabric-haproxy)
+  on the backend servers. This only works  on Fabric backends at the moment.

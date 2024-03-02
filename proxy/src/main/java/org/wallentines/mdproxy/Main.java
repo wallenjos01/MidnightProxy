@@ -33,12 +33,10 @@ public class Main {
             .with("backends", new ConfigList())
             .with("status", new ConfigList())
             .with("online_mode", true)
-            .with("force_authentication", true)
-            .with("reconnect_threads", 4)
+            .with("force_authentication", false)
             .with("auth_threads", 4)
-            .with("reconnect_timeout", 3000)
-            .with("backend_timeout", 5000)
-            .with("client_timeout", 15000)
+            .with("reconnect_timeout_sec", 3)
+            .with("backend_timeout_ms", 5000)
             .with("player_limit", 100);
 
 

@@ -1,29 +1,47 @@
 package org.wallentines.mdproxy.requirement;
 
+import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
+import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.requirement.StringCheck;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.Function;
 
-public class ConnectionString extends ConnectionCheck {
+public class ConnectionString extends StringCheck<ConnectionContext> implements ConnectionCheck {
 
-    private final Function<ConnectionContext, String> getter;
-    private final Set<String> values;
-    public ConnectionString(Function<ConnectionContext, String> getter, Collection<String> coll, boolean requireAuth, boolean requireLocale) {
-        super(requireAuth, null);
-        this.getter = getter;
-        this.values = Set.copyOf(coll);
+    private final boolean requireAuth;
+
+    public ConnectionString(Function<ConnectionContext, String> getter, Collection<String> coll, boolean requireAuth) {
+        super(getter, coll);
+        this.requireAuth = requireAuth;
     }
 
     @Override
-    public boolean test(ConnectionContext conn) {
-        return values.contains(getter.apply(conn));
+    public boolean requiresAuth() {
+        return requireAuth;
     }
 
-    public static Serializer<ConnectionString> serializer(Function<ConnectionContext, String> getter, boolean requireAuth, boolean requireLocale) {
-        return StringCheck.serializer(as -> as.values, values -> new ConnectionString(getter, values, requireAuth, requireLocale));
+    @Override
+    public @NotNull Collection<Identifier> getRequiredCookies() {
+        return Collections.emptyList();
     }
+
+
+    public static ConnectionCheckType type(Function<ConnectionContext, String> getter, boolean requireAuth) {
+        return new ConnectionCheckType() {
+            @Override
+            protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
+                return StringCheck.STRING_SERIALIZER.fieldOf("value").deserialize(ctx, value).flatMap(str -> new ConnectionString(getter, str, requireAuth));
+            }
+        };
+    }
+
+
+
 }

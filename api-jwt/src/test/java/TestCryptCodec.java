@@ -3,7 +3,6 @@ import org.junit.jupiter.api.Test;
 import org.wallentines.mdproxy.jwt.CryptCodec;
 
 import java.util.Base64;
-import java.util.Random;
 
 public class TestCryptCodec {
 

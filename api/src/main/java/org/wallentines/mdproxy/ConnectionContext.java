@@ -41,12 +41,22 @@ public class ConnectionContext {
         return connection.address();
     }
 
+    public String addressString() { return connection.address().toString(); }
+
     public String username() {
         return connection.username();
     }
 
     public UUID uuid() {
         return connection.uuid();
+    }
+
+    public String uuidString() {
+        return connection.uuid().toString();
+    }
+
+    public String locale() {
+        return connection.locale();
     }
 
     public Proxy getProxy() {

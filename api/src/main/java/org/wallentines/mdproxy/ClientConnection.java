@@ -12,7 +12,6 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 import java.net.InetAddress;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ClientConnection {
