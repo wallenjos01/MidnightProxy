@@ -11,8 +11,10 @@ import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
+import org.wallentines.mdproxy.jwt.UsedTokenCache;
 import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.plugin.PluginLoader;
+import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
@@ -28,22 +30,27 @@ public class ProxyServer implements Proxy {
     private static final Logger LOGGER = LoggerFactory.getLogger("ProxyServer");
 
     private final KeyPair keyPair;
+    private final KeyPair reconnectKeyPair;
     private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
-    private final ReconnectCache reconnectCache;
     private final StringRegistry<CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
+    private final List<Route> routes = new ArrayList<>();
     private final HashMap<UUID, ClientConnectionImpl> connected = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager langManager;
     private final PluginLoader pluginLoader;
+    private final UsedTokenCache reconnectTokenCache;
 
     private final int port;
     private final int clientTimeout;
+    private int reconnectTimeout;
     private int backendTimeout;
     private int playerLimit;
+    private boolean onlineMode;
     private boolean requireAuth;
+    private boolean haproxy;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
@@ -51,14 +58,14 @@ public class ProxyServer implements Proxy {
         this.config = config;
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
-        reload();
+        this.reconnectTokenCache = new UsedTokenCache("rcid");
 
         this.port = getConfig().getInt("port");
         this.clientTimeout = getConfig().getInt("client_timeout");
 
         this.keyPair = CryptUtil.generateKeyPair();
+        this.reconnectKeyPair = CryptUtil.generateKeyPair();
         this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
-        this.reconnectCache = new ReconnectCache(getConfig().getInt("reconnect_threads"), getConfig().getInt("reconnect_timeout"));
         this.commands = new StringRegistry<>();
 
         this.commands.register("stop", new StopCommand());
@@ -66,11 +73,14 @@ public class ProxyServer implements Proxy {
 
         this.listener = new ConnectionManager(this);
         this.console = new ConsoleHandler(this);
+
+        this.pluginLoader.loadAll(this);
+
+        reload();
+
     }
 
     public void start() {
-
-        this.pluginLoader.loadAll(this);
 
         this.listener.startup();
         console.start();
@@ -87,7 +97,6 @@ public class ProxyServer implements Proxy {
         listener.shutdown();
 
         authenticator.close();
-        reconnectCache.close();
 
     }
 
@@ -101,9 +110,12 @@ public class ProxyServer implements Proxy {
         config.load();
         langManager.reload();
 
-        this.requireAuth = getConfig().getBoolean("online_mode");
-        this.backendTimeout = getConfig().getInt("backend_timeout");
+        this.onlineMode = getConfig().getBoolean("online_mode");
+        this.requireAuth = getConfig().getBoolean("force_authentication");
+        this.backendTimeout = getConfig().getInt("backend_timeout_ms");
         this.playerLimit = getConfig().getInt("player_limit");
+        this.reconnectTimeout = getConfig().getInt("reconnect_timeout_sec");
+        this.haproxy = getConfig().getBoolean("haproxy_protocol");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -117,6 +129,9 @@ public class ProxyServer implements Proxy {
 
         this.statusEntries.clear();
         this.statusEntries.addAll(getConfig().getListFiltered("status", StatusEntry.SERIALIZER, LOGGER::warn));
+
+        this.routes.clear();
+        this.routes.addAll(getConfig().getListFiltered("routes", Route.SERIALIZER, LOGGER::warn));
     }
 
     @Override
@@ -135,10 +150,19 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
+    public List<Route> getRoutes() {
+        return routes;
+    }
+
+    @Override
     public IconCache getIconCache() {
         return null;
     }
 
+    @Override
+    public boolean isOnlineMode() {
+        return onlineMode;
+    }
 
     @Override
     public boolean requiresAuth() {
@@ -165,6 +189,11 @@ public class ProxyServer implements Proxy {
         return false;
     }
 
+    @Override
+    public PluginManager getPluginManager() {
+        return pluginLoader;
+    }
+
     public void addPlayer(ClientConnectionImpl conn) {
 
         if(!conn.playerInfoAvailable()) {
@@ -184,16 +213,24 @@ public class ProxyServer implements Proxy {
         }
     }
 
-    public ReconnectCache getReconnectCache() {
-        return reconnectCache;
+    public int getReconnectTimeout() {
+        return reconnectTimeout;
     }
 
     public KeyPair getKeyPair() {
         return keyPair;
     }
 
+    public KeyPair getReconnectKeyPair() {
+        return reconnectKeyPair;
+    }
+
     public Authenticator getAuthenticator() {
         return authenticator;
+    }
+
+    public UsedTokenCache getTokenCache() {
+        return reconnectTokenCache;
     }
 
     public int getClientTimeout() {
@@ -206,5 +243,9 @@ public class ProxyServer implements Proxy {
 
     public LangManager getLangManager() {
         return langManager;
+    }
+
+    public boolean useHAProxyProtocol() {
+        return haproxy;
     }
 }

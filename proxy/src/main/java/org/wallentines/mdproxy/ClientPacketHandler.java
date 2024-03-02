@@ -7,11 +7,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdproxy.jwt.*;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.common.ClientboundCookieRequestPacket;
+import org.wallentines.mdproxy.packet.common.ServerboundCookiePacket;
 import org.wallentines.mdproxy.packet.config.ClientboundSetCookiePacket;
 import org.wallentines.mdproxy.packet.config.ClientboundTransferPacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
@@ -20,25 +25,19 @@ import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
-import org.wallentines.mdproxy.util.StringUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.UUID;
+import java.security.*;
+import java.util.*;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
-    private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rid");
+    private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
 
     private final ProxyServer server;
     private final Channel channel;
@@ -50,9 +49,9 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
 
-    private final Random rand = new Random();
-    private final PriorityQueue<Backend> backendQueue;
-    private final HashSet<Identifier> requiredCookies = new HashSet<>();
+    private final Random random = new SecureRandom();
+    private final Queue<Route> routes;
+    private final HashSet<Identifier> requestedCookies = new HashSet<>();
 
 
     public ClientPacketHandler(Channel channel, ProxyServer server) {
@@ -62,11 +61,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.encrypted = false;
         this.phase = ProtocolPhase.HANDSHAKE;
 
-        this.backendQueue = new PriorityQueue<>();
-        for(Backend backend : server.getBackends()) {
-            this.backendQueue.add(backend);
-        }
-
+        this.routes = new ArrayDeque<>(server.getRoutes());
     }
 
     @Override
@@ -88,7 +83,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         PriorityQueue<StatusEntry> ent = new PriorityQueue<>(server.getStatusEntries());
         for(StatusEntry e : ent) {
-            if(e.canUse(conn)) {
+            if(e.canUse(new ConnectionContext(conn, server))) {
 
                 statusResponder = new StatusResponder(conn, server, e);
                 statusResponder.status(new GameVersion("MidnightProxy", conn.protocolVersion()));
@@ -111,8 +106,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundLoginPacket login) {
 
-
-        if (backendQueue.isEmpty()) {
+        if (server.getRoutes().isEmpty()) {
             disconnect(server.getLangManager().component("error.no_backends", conn));
             return;
         }
@@ -150,7 +144,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Encryption unsuccessful!");
         }
 
-        if (server.requiresAuth()) {
+        if (server.isOnlineMode()) {
 
             LOGGER.info("Starting authentication for {}", conn.username());
 
@@ -166,7 +160,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginFinishedPacket finished) {
 
         changePhase(ProtocolPhase.CONFIG);
-        conn.setTransferable(true);
     }
 
     @Override
@@ -174,65 +167,76 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(cookie.key().equals(RECONNECT_COOKIE)) {
 
-            String id = cookie.data().map(bytes -> new String(cookie.data().orElseThrow(), StandardCharsets.US_ASCII)).orElse(null);
-            ClientConnectionImpl newConn = id == null ? null : server.getReconnectCache().get(id);
-
-            if(newConn == null) {
+            if(cookie.data().length == 0) {
                 startLogin();
                 return;
             }
 
-            if(!newConn.username().equals(conn.username()) || !newConn.uuid().equals(conn.uuid())) {
+            String jwt = new String(cookie.data(), StandardCharsets.US_ASCII);
+            SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
+            if(!jwtRes.isComplete()) {
+
+                LOGGER.warn("Unable to parse reconnect cookie! {}", jwtRes.getError());
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
             }
 
-            server.getReconnectCache().clear(id);
-            conn = newConn;
-
-            LOGGER.info("User {} reconnected with UUID {}", getUsername(), conn.uuid());
-
-            if(!tryConnectBackend()) {
-                disconnect(server.getLangManager().component("error.no_valid_backends", conn));
+            JWT decoded = jwtRes.getOrThrow();
+            if(decoded.isExpired()) {
+                startLogin();
+                return;
             }
 
+            // Verify claims
+            JWTVerifier verifier = new JWTVerifier()
+                    .requireEncrypted()
+                    .enforceSingleUse(server.getTokenCache())
+                    .withClaim("hostname", conn.hostname())
+                    .withClaim("port", conn.port())
+                    .withClaim("username", conn.username())
+                    .withClaim("uuid", conn.uuid().toString())
+                    .withClaim("protocol", conn.protocolVersion());
+
+            if(!verifier.verify(decoded)) {
+                LOGGER.warn("Unable to verify reconnect cookie!");
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                return;
+            }
+
+            Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
+            if(b == null) {
+                LOGGER.warn("Unable to find requested reconnect backend {}!", decoded.getClaimAsString("backend"));
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                return;
+            }
+
+            connectToBackend(b);
             return;
         }
 
-
-        if(requiredCookies.remove(cookie.key())) {
-            cookie.data().ifPresent(data -> conn.setCookie(cookie.key(), data));
+        if(requestedCookies.remove(cookie.key())) {
+            conn.setCookie(cookie.key(), cookie.data());
         } else {
             LOGGER.warn("Received unsolicited cookie with ID {} from user {}!", cookie.key(), getUsername());
         }
 
-        if(requiredCookies.isEmpty()) {
-
-            conn.setCookiesAvailable();
-            conn.send(new ClientboundLoginFinishedPacket(profile));
+        if(requestedCookies.isEmpty()) {
+            tryNextServer();
         }
 
     }
 
     @Override
     public void handle(ServerboundPluginMessagePacket message) {
-
+        LOGGER.info("Received plugin message in channel {}", message.channel());
     }
 
     @Override
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
+        tryNextServer();
 
-        Backend b = findBackend();
-
-        if(b == null) {
-            LOGGER.warn("Unable to find any backend server for {} after login!", getUsername());
-            disconnect(server.getLangManager().component("error.no_valid_backends", conn));
-            return;
-        }
-
-        reconnect(b);
     }
 
     public void close() {
@@ -240,6 +244,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     private void connectToBackend(Backend b) {
+
+        if(conn.hasDisconnected()) return;
+        if(conn.authenticated()) {
+            reconnect(b);
+            return;
+        }
 
         prepareForwarding();
 
@@ -249,8 +259,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         });
         server.addPlayer(conn);
 
-
-        BackendConnectionImpl bconn = new BackendConnectionImpl(b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout(), false);
+        BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
         bconn.connect(channel.eventLoop()).addListener(future -> {
             if(future.isSuccess()) {
 
@@ -273,23 +282,36 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void startLogin() {
 
         boolean canConnectImmediately = true;
-        if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
+
+        if(server.requiresAuth()) {
+            canConnectImmediately = false;
+        } else if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
             switch (conn.bypassesPlayerLimit(server)) {
                 case FAIL -> {
                     disconnect(server.getLangManager().component("error.server_full"));
                     return;
                 }
-                case PASS -> {
-                    // Ignore
-                }
-                case NOT_ENOUGH_INFO -> {
-                    canConnectImmediately = false;
-                }
+                case NOT_ENOUGH_INFO -> canConnectImmediately = false;
             }
         }
 
-        if(canConnectImmediately && tryConnectBackend()) {
+        if(canConnectImmediately) {
+            tryNextServer();
             return;
+        }
+
+        if(conn.hasDisconnected()) {
+            return;
+        }
+
+        startAuthentication();
+    }
+
+
+    private void startAuthentication() {
+
+        if(conn.authenticated()) {
+            throw new IllegalStateException("Attempt to re-authenticate player");
         }
 
         if(!new GameVersion("", conn.protocolVersion()).hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
@@ -297,19 +319,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        challenge = Ints.toByteArray(rand.nextInt());
-        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.requiresAuth()));
-    }
-
-    private boolean tryConnectBackend() {
-
-        Backend b = findBackend();
-        if(b == null) {
-            return false;
-        }
-
-        connectToBackend(b);
-        return true;
+        challenge = Ints.toByteArray(random.nextInt());
+        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.isOnlineMode()));
     }
 
     private void finishAuthentication(GameProfile profile) {
@@ -326,42 +337,58 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        backendQueue.removeIf(b -> b.canUse(conn) == TestResult.FAIL);
-
-        for (Backend b : backendQueue) {
-            requiredCookies.addAll(b.getRequiredCookies());
-        }
-
-        if (requiredCookies.isEmpty()) {
-            conn.send(new ClientboundLoginFinishedPacket(profile));
-
-        } else {
-            for(Identifier i : requiredCookies) {
-                conn.send(new ClientboundCookieRequestPacket(i));
-            }
-        }
-
+        conn.send(new ClientboundLoginFinishedPacket(profile));
     }
 
     private void disconnect(Component component) {
         conn.disconnect(phase, component);
     }
 
-    private Backend findBackend() {
+    private void tryNextServer() {
 
-        backendQueue.removeIf(b -> b.canUse(conn) == TestResult.FAIL);
-        if(backendQueue.isEmpty()) return null;
+        Backend toUse = null;
+        while(!routes.isEmpty()) {
 
-        for(Backend b : backendQueue) {
-            TestResult res = b.canUse(conn);
-            if(res == TestResult.NOT_ENOUGH_INFO) {
-                return null;
-            } else if (res == TestResult.PASS) {
-                return b;
+            Route current = routes.peek();
+            if (conn.authenticated() || current.requirement() != null && !current.requirement().requiresAuth()) {
+                for (Identifier id : current.getRequiredCookies()) {
+                    if (conn.getCookie(id) == null) {
+                        requestedCookies.add(id);
+                        conn.send(new ClientboundCookieRequestPacket(id));
+                    }
+                }
+                if(!requestedCookies.isEmpty()) {
+                    return;
+                }
             }
+
+            ConnectionContext ctx = new ConnectionContext(conn, server);
+            TestResult res = current.canUse(ctx);
+
+            if (conn.hasDisconnected()) {
+                return;
+            }
+
+            if(res == TestResult.NOT_ENOUGH_INFO) {
+                startAuthentication();
+                return;
+            }
+
+            if(res == TestResult.PASS) {
+                toUse = current.resolveBackend(ctx, server.getBackends());
+                break;
+            }
+
+            routes.remove();
         }
 
-        return null;
+        if(toUse == null) {
+            LOGGER.warn("Unable to find any backend server for {}!", getUsername());
+            disconnect(server.getLangManager().component("error.no_valid_backends", conn));
+            return;
+        }
+
+        connectToBackend(toUse);
     }
 
     private void setupEncryption(byte[] key) throws GeneralSecurityException {
@@ -405,6 +432,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void setupForwarding(Channel forward) {
 
+        LOGGER.info("User {} connected to backend {}", conn.username(), server.getBackends().getId(conn.getBackendConnection().getBackend()));
         channel.pipeline().addLast("forward", new PacketForwarder(forward));
         channel.config().setAutoRead(true);
     }
@@ -436,14 +464,22 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         String host = b.redirect() ? b.hostname() : conn.hostname();
         int port = b.redirect() ? b.port() : conn.port();
 
-        String id = StringUtil.randomId(16);
+        KeyCodec<PublicKey, PrivateKey> rsa = KeyCodec.RSA_OAEP(server.getReconnectKeyPair());
+        String str = new JWTBuilder()
+                .withClaim("hostname", host)
+                .withClaim("port", port)
+                .withClaim("protocol", conn.protocolVersion())
+                .withClaim("username", conn.username())
+                .withClaim("uuid", conn.uuid().toString())
+                .withClaim("backend", server.getBackends().getId(b))
+                .withClaim(server.getTokenCache().getIdClaim(), UUID.randomUUID(), Serializer.UUID)
+                .expiresIn(server.getReconnectTimeout())
+                .issuedBy("midnightproxy")
+                .encrypted(rsa, CryptCodec.A128CBC_HS256())
+                .asString().getOrThrow();
 
-        conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, id.getBytes()));
+        conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));
-
-        channel.config().setAutoRead(false);
-
-        server.getReconnectCache().set(id, conn);
     }
 
 

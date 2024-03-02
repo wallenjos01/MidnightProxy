@@ -12,8 +12,7 @@ import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
-import org.wallentines.mdproxy.packet.config.ClientboundConfigKickPacket;
-import org.wallentines.mdproxy.packet.login.ClientboundKickPacket;
+import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -33,8 +32,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final int port;
     private PlayerInfo playerInfo;
     private boolean auth;
-    private boolean cookiesAvailable;
-    private boolean transferable;
     private String locale;
     private BackendConnectionImpl backend;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
@@ -56,21 +53,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public boolean authenticated() {
         return auth;
-    }
-
-    @Override
-    public boolean cookiesAvailable() {
-        return cookiesAvailable;
-    }
-
-    @Override
-    public boolean canTransfer() {
-        return transferable;
-    }
-
-    @Override
-    public boolean localeAvailable() {
-        return locale != null;
     }
 
     @Override
@@ -142,8 +124,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isForwarding() {
         return backend != null;
+    }
+
+    @Override
+    public boolean hasDisconnected() {
+        return !channel.isOpen();
     }
 
     @Override
@@ -157,14 +144,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void setAuthenticated(boolean auth) {
         this.auth = auth;
-    }
-
-    public void setTransferable(boolean transferable) {
-        this.transferable = transferable;
-    }
-
-    public void setCookiesAvailable() {
-        this.cookiesAvailable = true;
     }
 
     public void setLocale(String locale) {
@@ -185,6 +164,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     public void send(Packet<ClientboundPacketHandler> packet, ChannelFutureListener listener) {
+
+        if(hasDisconnected()) {
+            LOGGER.warn("Attempt to send packet to player {} after they disconnected!", username());
+            return;
+        }
 
         if(backend != null) {
             LOGGER.warn("Attempt to send packet to player {} after they connected to a backend!", username());
@@ -214,19 +198,25 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void disconnect(ProtocolPhase phase, Component component) {
 
+        if(hasDisconnected()) {
+            return;
+        }
+
         Component cmp = ComponentResolver.resolveComponent(component, this);
 
         LOGGER.info("Disconnecting player {}: {}", username(), cmp.allText());
 
         if(backend == null) {
-            Packet<ClientboundPacketHandler> p = phase == ProtocolPhase.CONFIG ? new ClientboundConfigKickPacket(cmp) : new ClientboundKickPacket(cmp);
-            channel.writeAndFlush(p).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            channel.close();
+            send(new ClientboundKickPacket(cmp));
         }
+        channel.close().awaitUninterruptibly();
     }
 
     public void disconnect() {
+        if(hasDisconnected()) {
+            return;
+        }
+
         LOGGER.info("Disconnecting player {}", username());
         channel.close();
     }

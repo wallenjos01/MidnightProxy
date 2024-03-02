@@ -1,5 +1,5 @@
 {
-  "name": "TestPlugin",
-  "version": "1.0.0",
-  "main": "org.wallentines.mdproxy.test.TestPlugin"
+  "name": "JWT",
+  "version": "${version}",
+  "main": "org.wallentines.mdproxy.jwt.JWTPlugin"
 }

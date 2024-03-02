@@ -7,13 +7,14 @@ import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdproxy.requirement.ConnectionRequirement;
 
 import java.util.Collection;
 import java.util.List;
 
 public record StatusEntry(int priority, Integer playersOverride, Integer maxPlayersOverride,
                           Collection<PlayerInfo> playerSample, Component message, String icon, Boolean secureChat,
-                          Boolean previewChat, String passthrough, WrappedRequirement requirement) implements Comparable<StatusEntry> {
+                          Boolean previewChat, String passthrough, ConnectionRequirement requirement) implements Comparable<StatusEntry> {
 
     public boolean shouldPassthrough() {
         return passthrough != null;
@@ -74,9 +75,9 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
         return out;
     }
 
-    public boolean canUse(ClientConnection conn) {
+    public boolean canUse(ConnectionContext ctx) {
 
-        return requirement == null || requirement.check(conn) == TestResult.PASS;
+        return requirement == null || requirement.test(ctx) == TestResult.PASS;
     }
 
     public static final Serializer<StatusEntry> SERIALIZER = ObjectSerializer.create(
@@ -89,7 +90,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
             Serializer.BOOLEAN.entry("secure_chat", StatusEntry::secureChat).optional(),
             Serializer.BOOLEAN.entry("preview_chat", StatusEntry::previewChat).optional(),
             Serializer.STRING.entry("passthrough", StatusEntry::passthrough).optional(),
-            WrappedRequirement.SERIALIZER.entry("requirement", StatusEntry::requirement).optional(),
+            ConnectionRequirement.SERIALIZER.entry("requirement", StatusEntry::requirement).optional(),
             StatusEntry::new
     );
 

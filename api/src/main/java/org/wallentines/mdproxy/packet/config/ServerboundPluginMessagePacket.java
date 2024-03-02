@@ -4,13 +4,14 @@ import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ver -> ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 2 : 1, ServerboundPluginMessagePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 2 : 1, ServerboundPluginMessagePacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {
@@ -18,7 +19,7 @@ public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) i
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) {
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeUtf(buf, channel.toString());
         buf.writeBytes(data);
     }
@@ -28,9 +29,11 @@ public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) i
         handler.handle(this);
     }
 
-    public static ServerboundPluginMessagePacket read(GameVersion version, ByteBuf buf) {
+    public static ServerboundPluginMessagePacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
-        return new ServerboundPluginMessagePacket(id, buf);
+        ServerboundPluginMessagePacket out = new ServerboundPluginMessagePacket(id, buf.retainedSlice());
+        buf.skipBytes(buf.readableBytes());
+        return out;
     }
 
 }

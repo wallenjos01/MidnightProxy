@@ -5,12 +5,13 @@ import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 public record ClientboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(ver -> ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 1 : 0, (ver, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of((ver,phase) -> ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 1 : 0, (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 
@@ -20,7 +21,7 @@ public record ClientboundPluginMessagePacket(Identifier channel, ByteBuf data) i
     }
 
     @Override
-    public void write(GameVersion version, ByteBuf buf) {
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeUtf(buf, channel.toString());
         buf.writeBytes(data);
     }

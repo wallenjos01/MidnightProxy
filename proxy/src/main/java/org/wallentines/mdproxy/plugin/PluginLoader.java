@@ -14,14 +14,19 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 
-public class PluginLoader {
+public class PluginLoader implements PluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PluginLoader");
     private final File pluginFolder;
+    private final HashMap<String, Plugin> byId;
+    private final HashMap<Class<? extends Plugin>, Plugin> byClass;
 
     public PluginLoader(File pluginFolder) {
         this.pluginFolder = pluginFolder;
+        this.byId = new HashMap<>();
+        this.byClass = new HashMap<>();
     }
 
     public void loadAll(Proxy proxy) {
@@ -35,6 +40,16 @@ public class PluginLoader {
                 tryLoad(f, proxy);
             }
         }
+    }
+
+    public Plugin get(String id) {
+        return byId.get(id);
+    }
+
+    public <T extends Plugin> T get(Class<T> clazz) {
+
+        if(!byClass.containsKey(clazz)) return null;
+        return clazz.cast(byClass.get(clazz));
     }
 
     private void tryLoad(File f, Proxy proxy) {
@@ -85,6 +100,9 @@ public class PluginLoader {
             } catch (Exception ex) {
                 LOGGER.error("An exception occurred while initializing {} version {}", info.name(), info.version(), ex);
             }
+
+            byId.put(info.name(), plugin);
+            byClass.put(plugin.getClass(), plugin);
 
         } catch (IOException ex) {
 

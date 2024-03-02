@@ -2,6 +2,7 @@ package org.wallentines.mdproxy;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 
 public record VarInt(int value) {
 
@@ -56,6 +57,26 @@ public record VarInt(int value) {
         } while((currentByte & CONTINUE_BIT) == CONTINUE_BIT);
 
         return new VarInt(out);
+    }
+
+    public static SerializeResult<VarInt> readPartial(ByteBuf buffer, int limit) {
+
+        int out = 0;
+        int position = 0;
+        byte currentByte;
+        do {
+            if(position == limit) {
+                return SerializeResult.failure("VarInt was too big!");
+            }
+            if(!buffer.isReadable()) {
+                return SerializeResult.failure("Reached the end of the buffer!");
+            }
+            currentByte = buffer.readByte();
+            out |= (currentByte & SEGMENT_BITS) << (7 * position);
+            position++;
+        } while((currentByte & CONTINUE_BIT) == CONTINUE_BIT);
+
+        return SerializeResult.success(new VarInt(out));
     }
 
 }

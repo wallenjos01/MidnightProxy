@@ -11,4 +11,6 @@ public interface BackendConnection {
 
     void send(Packet<ServerboundPacketHandler> packet);
 
+    Backend getBackend();
+
 }

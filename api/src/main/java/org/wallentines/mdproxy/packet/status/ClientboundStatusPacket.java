@@ -9,6 +9,7 @@ import org.wallentines.mdproxy.StatusMessage;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public record ClientboundStatusPacket(ConfigSection data) implements Packet<ClientboundPacketHandler> {
@@ -26,7 +27,7 @@ public record ClientboundStatusPacket(ConfigSection data) implements Packet<Clie
     }
 
     @Override
-    public void write(GameVersion ver, ByteBuf buf) {
+    public void write(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
 
         PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, data));
     }
@@ -36,7 +37,7 @@ public record ClientboundStatusPacket(ConfigSection data) implements Packet<Clie
         handler.handle(this);
     }
 
-    public static ClientboundStatusPacket read(GameVersion version, ByteBuf buf) {
+    public static ClientboundStatusPacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
 
         return new ClientboundStatusPacket(JSONCodec.loadConfig(PacketBufferUtil.readUtf(buf)).asSection());
     }

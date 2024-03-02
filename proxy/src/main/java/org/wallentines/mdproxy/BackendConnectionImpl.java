@@ -4,27 +4,27 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
+import io.netty.handler.codec.haproxy.*;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.netty.*;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketRegistry;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.*;
+
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 
 public class BackendConnectionImpl implements BackendConnection {
 
+    private final ClientConnectionImpl conn;
     private final Backend backend;
     private final GameVersion version;
     private final int timeout;
-    private final boolean haproxy;
     private Channel channel;
     private boolean forwarding = false;
 
-    public BackendConnectionImpl(Backend backend, GameVersion version, int timeout, boolean haproxy) {
+    public BackendConnectionImpl(ClientConnectionImpl conn, Backend backend, GameVersion version, int timeout) {
+        this.conn = conn;
         this.backend = backend;
         this.version = version;
-        this.haproxy = haproxy;
         this.timeout = timeout;
     }
 
@@ -42,7 +42,7 @@ public class BackendConnectionImpl implements BackendConnection {
                                 .addLast("frame_enc", new FrameEncoder())
                                 .addLast("encoder", new PacketEncoder<>(PacketRegistry.HANDSHAKE));
 
-                        if(haproxy) {
+                        if(backend.haproxy()) {
                             ch.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
                         }
                     }
@@ -50,6 +50,28 @@ public class BackendConnectionImpl implements BackendConnection {
 
 
         ChannelFuture out = bootstrap.connect(backend.hostname(), backend.port());
+        if(backend.haproxy()) {
+            out.addListener(future -> {
+                if (future.isSuccess()) {
+                    InetSocketAddress source = (InetSocketAddress) conn.getChannel().remoteAddress();
+                    InetSocketAddress dest = (InetSocketAddress) channel.remoteAddress();
+                    HAProxyProxiedProtocol proto = source.getAddress() instanceof Inet4Address ?
+                            HAProxyProxiedProtocol.TCP4 :
+                            HAProxyProxiedProtocol.TCP6;
+
+                    channel.writeAndFlush(new HAProxyMessage(
+                            HAProxyProtocolVersion.V2,
+                            HAProxyCommand.PROXY,
+                            proto,
+                            source.getAddress().getHostAddress(),
+                            dest.getAddress().getHostAddress(),
+                            source.getPort(),
+                            dest.getPort()
+                    ));
+                }
+            });
+        }
+
         this.channel = out.channel();
 
         return out;
@@ -84,7 +106,8 @@ public class BackendConnectionImpl implements BackendConnection {
     public void changePhase(ProtocolPhase phase) {
 
         this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
-        this.channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
+        PacketDecoder<ClientboundPacketHandler> dec = this.channel.pipeline().get(PacketDecoder.class);
+        if(dec != null) dec.setRegistry(PacketRegistry.getClientbound(version, phase));
     }
 
     public Channel getChannel() {

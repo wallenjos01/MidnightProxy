@@ -1,36 +1,33 @@
 [versions]
-junit = "5.9.1"
-netty = "4.1.94.Final"
-mdcfg = "2.0.0-SNAPSHOT"
-mdlib = "1.4.0-SNAPSHOT"
-slf4j = "2.0.7"
+junit = "5.10.1"
+netty = "4.1.105.Final"
+mdcfg = "2.1.0"
+mdlib = "1.6.0"
+mcore = "2.0.0-pre6"
+slf4j = "2.0.11"
 jbr-anno = "24.0.1"
-nedit = "2.2.0"
-zstd = "1.5.5-5"
-
+auth = "6.0.52"
+guava = "33.0.0-jre"
 shadow = "8.1.1"
-loom = "1.3.8"
-multiversion = "0.2.1-SNAPSHOT"
-patch = "0.1.1-SNAPSHOT"
+jwt = "4.4.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 midnight-cfg = { module = "org.wallentines:midnightcfg-api", version.ref="mdcfg" }
 midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version.ref="mdcfg" }
-midnight-cfg-gson = { module = "org.wallentines:midnightcfg-codec-gson", version.ref="mdcfg" }
-midnight-cfg-binary = { module = "org.wallentines:midnightcfg-codec-binary", version.ref="mdcfg" }
+midnight-cfg-nbt = { module = "org.wallentines:midnightcfg-codec-nbt", version.ref="mdcfg" }
 midnight-lib = { module = "org.wallentines:midnightlib", version.ref="mdlib" }
+midnight-core = { module = "org.wallentines:midnightcore-common", version.ref="mcore" }
+mojang-authlib = { module = "com.mojang:authlib", version.ref="auth" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref="jbr-anno" }
-nullicorn-nedit = { module = "me.nullicorn:Nedit", version.ref="nedit" }
-zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd" }
+google-guava = { module = "com.google.guava:guava", version.ref="guava" }
+auth0-jwt = { module = "com.auth0:java-jwt", version.ref="jwt" }
 
 [plugins]
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
-loom = { id = "fabric-loom", version.ref = "loom" }
-multiversion = { id = "org.wallentines.gradle-multi-version", version.ref="multiversion" }
-patch = { id = "org.wallentines.gradle-patch", version.ref="patch" }
