@@ -376,7 +376,16 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             if(res == TestResult.PASS) {
                 toUse = current.resolveBackend(ctx, server.getBackends());
-                break;
+                if(toUse == null) {
+                    LOGGER.warn("Unable to resolve backend for successful route! (" + current.backend() + ")");
+                } else {
+                    break;
+                }
+            }
+
+            if(res == TestResult.FAIL && current.kickOnFail()) {
+                disconnect(server.getLangManager().component(current.kickMessage(), conn));
+                return;
             }
 
             routes.remove();

@@ -12,7 +12,7 @@ import org.wallentines.midnightlib.registry.RegistryBase;
 import java.util.Collection;
 import java.util.List;
 
-public record Route(String backend, @Nullable ConnectionRequirement requirement) {
+public record Route(@Nullable String backend, @Nullable ConnectionRequirement requirement, boolean kickOnFail, String kickMessage) {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Route");
 
@@ -25,6 +25,10 @@ public record Route(String backend, @Nullable ConnectionRequirement requirement)
 
     }
 
+    public boolean hasDeclaredBackend() {
+        return backend != null;
+    }
+
     public TestResult canUse(ConnectionContext ctx) {
 
         if(requirement == null) return TestResult.PASS;
@@ -32,6 +36,8 @@ public record Route(String backend, @Nullable ConnectionRequirement requirement)
     }
 
     public @Nullable Backend resolveBackend(ConnectionContext ctx, RegistryBase<String, Backend> backends) {
+
+        if(backend == null) return null;
 
         String resolvedId = backend;
         if(backend.length() > 2 && backend.charAt(0) == '%' && backend.charAt(backend.length() - 1) == '%') {
@@ -50,8 +56,10 @@ public record Route(String backend, @Nullable ConnectionRequirement requirement)
     }
 
     public static final Serializer<Route> SERIALIZER = ObjectSerializer.create(
-            Serializer.STRING.entry("backend", Route::backend),
+            Serializer.STRING.entry("backend", Route::backend).optional(),
             ConnectionRequirement.SERIALIZER.entry("requirement", Route::requirement).optional(),
+            Serializer.BOOLEAN.entry("kick_on_fail", Route::kickOnFail).orElse(false),
+            Serializer.STRING.entry("kick_message", Route::kickMessage).orElse("error.generic_route_failed"),
             Route::new
     );
 
