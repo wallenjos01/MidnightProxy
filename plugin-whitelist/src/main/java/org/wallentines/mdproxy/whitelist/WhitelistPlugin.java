@@ -26,11 +26,14 @@ public class WhitelistPlugin implements Plugin {
     @Override
     public void initialize(Proxy proxy) {
 
-        File configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("jwt").toFile();
+        File configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist").toFile();
         if(!configFolder.isDirectory() && !configFolder.mkdirs()) {
             throw new IllegalStateException("Unable to create config directory!");
         }
         config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
+        if(!config.getFile().exists()) {
+            config.save();
+        }
 
         ConnectionCheckType.REGISTRY.register("whitelist", WhitelistCheck.TYPE);
 

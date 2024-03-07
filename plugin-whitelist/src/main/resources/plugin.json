@@ -1,5 +1,5 @@
 {
-  "name": "WhitelistPlugin",
+  "name": "Whitelist",
   "version": "${version}",
   "main": "org.wallentines.mdproxy.whitelist.WhitelistPlugin"
 }

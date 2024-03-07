@@ -58,7 +58,7 @@ public class WhitelistCheck implements ConnectionCheck {
     };
 
     private static final Serializer<WhitelistCheck> SERIALIZER = ObjectSerializer.create(
-            Serializer.BOOLEAN.entry("require_auth", chk -> chk.requireAuth),
+            Serializer.BOOLEAN.<WhitelistCheck>entry("require_auth", chk -> chk.requireAuth).orElse(true),
             Serializer.STRING.entry("whitelist", chk -> chk.listId),
             WhitelistCheck::new
     );
