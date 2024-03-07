@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class Whitelist {
 
-    private List<UUID> uuids = new ArrayList<>();
-    private List<String> usernames = new ArrayList<>();
+    private final List<UUID> uuids = new ArrayList<>();
+    private final List<String> usernames = new ArrayList<>();
 
     public boolean isWhitelisted(ClientConnection conn) {
         return uuids.contains(conn.uuid()) || usernames.contains(conn.username());

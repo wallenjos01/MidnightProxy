@@ -9,6 +9,7 @@ import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.command.CommandExecutor;
+import org.wallentines.mdproxy.command.ListCommand;
 import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
 import org.wallentines.mdproxy.jwt.UsedTokenCache;
@@ -20,10 +21,7 @@ import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class ProxyServer implements Proxy {
 
@@ -70,6 +68,7 @@ public class ProxyServer implements Proxy {
 
         this.commands.register("stop", new StopCommand());
         this.commands.register("reload", new ReloadCommand());
+        this.commands.register("list", new ListCommand());
 
         this.listener = new ConnectionManager(this);
         this.console = new ConsoleHandler(this);
@@ -172,6 +171,16 @@ public class ProxyServer implements Proxy {
     @Override
     public StringRegistry<CommandExecutor> getCommands() {
         return commands;
+    }
+
+    @Override
+    public Collection<UUID> getClientIds() {
+        return connected.keySet();
+    }
+
+    @Override
+    public ClientConnection getConnection(UUID uuid) {
+        return connected.get(uuid);
     }
 
     @Override
