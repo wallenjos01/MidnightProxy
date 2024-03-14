@@ -37,7 +37,9 @@ public class Main {
             .with("auth_threads", 4)
             .with("reconnect_timeout_sec", 3)
             .with("backend_timeout_ms", 5000)
-            .with("player_limit", 100);
+            .with("player_limit", 100)
+            .with("icon_cache_dir", "icons")
+            .with("icon_cache_size", 8);
 
 
     public static void main(String[] args) {
@@ -47,6 +49,7 @@ public class Main {
         MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.set(Path.of("config"));
 
         ClientConnection.registerPlaceholders(PlaceholderManager.INSTANCE);
+        Proxy.registerPlaceholders(PlaceholderManager.INSTANCE);
 
         FileCodecRegistry reg = MidnightCoreAPI.FILE_CODEC_REGISTRY;
         reg.registerFileCodec(JSONCodec.fileCodec());

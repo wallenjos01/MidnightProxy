@@ -25,7 +25,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
         return o.priority - priority;
     }
 
-    public StatusMessage create(GameVersion version, int onlinePlayers, int maxPlayers) {
+    public StatusMessage create(GameVersion version, int onlinePlayers, int maxPlayers, IconCache iconCache) {
 
         if(playersOverride != null) onlinePlayers = playersOverride;
         if(maxPlayersOverride != null) maxPlayers = maxPlayersOverride;
@@ -33,7 +33,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
         return new StatusMessage(version, onlinePlayers, maxPlayers,
                 playerSample == null ? List.of() : playerSample,
                 message == null ? Component.empty() : message,
-                null,
+                icon == null ? null : iconCache.getIconB64(icon),
                 secureChat != null && secureChat,
                 previewChat != null && previewChat);
     }

@@ -20,6 +20,7 @@ import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
+import java.io.File;
 import java.security.KeyPair;
 import java.util.*;
 
@@ -40,6 +41,7 @@ public class ProxyServer implements Proxy {
     private final LangManager langManager;
     private final PluginLoader pluginLoader;
     private final UsedTokenCache reconnectTokenCache;
+    private final IconCacheImpl iconCache;
 
     private final int port;
     private final int clientTimeout;
@@ -57,6 +59,7 @@ public class ProxyServer implements Proxy {
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
         this.reconnectTokenCache = new UsedTokenCache("rcid");
+        this.iconCache = new IconCacheImpl(new File(getConfig().getString("icon_cache_dir")), getConfig().getInt("icon_cache_size"));
 
         this.port = getConfig().getInt("port");
         this.clientTimeout = getConfig().getInt("client_timeout");
@@ -155,7 +158,7 @@ public class ProxyServer implements Proxy {
 
     @Override
     public IconCache getIconCache() {
-        return null;
+        return iconCache;
     }
 
     @Override

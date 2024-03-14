@@ -45,7 +45,7 @@ public class StatusResponder implements ClientboundPacketHandler {
             return;
         }
 
-        StatusMessage message = entry.create(playerVersion, server.getOnlinePlayers(), server.getPlayerLimit());
+        StatusMessage message = entry.create(playerVersion, server.getOnlinePlayers(), server.getPlayerLimit(), server.getIconCache());
         conn.send(new ClientboundStatusPacket(message));
     }
 
