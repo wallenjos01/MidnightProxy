@@ -59,10 +59,17 @@ public class ProxyServer implements Proxy {
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
         this.reconnectTokenCache = new UsedTokenCache("rcid");
-        this.iconCache = new IconCacheImpl(new File(getConfig().getString("icon_cache_dir")), getConfig().getInt("icon_cache_size"));
+
+        File iconCacheDir = new File(getConfig().getString("icon_cache_dir"));
+        this.iconCache = new IconCacheImpl(iconCacheDir, getConfig().getInt("icon_cache_size"));
+
+        if(!iconCacheDir.exists() && !iconCacheDir.mkdirs()) {
+            LOGGER.warn("Unable to create icon cache directory!");
+        }
+
 
         this.port = getConfig().getInt("port");
-        this.clientTimeout = getConfig().getInt("client_timeout");
+        this.clientTimeout = getConfig().getInt("client_timeout_ms");
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.reconnectKeyPair = CryptUtil.generateKeyPair();

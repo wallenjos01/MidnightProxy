@@ -33,8 +33,6 @@ public class JWTPlugin implements Plugin {
 
         proxy.getCommands().register("jwt", new JWTCommand());
         ConnectionCheckType.REGISTRY.register("jwt", JWTCheck.TYPE);
-
-        LOGGER.info("JWT Plugin enabled!");
     }
 
     public KeyStore getKeyStore() {
