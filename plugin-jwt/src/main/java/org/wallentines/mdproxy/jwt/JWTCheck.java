@@ -1,8 +1,6 @@
 package org.wallentines.mdproxy.jwt;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.PlaceholderContext;
 import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mdcfg.serializer.*;
@@ -14,8 +12,6 @@ import org.wallentines.midnightlib.registry.Identifier;
 import java.util.*;
 
 public class JWTCheck implements ConnectionCheck {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("JWTCheck");
 
     private final Identifier cookie;
     private final boolean requireAuth;
@@ -59,7 +55,7 @@ public class JWTCheck implements ConnectionCheck {
         String str = new String(data);
         SerializeResult<JWT> jwtRes = JWTReader.readAny(str, KeySupplier.fromHeader(store, keyType, key));
         if(!jwtRes.isComplete()) {
-            LOGGER.warn("Unable to parse JWT! " + jwtRes.getError());
+            JWTPlugin.LOGGER.warn("Unable to parse JWT! " + jwtRes.getError());
             return false;
         }
 
@@ -76,7 +72,7 @@ public class JWTCheck implements ConnectionCheck {
         }
 
         if(!verifier.verify(jwt)) {
-            LOGGER.warn("Unable to verify JWT!");
+            JWTPlugin.LOGGER.warn("Unable to verify JWT!");
             return false;
         }
 

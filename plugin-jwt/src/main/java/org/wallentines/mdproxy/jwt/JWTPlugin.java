@@ -14,7 +14,7 @@ import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import java.io.File;
 
 public class JWTPlugin implements Plugin {
-    private static final Logger LOGGER = LoggerFactory.getLogger("JWTPlugin");
+    public static final Logger LOGGER = LoggerFactory.getLogger("JWTPlugin");
     private static final ConfigSection DEFAULT_CONFIG = new ConfigSection()
             .with("key_store_path", "keystore");
 
@@ -29,7 +29,12 @@ public class JWTPlugin implements Plugin {
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
-        keyStore = new FileKeyStore(new File(configFolder, config.getRoot().asSection().getString("key_store_path")), FileKeyStore.DEFAULT_TYPES);
+
+        File keyStoreDir = new File(configFolder, config.getRoot().asSection().getString("key_store_path"));
+        if(!keyStoreDir.isDirectory() && !keyStoreDir.mkdirs()) {
+            throw new IllegalStateException("Unable to create key store directory!");
+        }
+        keyStore = new FileKeyStore(keyStoreDir, FileKeyStore.DEFAULT_TYPES);
 
         proxy.getCommands().register("jwt", new JWTCommand());
         ConnectionCheckType.REGISTRY.register("jwt", JWTCheck.TYPE);
