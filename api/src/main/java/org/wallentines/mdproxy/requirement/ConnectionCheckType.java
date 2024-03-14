@@ -18,6 +18,7 @@ public abstract class ConnectionCheckType implements CheckType<ConnectionContext
 
 
     public static final Registry<ConnectionCheckType> REGISTRY = new Registry<>("mdp");
+    public static final ConnectionCheckType DATE = REGISTRY.register("date", DateCheck.TYPE);
     public static final ConnectionCheckType HOSTNAME = REGISTRY.register("hostname", ConnectionString.type(ConnectionContext::hostname, false));
     public static final ConnectionCheckType PORT = REGISTRY.register("port", ConnectionInt.type(ConnectionContext::port, false));
     public static final ConnectionCheckType ADDRESS = REGISTRY.register("ip_address", ConnectionString.type(ConnectionContext::addressString, false));

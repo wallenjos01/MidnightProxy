@@ -1,7 +1,7 @@
 [versions]
 junit = "5.10.1"
 netty = "4.1.105.Final"
-mdcfg = "2.1.0"
+mdcfg = "2.2.0-SNAPSHOT"
 mdlib = "1.6.0"
 mcore = "2.0.0-pre6"
 slf4j = "2.0.11"
