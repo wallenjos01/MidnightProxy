@@ -64,7 +64,7 @@ public class DateCheck implements ConnectionCheck {
         return SERIALIZER.serialize(ctx, this);
     }
 
-    public static final Serializer<ZoneId> ZONE_SERIALIZER = new Serializer<ZoneId>() {
+    public static final Serializer<ZoneId> ZONE_SERIALIZER = new Serializer<>() {
         @Override
         public <O> SerializeResult<O> serialize(SerializeContext<O> ctx, ZoneId zoneId) {
             return SerializeResult.success(ctx.toString(zoneId.getId()));

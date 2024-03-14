@@ -12,11 +12,11 @@ import org.wallentines.midnightlib.requirement.StringCheck;
 import java.util.Collection;
 import java.util.Set;
 
-public class Cookie implements ConnectionCheck {
+public class CookieCheck implements ConnectionCheck {
     private final Identifier cookie;
     private final Set<String> values;
 
-    public Cookie(Identifier cookie, Collection<String> values) {
+    public CookieCheck(Identifier cookie, Collection<String> values) {
         this.cookie = cookie;
         this.values = Set.copyOf(values);
     }
@@ -43,10 +43,10 @@ public class Cookie implements ConnectionCheck {
         return SERIALIZER.serialize(ctx, this);
     }
 
-    public static final Serializer<Cookie> SERIALIZER = ObjectSerializer.create(
+    public static final Serializer<CookieCheck> SERIALIZER = ObjectSerializer.create(
             Identifier.serializer("minecraft").entry("cookie", c -> c.cookie),
             StringCheck.STRING_SERIALIZER.entry("value", c -> c.values),
-            Cookie::new
+            CookieCheck::new
     );
 
     public static final ConnectionCheckType TYPE = new ConnectionCheckType() {

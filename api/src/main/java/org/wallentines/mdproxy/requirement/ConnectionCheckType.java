@@ -25,7 +25,7 @@ public abstract class ConnectionCheckType implements CheckType<ConnectionContext
     public static final ConnectionCheckType USERNAME = REGISTRY.register("username", ConnectionString.type(ConnectionContext::username, true));
     public static final ConnectionCheckType UUID = REGISTRY.register("uuid", ConnectionString.type(ConnectionContext::uuidString, true));
     public static final ConnectionCheckType LOCALE = REGISTRY.register("locale", ConnectionString.type(ConnectionContext::locale, true));
-    public static final ConnectionCheckType COOKIE = REGISTRY.register("cookie", Cookie.TYPE);
+    public static final ConnectionCheckType COOKIE = REGISTRY.register("cookie", CookieCheck.TYPE);
     public static final ConnectionCheckType COMPOSITE = REGISTRY.register("composite", Composite.TYPE);
 
 }
