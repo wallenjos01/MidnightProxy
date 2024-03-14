@@ -135,6 +135,9 @@ public class JWESerializer {
             crypt = cryptAlg.createCodec(header, supp, iv);
         } else {
             codec = keyAlg.createCodec(header, supp);
+            if(!codec.canDecode()) {
+                return SerializeResult.failure("Unable to find decryption key!");
+            }
             crypt = cryptAlg.createCodec(codec.decode(decoder.decode(values[1])), iv);
         }
 

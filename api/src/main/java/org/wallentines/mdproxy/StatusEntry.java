@@ -3,6 +3,7 @@ package org.wallentines.mdproxy;
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mcore.text.ConfigSerializer;
 import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
@@ -85,7 +86,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
             Serializer.INT.entry("players_override", StatusEntry::playersOverride).optional(),
             Serializer.INT.entry("max_players_override", StatusEntry::maxPlayersOverride).optional(),
             PlayerInfo.SERIALIZER.listOf().entry("player_sample", StatusEntry::playerSample).optional(),
-            ModernSerializer.INSTANCE.forContext(GameVersion.MAX).entry("message", StatusEntry::message).optional(),
+            ConfigSerializer.INSTANCE.entry("message", StatusEntry::message).optional(),
             Serializer.STRING.entry("icon", StatusEntry::icon).optional(),
             Serializer.BOOLEAN.entry("secure_chat", StatusEntry::secureChat).optional(),
             Serializer.BOOLEAN.entry("preview_chat", StatusEntry::previewChat).optional(),

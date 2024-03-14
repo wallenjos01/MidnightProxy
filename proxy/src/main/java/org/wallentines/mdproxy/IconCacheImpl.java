@@ -46,8 +46,6 @@ public class IconCacheImpl implements IconCache {
             if(cache.size() == cacheSize) {
                 iconData.remove(cache.pop());
             }
-
-            iconData.put(k, data);
             cache.push(k);
 
             return data;
