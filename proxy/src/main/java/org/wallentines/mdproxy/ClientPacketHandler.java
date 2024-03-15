@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy;
 
 import com.google.common.primitives.Ints;
-import com.mojang.authlib.GameProfile;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private byte[] challenge;
     private ClientConnectionImpl conn;
     private boolean encrypted;
-    private GameProfile profile;
+    private PlayerProfile profile;
     private ProtocolPhase phase;
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
@@ -118,7 +117,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
-            this.profile = new GameProfile(login.uuid(), login.username());
+            this.profile = new PlayerProfile(login.uuid(), login.username());
 
             // Continue with login
             startLogin();
@@ -149,7 +148,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             LOGGER.info("Starting authentication for {}", conn.username());
 
             String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
-            server.getAuthenticator().authenticate(conn, serverId).thenAcceptAsync(res -> finishAuthentication(res.profile()), channel.eventLoop());
+            server.getAuthenticator().authenticate(conn, serverId).thenAcceptAsync(this::finishAuthentication, channel.eventLoop());
 
         } else {
             finishAuthentication(profile);
@@ -323,12 +322,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.isOnlineMode()));
     }
 
-    private void finishAuthentication(GameProfile profile) {
+    private void finishAuthentication(PlayerProfile profile) {
 
         this.profile = profile;
         conn.setAuthenticated(true);
 
-        LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.getId());
+        LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.uuid());
 
         if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
             if(conn.bypassesPlayerLimit(server) != TestResult.PASS) {
@@ -452,7 +451,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 ? conn != null && conn.playerInfoAvailable()
                         ? conn.username()
                         : channel.remoteAddress().toString()
-                : profile.getName();
+                : profile.username();
 
     }
 

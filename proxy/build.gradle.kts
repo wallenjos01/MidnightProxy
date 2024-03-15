@@ -31,12 +31,9 @@ dependencies {
     implementation(libs.midnight.cfg.nbt)
 
     implementation(libs.midnight.lib)
-
     implementation(libs.midnight.core)
 
     implementation(libs.netty.all)
-
-    implementation(libs.mojang.authlib)
 
     implementation(libs.google.guava)
     implementation(libs.slf4j.api)

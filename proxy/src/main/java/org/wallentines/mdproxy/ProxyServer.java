@@ -1,6 +1,5 @@
 package org.wallentines.mdproxy;
 
-import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.LangManager;
@@ -51,6 +50,7 @@ public class ProxyServer implements Proxy {
     private boolean onlineMode;
     private boolean requireAuth;
     private boolean haproxy;
+    private boolean preventProxy;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
@@ -73,7 +73,7 @@ public class ProxyServer implements Proxy {
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.reconnectKeyPair = CryptUtil.generateKeyPair();
-        this.authenticator = new Authenticator(new YggdrasilAuthenticationService(java.net.Proxy.NO_PROXY).createMinecraftSessionService(), getConfig().getInt("auth_threads"));
+        this.authenticator = new Authenticator(this, getConfig().getInt("auth_threads"));
         this.commands = new StringRegistry<>();
 
         this.commands.register("stop", new StopCommand());
@@ -125,6 +125,7 @@ public class ProxyServer implements Proxy {
         this.playerLimit = getConfig().getInt("player_limit");
         this.reconnectTimeout = getConfig().getInt("reconnect_timeout_sec");
         this.haproxy = getConfig().getBoolean("haproxy_protocol");
+        this.preventProxy = getConfig().getBoolean("prevent_proxy_connections");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -266,5 +267,9 @@ public class ProxyServer implements Proxy {
 
     public boolean useHAProxyProtocol() {
         return haproxy;
+    }
+
+    public boolean preventProxyConnections() {
+        return preventProxy;
     }
 }

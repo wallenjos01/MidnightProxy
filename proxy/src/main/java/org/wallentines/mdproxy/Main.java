@@ -41,7 +41,8 @@ public class Main {
             .with("client_timeout_ms", 15000)
             .with("player_limit", 100)
             .with("icon_cache_dir", "icons")
-            .with("icon_cache_size", 8);
+            .with("icon_cache_size", 8)
+            .with("prevent_proxy_connections", false);
 
 
     public static void main(String[] args) {

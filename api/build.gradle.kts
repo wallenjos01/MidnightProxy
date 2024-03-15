@@ -26,8 +26,6 @@ dependencies {
     api(libs.netty.codec)
     api(libs.netty.buffer)
 
-    api(libs.mojang.authlib)
-
     api(libs.google.guava)
     api(libs.slf4j.api)
 
