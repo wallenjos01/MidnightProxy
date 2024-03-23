@@ -28,7 +28,6 @@ public class LastServerPlugin implements Plugin {
 
     @Override
     public void initialize(Proxy proxy) {
-
         proxy.clientDisconnectEvent().register(this, client -> {
 
             BackendConnection conn = client.getBackendConnection();
@@ -36,7 +35,7 @@ public class LastServerPlugin implements Plugin {
 
             String id = proxy.getBackends().getId(conn.getBackend());
             dataManager.getData(client.uuid().toString()).set("last_server", id);
-
+            dataManager.save(client.uuid().toString());
         });
 
     }
