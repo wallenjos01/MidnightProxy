@@ -16,12 +16,14 @@ import org.wallentines.mdproxy.netty.ConnectionManager;
 import org.wallentines.mdproxy.plugin.PluginLoader;
 import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.mdproxy.util.CryptUtil;
+import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.io.File;
 import java.security.KeyPair;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class ProxyServer implements Proxy {
 
@@ -34,16 +36,16 @@ public class ProxyServer implements Proxy {
     private final StringRegistry<CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final List<Route> routes = new ArrayList<>();
-    private final HashMap<UUID, ClientConnectionImpl> connected = new HashMap<>();
+    //private final HashMap<UUID, ClientConnectionImpl> clients = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager langManager;
     private final PluginLoader pluginLoader;
     private final UsedTokenCache reconnectTokenCache;
     private final IconCacheImpl iconCache;
-
     private final int port;
     private final int clientTimeout;
+
     private int reconnectTimeout;
     private int backendTimeout;
     private int playerLimit;
@@ -52,6 +54,13 @@ public class ProxyServer implements Proxy {
     private boolean haproxy;
     private boolean preventProxy;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
+
+
+    // Events
+    private final HandlerList<ClientConnection> connected = new HandlerList<>();
+    private final HandlerList<ClientConnection> disconnected = new HandlerList<>();
+    private final HandlerList<ClientConnection> joined = new HandlerList<>();
+
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
 
@@ -185,18 +194,19 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
-    public Collection<UUID> getClientIds() {
-        return connected.keySet();
+    public Stream<UUID> getClientIds() {
+
+        return listener.getClientIds();
     }
 
     @Override
     public ClientConnection getConnection(UUID uuid) {
-        return connected.get(uuid);
+        return listener.getConnection(uuid);
     }
 
     @Override
     public int getOnlinePlayers() {
-        return connected.size();
+        return listener.getClientCount();
     }
 
     @Override
@@ -214,24 +224,39 @@ public class ProxyServer implements Proxy {
         return pluginLoader;
     }
 
-    public void addPlayer(ClientConnectionImpl conn) {
-
-        if(!conn.playerInfoAvailable()) {
-            throw new IllegalStateException("Attempt to add player before connection!");
-        }
-
-        ClientConnectionImpl old = connected.put(conn.uuid(), conn);
-        if(old != null) {
-            old.disconnect();
-        }
+    @Override
+    public HandlerList<ClientConnection> clientConnectEvent() {
+        return connected;
     }
 
-    public void removePlayer(UUID uuid) {
-        ClientConnectionImpl old = connected.remove(uuid);
-        if(old != null) {
-            old.disconnect();
-        }
+    @Override
+    public HandlerList<ClientConnection> clientDisconnectEvent() {
+        return disconnected;
     }
+
+    @Override
+    public HandlerList<ClientConnection> clientJoinBackendEvent() {
+        return joined;
+    }
+
+//    public void addPlayer(ClientConnectionImpl conn) {
+//
+//        if(!conn.playerInfoAvailable()) {
+//            throw new IllegalStateException("Attempt to add player before connection!");
+//        }
+//
+//        ClientConnectionImpl old = clients.put(conn.uuid(), conn);
+//        if(old != null) {
+//            old.disconnect();
+//        }
+//    }
+//
+//    public void removePlayer(UUID uuid) {
+//        ClientConnectionImpl old = clients.remove(uuid);
+//        if(old != null) {
+//            old.disconnect();
+//        }
+//    }
 
     public int getReconnectTimeout() {
         return reconnectTimeout;

@@ -1,0 +1,5 @@
+{
+  "name": "LastServer",
+  "version": "${version}",
+  "main": "org.wallentines.mdproxy.lastsrv.LastServerPlugin"
+}

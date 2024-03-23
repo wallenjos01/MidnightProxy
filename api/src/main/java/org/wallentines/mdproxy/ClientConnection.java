@@ -44,6 +44,10 @@ public interface ClientConnection {
 
     BackendConnection getBackendConnection();
 
+    default boolean hasBackendConnection() {
+        return getBackendConnection() != null;
+    }
+
     TestResult bypassesPlayerLimit(Proxy proxy);
 
     void send(Packet<ClientboundPacketHandler> packet);

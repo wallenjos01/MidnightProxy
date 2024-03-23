@@ -39,6 +39,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
 
     private final ProxyServer server;
+    private final ConnectionManager manager;
     private final Channel channel;
     private byte[] challenge;
     private ClientConnectionImpl conn;
@@ -53,14 +54,20 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
 
 
-    public ClientPacketHandler(Channel channel, ProxyServer server) {
+    public ClientPacketHandler(Channel channel, ConnectionManager manager, ProxyServer server) {
 
         this.server = server;
+        this.manager = manager;
         this.channel = channel;
         this.encrypted = false;
         this.phase = ProtocolPhase.HANDSHAKE;
 
         this.routes = new ArrayDeque<>(server.getRoutes());
+    }
+
+
+    public ClientConnectionImpl getConnection() {
+        return conn;
     }
 
     @Override
@@ -252,12 +259,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         prepareForwarding();
 
-        UUID uuid = conn.uuid();
-        channel.closeFuture().addListener(future -> {
-            server.removePlayer(uuid);
-        });
-        server.addPlayer(conn);
-
         BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
         bconn.connect(channel.eventLoop()).addListener(future -> {
             if(future.isSuccess()) {
@@ -271,6 +272,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
                 bconn.setupForwarding(channel);
                 setupForwarding(bconn.getChannel());
+
+                server.clientJoinBackendEvent().invoke(conn);
 
             } else {
                 disconnect(server.getLangManager().component("error.backend_connection_failed", conn));

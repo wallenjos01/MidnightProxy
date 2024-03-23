@@ -9,10 +9,9 @@ public class ListCommand implements CommandExecutor {
     public void execute(CommandSender sender, String[] args) {
 
         sender.sendMessage("Clients connected:");
-        for(UUID uuid : sender.getProxy().getClientIds()) {
+        sender.getProxy().getClientIds().forEach(uuid -> {
             ClientConnection conn = sender.getProxy().getConnection(uuid);
             sender.sendMessage(" - " + conn.username() + ": " + sender.getProxy().getBackends().getId(conn.getBackendConnection().getBackend()));
-        }
-
+        });
     }
 }

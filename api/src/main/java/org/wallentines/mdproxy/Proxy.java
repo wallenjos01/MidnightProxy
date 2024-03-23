@@ -5,6 +5,7 @@ import org.wallentines.mcore.lang.PlaceholderSupplier;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.plugin.PluginManager;
+import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.RegistryBase;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
@@ -15,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface Proxy {
 
@@ -39,7 +41,7 @@ public interface Proxy {
 
     StringRegistry<CommandExecutor> getCommands();
 
-    Collection<UUID> getClientIds();
+    Stream<UUID> getClientIds();
 
     ClientConnection getConnection(UUID uuid);
 
@@ -50,6 +52,10 @@ public interface Proxy {
     boolean bypassesPlayerLimit(PlayerInfo info);
 
     PluginManager getPluginManager();
+
+    HandlerList<ClientConnection> clientConnectEvent();
+    HandlerList<ClientConnection> clientDisconnectEvent();
+    HandlerList<ClientConnection> clientJoinBackendEvent();
 
 
     static void registerPlaceholders(PlaceholderManager manager) {
@@ -68,7 +74,6 @@ public interface Proxy {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format);
             return Instant.now().atZone(ZoneOffset.UTC).format(dtf);
         }));
-
     }
 
 }

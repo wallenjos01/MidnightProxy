@@ -9,12 +9,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.ClientPacketHandler;
+import org.wallentines.mdproxy.PlayerInfo;
 import org.wallentines.mdproxy.ProxyServer;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class ConnectionManager {
 
@@ -22,13 +24,13 @@ public class ConnectionManager {
 
     private final EventLoopGroup eventLoopGroup;
     private final ProxyServer server;
-    private final Set<ClientPacketHandler> connected;
+    private final List<ClientPacketHandler> connected;
     private ChannelFuture channel;
 
     public ConnectionManager(ProxyServer server) {
         this.server = server;
         this.eventLoopGroup = new NioEventLoopGroup();
-        this.connected = new HashSet<>();
+        this.connected = new ArrayList<>();
     }
 
     public void startup() {
@@ -57,16 +59,32 @@ public class ConnectionManager {
         return channel;
     }
 
-    public void addClientConnection(ClientPacketHandler channel) {
-        this.connected.add(channel);
+    public void addClientConnection(ClientPacketHandler handler) {
+        this.connected.add(handler);
     }
 
-    public void removeClientConnection(ClientPacketHandler channel) {
-        this.connected.remove(channel);
+    public void removeClientConnection(ClientPacketHandler handler) {
+        this.connected.remove(handler);
+        server.clientDisconnectEvent().invoke(handler.getConnection());
     }
 
-    public int getConnectedClients() {
+    public int getClientCount() {
         return connected.size();
+    }
+
+    private Stream<ClientConnectionImpl> connected() {
+        return connected.stream()
+                .map(ClientPacketHandler::getConnection)
+                .filter(ClientConnectionImpl::playerInfoAvailable)
+                .filter(ClientConnectionImpl::hasBackendConnection);
+    }
+
+    public Stream<UUID> getClientIds() {
+        return connected().map(ClientConnectionImpl::uuid);
+    }
+
+    public ClientConnectionImpl getConnection(UUID uuid) {
+        return connected().filter(conn -> conn.uuid().equals(uuid)).findFirst().orElse(null);
     }
 
 
