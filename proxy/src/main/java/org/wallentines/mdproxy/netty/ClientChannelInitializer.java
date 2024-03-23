@@ -9,7 +9,6 @@ import org.wallentines.mdproxy.ProxyServer;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.midnightlib.types.DefaultedSingleton;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 

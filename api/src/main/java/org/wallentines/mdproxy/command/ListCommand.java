@@ -2,8 +2,6 @@ package org.wallentines.mdproxy.command;
 
 import org.wallentines.mdproxy.ClientConnection;
 
-import java.util.UUID;
-
 public class ListCommand implements CommandExecutor {
     @Override
     public void execute(CommandSender sender, String[] args) {
