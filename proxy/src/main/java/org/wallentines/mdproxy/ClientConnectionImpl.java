@@ -27,6 +27,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientConnectionImpl");
 
     private final Channel channel;
+    private final InetSocketAddress address;
     private final int protocolVersion;
     private final String hostname;
     private final int port;
@@ -38,8 +39,9 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
 
 
-    public ClientConnectionImpl(Channel channel, int protocolVersion, String hostname, int port) {
+    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
         this.channel = channel;
+        this.address = address;
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
@@ -57,7 +59,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public InetAddress address() {
-        return ((InetSocketAddress) channel.remoteAddress()).getAddress();
+        return address.getAddress();
+    }
+
+    public InetSocketAddress socketAddress() {
+        return address;
     }
 
     @Override

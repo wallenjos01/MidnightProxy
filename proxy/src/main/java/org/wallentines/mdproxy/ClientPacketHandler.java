@@ -25,10 +25,13 @@ import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.types.DefaultedSingleton;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
@@ -39,7 +42,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
 
     private final ProxyServer server;
-    private final ConnectionManager manager;
     private final Channel channel;
     private byte[] challenge;
     private ClientConnectionImpl conn;
@@ -52,15 +54,16 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final Random random = new SecureRandom();
     private final Queue<Route> routes;
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
+    private final DefaultedSingleton<InetSocketAddress> address;
 
 
-    public ClientPacketHandler(Channel channel, ConnectionManager manager, ProxyServer server) {
+    public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server) {
 
         this.server = server;
-        this.manager = manager;
         this.channel = channel;
         this.encrypted = false;
         this.phase = ProtocolPhase.HANDSHAKE;
+        this.address = address;
 
         this.routes = new ArrayDeque<>(server.getRoutes());
     }
@@ -74,7 +77,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundHandshakePacket handshake) {
 
         LOGGER.info("Received handshake from " + getUsername() + " to " + handshake.address() + " (" + handshake.intent().name() + ")");
-        this.conn = new ClientConnectionImpl(channel, handshake.protocolVersion(), handshake.address(), handshake.port());
+        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port());
         this.intent = handshake.intent();
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {

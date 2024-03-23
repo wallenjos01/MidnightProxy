@@ -239,25 +239,6 @@ public class ProxyServer implements Proxy {
         return joined;
     }
 
-//    public void addPlayer(ClientConnectionImpl conn) {
-//
-//        if(!conn.playerInfoAvailable()) {
-//            throw new IllegalStateException("Attempt to add player before connection!");
-//        }
-//
-//        ClientConnectionImpl old = clients.put(conn.uuid(), conn);
-//        if(old != null) {
-//            old.disconnect();
-//        }
-//    }
-//
-//    public void removePlayer(UUID uuid) {
-//        ClientConnectionImpl old = clients.remove(uuid);
-//        if(old != null) {
-//            old.disconnect();
-//        }
-//    }
-
     public int getReconnectTimeout() {
         return reconnectTimeout;
     }

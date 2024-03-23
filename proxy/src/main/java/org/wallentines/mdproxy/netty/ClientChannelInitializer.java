@@ -7,7 +7,10 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.wallentines.mdproxy.ClientPacketHandler;
 import org.wallentines.mdproxy.ProxyServer;
 import org.wallentines.mdproxy.packet.PacketRegistry;
+import org.wallentines.midnightlib.types.DefaultedSingleton;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 public class ClientChannelInitializer extends ChannelInitializer<Channel> {
@@ -31,11 +34,14 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                 .addLast("frame_dec", new FrameDecoder())
                 .addLast("decoder", new PacketDecoder<>(PacketRegistry.HANDSHAKE));
 
+        DefaultedSingleton<InetSocketAddress> addr = new DefaultedSingleton<>(((InetSocketAddress) channel.remoteAddress()));
+
         if(server.useHAProxyProtocol()) {
-            channel.pipeline().addFirst(new HAProxyMessageDecoder());
+            channel.pipeline().addFirst("haproxy_decoder", new HAProxyMessageDecoder());
+            channel.pipeline().addFirst("haproxy_handler", new HAProxyHandler(addr));
         }
 
-        ClientPacketHandler handler = new ClientPacketHandler(channel, manager, server);
+        ClientPacketHandler handler = new ClientPacketHandler(channel, addr, server);
         channel.pipeline().addLast("handler", new PacketHandler<>(handler));
 
         manager.addClientConnection(handler);

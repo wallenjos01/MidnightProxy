@@ -53,7 +53,7 @@ public class BackendConnectionImpl implements BackendConnection {
         if(backend.haproxy()) {
             out.addListener(future -> {
                 if (future.isSuccess()) {
-                    InetSocketAddress source = (InetSocketAddress) conn.getChannel().remoteAddress();
+                    InetSocketAddress source = conn.socketAddress();
                     InetSocketAddress dest = (InetSocketAddress) channel.remoteAddress();
                     HAProxyProxiedProtocol proto = source.getAddress() instanceof Inet4Address ?
                             HAProxyProxiedProtocol.TCP4 :
