@@ -12,12 +12,17 @@ configuring.
 - `port`: The port to listen on. Defaults to 25565
 - `online_mode`: Whether usernames should be verified when connecting to the proxy
 - `player_limit`: The maximum number of players allowed to connect to the proxy. Set to -1 to disable.
+- `icon_cache_dir`: The directory the proxy should look for status icons in
 
 ### Advanced options
 - `reconnect_timeout_sec`: How many seconds a player has to reconnect after being transferred
 - `backend_timeout_ms`: How many milliseconds the proxy should wait while attempting to connect to a backend server before assuming it is offline.
+- `client_timeout_ms`: How many milliseconds the proxy should wait between packets from a client before timing them out.
 - `auth_threads`: How many threads should be available for authentication requests
 - `force_authentication`: Whether the proxy should always attempt to authenticate connecting players, even if routing could be done without it
+- `icon_cache_size`: How many icons should be kept in memory after being loaded.
+- `prevent_proxy_connections`: Whether the server should reject players who attempt to connect from behind their own proxy.
+- `haproxy_protocol`: Whether the proxy expects HAProxy PROXY messages to be sent from joining clients.
 
 ### Backends
 The `backends` section of the configuration file is used to define the backend servers.
@@ -47,6 +52,12 @@ Route precedence is determined by their index into the `routes` array. A minimal
     }
 ]
 ```
+Valid options for routes include: 
+- `backend`: The ID of the backend server to connect to
+- `requirement`: The requirement for using this route
+- `kick_on_fail`: Whether the proxy should kick clients when they fail the requirement
+- `kick_message`: The language key to use when kicking a player (defaults to `error.generic_route_failed`)
+
 The proxy can route players to different backends depending on a variety of factors, all defined via requirements.
 To define a requirement, use the `requirement` key in a route configuration. If a player fulfills the requirement for the \
 route with the highest precedence, they will be routed to that backend.
@@ -82,6 +93,7 @@ passthrough backend) will be sent instead.
 - `player_sample`: Sets the preview list of players which will be visible to the client when they hover over the player
 count in the server list.
 - `message`: The JSON message which appears in the server list
+- `icon`: The name of the icon image file which should appear in the server list
 - `secure_chat`: Declares to the client whether the server uses secure chat or not
 - `preview_chat`: Declares to the client whether the server uses chat previews or not
 - `passthrough`: If set, the proxy will relay all status messages to the backend server with the given ID. All null 
@@ -122,18 +134,30 @@ defining which cookie should be queried, and a `value` key, which contains a lis
 values. Not available in status requests.
 - `locale`: Checks the player's locale information (i.e. en_us). It should have a `value` key, which is a string or list of strings defining
 valid locales. Not available in status requests.
+- `date`: Checks the current time and date on the server. It should have one or more of the following optional fields:
+  - `time_zone`: The time zone to use (defaults to the system's time zone)
+  - `second`: A range of seconds of the minute which are valid.
+  - `minute`: A range of minutes of the hour which are valid.
+  - `hour`: A range of hours of the day which are valid.
+  - `day`: A range of days of the month which are valid.
+  - `month`: A range of months of the year which are valid.
+  - `year`: A range of years of the era which are valid.
 - `composite`: Combines multiple requirements into one. It should have the following keys:
-  - `count`: The number of requirements which need to be completed, or a range in one of the following formats:
-    - `"all"`: The player must fulfill all requirements (default)
-    - `N`: The player must fulfill exactly N requirements
-    - `">N"`: The player must fulfill more than N requirements
-    - `"<N"`: The player must fulfill less than N requirements
-    - `">=N"`: The player must fulfill at least N requirements
-    - `"<=N"`: The player must fulfill at most N requirements
-    - `"[N,M]"`: The player must fulfill between N and M requirements (inclusive)
-    - `"(N,M)"`: The player must fulfill between N and M requirements (exclusive)
-    - `"{N,M,O}"`: The player must fulfill exactly N, M, or O requirements
+  - `count`: The number of requirements which need to be completed, or a range. (Set to "all" to require all 
+  sub-requirements to be fulfilled)
   - `values`: A list of requirements which must be fulfilled
+
+### Ranges
+Date requirements fields and the composite requirement `count` field allow you to specify ranges of numbers in any
+of the following formats:
+- `N`: Exactly N
+- `">N"`: more than N
+- `"<N"`: Less than N
+- `">=N"`: At least N
+- `"<=N"`: At most N
+- `"[N,M]"`: Between N and M (inclusive)
+- `"(N,M)"`: Between N and M (exclusive)
+- `"{N,M,O}"`: Exactly N, M, or O
 
 ### Outputs
 Some requirements (Such as [`mdp:jwt`](plugin-jwt/README.md)) may output values when successfully checked. These values can be accessed in a route's
@@ -172,7 +196,20 @@ A requirement which denies players based on their username:
     }
 ]
 ```
-
+A status requirement which displays a different message and icon on Christmas day
+```json
+"status": [
+    {
+        "message": "&aMerry Christmas!",
+        "icon": "christmas"
+        "requirement": {
+            "type": "date",
+            "day": 25,
+            "month": 12
+        }
+    }
+]
+```
 
 ## Lang
 Language files are stored in the `lang` directory. Configurable messages include those that are sent to clients when 
@@ -189,8 +226,8 @@ file at its root with the following contents:
 }
 ```
 A plugin's main class must implement the `Plugin` interface, which requires it implement the method `void initialize(Proxy)`
-The proxy's API is published in the repository at `https://maven.wallentines.org`
-The proxy's API is published with the artifact ID `org.wallentines:midnightproxy-api`. The latest version is `0.1.0`
+The proxy's API is published in the repository at `https://maven.wallentines.org/releases`
+The proxy's API is published with the artifact ID `org.wallentines:midnightproxy-api`. The latest version is `0.3.0`
 
 As of now, the plugin API is pretty limited. Plugins can pretty much only add console commands and requirement types.
 
