@@ -33,7 +33,9 @@ public class LastServerPlugin implements Plugin {
             BackendConnection conn = client.getBackendConnection();
             if(conn == null) return;
 
-            String id = proxy.getBackends().getId(conn.getBackend());
+            String id = conn.getBackendId(proxy);
+            if(id == null) return;
+
             dataManager.getData(client.uuid().toString()).set("last_server", id);
             dataManager.save(client.uuid().toString());
         });

@@ -5,6 +5,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.*;
+import org.jetbrains.annotations.Nullable;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.*;
@@ -121,6 +122,11 @@ public class BackendConnectionImpl implements BackendConnection {
     @Override
     public boolean isForwarding() {
         return forwarding;
+    }
+
+    @Override
+    public @Nullable String getBackendId(Proxy proxy) {
+        return proxy.getBackends().getId(backend);
     }
 
     @Override

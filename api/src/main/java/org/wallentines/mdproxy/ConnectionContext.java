@@ -1,6 +1,10 @@
 package org.wallentines.mdproxy;
 
+import org.wallentines.mcore.lang.CustomPlaceholder;
+import org.wallentines.mcore.lang.PlaceholderContext;
+
 import java.net.InetAddress;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +31,15 @@ public class ConnectionContext {
 
     public String setMetaProperty(String key, String value) {
         return meta.put(key, value);
+    }
+
+    public PlaceholderContext toPlaceholderContext() {
+        PlaceholderContext out = new PlaceholderContext();
+        out.addValue(connection);
+        for(String s : meta.keySet()) {
+            out.addValue(CustomPlaceholder.inline(s, meta.get(s)));
+        }
+        return out;
     }
 
     public String hostname() {
