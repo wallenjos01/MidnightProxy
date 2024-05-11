@@ -18,7 +18,8 @@ import org.wallentines.midnightlib.registry.Identifier;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
@@ -227,29 +228,36 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
-    public int executeTasks(String taskQueue) {
-        return executeTasksAsync(taskQueue).join();
+    public void executeTasks(String taskQueue) {
+        executeTasksAsync(taskQueue);
     }
 
     @Override
-    public CompletableFuture<Integer> executeTasksAsync(String taskQueue) {
-        channel.config().setAutoRead(false);
-        return CompletableFuture.supplyAsync(() -> {
-            Queue<Task> toExecute = tasks.get(taskQueue);
-            if(toExecute == null) return 0;
+    public CompletableFuture<Void> executeTasksAsync(String taskQueue) {
 
-            int executed = 0;
+        channel.config().setAutoRead(false);
+        return CompletableFuture.runAsync(() -> {
+            Queue<Task> toExecute = tasks.get(taskQueue);
+            if(toExecute == null || toExecute.isEmpty()) return;
+
+            List<Callable<Object>> toCall = new ArrayList<>(toExecute.size());
             while(!toExecute.isEmpty()) {
                 Task task = toExecute.remove();
-                try {
-                    task.run(taskQueue, this);
-                } catch (Throwable th) {
-                    LOGGER.error("An error occurred while executing a task!", th);
-                }
-                executed++;
+                toCall.add(Executors.callable(() -> {
+                    try {
+                        task.run(taskQueue, this);
+                    } catch (Throwable th) {
+                        LOGGER.error("An error occurred while running a task!", th);
+                    }
+                }));
+            }
+
+            try {
+                channel.eventLoop().invokeAll(toCall);
+            } catch (InterruptedException ex) {
+                LOGGER.error("Unable to complete all tasks!", ex);
             }
             channel.config().setAutoRead(true);
-            return executed;
 
         }, channel.eventLoop());
     }

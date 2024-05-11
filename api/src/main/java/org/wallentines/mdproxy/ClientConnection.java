@@ -57,11 +57,10 @@ public interface ClientConnection {
     int protocolVersion();
 
     /**
-     * Gets the client's player username. Will be null if the player info is not available. May be forged if the player
-     * is not authenticated.
+     * Gets the client's player username. Will be the player's IP address if the player info is not available.
+     * May be forged if the player is not authenticated.
      * @return The client's username.
      */
-    @Nullable
     String username();
 
     /**
@@ -163,16 +162,15 @@ public interface ClientConnection {
     /**
      * Executes all the tasks in the given queue before returning.
      * @param taskQueue The task queue name.
-     * @return The number of tasks executed.
      */
-    int executeTasks(String taskQueue);
+    void executeTasks(String taskQueue);
 
     /**
      * Executes all the tasks in the given queue asynchronously.
      * @param taskQueue The task queue name.
-     * @return A completable future which will contain the number of tasks executed.
+     * @return A completable future which will be complete when all tasks are done.
      */
-    CompletableFuture<Integer> executeTasksAsync(String taskQueue);
+    CompletableFuture<Void> executeTasksAsync(String taskQueue);
 
 
     static void registerPlaceholders(PlaceholderManager manager) {

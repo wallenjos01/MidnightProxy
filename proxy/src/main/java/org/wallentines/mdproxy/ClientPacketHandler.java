@@ -178,6 +178,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
+            PlayerInfo pi = conn.playerInfo();
+            if(pi == null) {
+                LOGGER.error("Received reconnect cookie before player info!");
+                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                return;
+            }
+
             String jwt = new String(cookie.data(), StandardCharsets.US_ASCII);
             SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
             if(!jwtRes.isComplete()) {
@@ -199,8 +206,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     .enforceSingleUse(server.getTokenCache())
                     .withClaim("hostname", conn.hostname())
                     .withClaim("port", conn.port())
-                    .withClaim("username", conn.username())
-                    .withClaim("uuid", conn.uuid().toString())
+                    .withClaim("username", pi.username())
+                    .withClaim("uuid", pi.uuid().toString())
                     .withClaim("protocol", conn.protocolVersion());
 
             if(!verifier.verify(decoded)) {
