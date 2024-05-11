@@ -3,7 +3,6 @@ package org.wallentines.mdproxy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.lang.PlaceholderContext;
 import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;

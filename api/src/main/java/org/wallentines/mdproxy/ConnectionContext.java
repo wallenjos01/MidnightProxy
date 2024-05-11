@@ -4,7 +4,6 @@ import org.wallentines.mcore.lang.CustomPlaceholder;
 import org.wallentines.mcore.lang.PlaceholderContext;
 
 import java.net.InetAddress;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

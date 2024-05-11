@@ -14,7 +14,9 @@ import org.wallentines.mdproxy.ClientPacketHandler;
 import org.wallentines.mdproxy.ProxyServer;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class ConnectionManager {

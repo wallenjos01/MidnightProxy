@@ -18,8 +18,9 @@ import org.wallentines.midnightlib.registry.Identifier;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
@@ -35,7 +36,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private String locale;
     private BackendConnectionImpl backend;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
-
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
 
 

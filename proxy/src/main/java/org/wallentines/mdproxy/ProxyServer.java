@@ -22,7 +22,9 @@ import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.io.File;
 import java.security.KeyPair;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class ProxyServer implements Proxy {
@@ -36,7 +38,6 @@ public class ProxyServer implements Proxy {
     private final StringRegistry<CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final List<Route> routes = new ArrayList<>();
-    //private final HashMap<UUID, ClientConnectionImpl> clients = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager langManager;
