@@ -46,7 +46,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private ClientConnectionImpl conn;
     private boolean encrypted;
     private PlayerProfile profile;
-    private ProtocolPhase phase;
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
 
@@ -61,7 +60,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.server = server;
         this.channel = channel;
         this.encrypted = false;
-        this.phase = ProtocolPhase.HANDSHAKE;
         this.address = address;
 
         this.routes = new ArrayDeque<>(server.getRoutes());
@@ -462,8 +460,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
-
-        this.phase = phase;
 
         GameVersion version = new GameVersion("", conn.protocolVersion());
 

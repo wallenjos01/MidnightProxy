@@ -4,6 +4,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mdproxy.ClientPacketHandler;
 import org.wallentines.mdproxy.ProxyServer;
 import org.wallentines.mdproxy.packet.PacketRegistry;
@@ -14,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
-
+    private static final Logger LOGGER = LoggerFactory.getLogger("ClientChannelInitializer");
     private final ConnectionManager manager;
     private final ProxyServer server;
 
@@ -45,6 +47,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
         manager.addClientConnection(handler);
         channel.closeFuture().addListener(future -> {
+            LOGGER.info("Client disconnected: {}", handler.getUsername());
             manager.removeClientConnection(handler);
         });
 

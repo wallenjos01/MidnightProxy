@@ -6,7 +6,6 @@ import org.wallentines.mcore.lang.PlaceholderSupplier;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.midnightlib.registry.Identifier;
