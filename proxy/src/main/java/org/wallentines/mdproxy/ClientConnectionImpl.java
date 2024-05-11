@@ -17,9 +17,8 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
@@ -35,6 +34,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private String locale;
     private BackendConnectionImpl backend;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
+
+    private final Map<String, Queue<Task>> tasks = new HashMap<>();
 
 
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
@@ -218,6 +219,39 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
         LOGGER.info("Disconnecting player {}", username());
         channel.close();
+    }
+
+    @Override
+    public void registerTask(String taskQueue, Task task) {
+        tasks.computeIfAbsent(taskQueue, k -> new ArrayDeque<>()).add(task);
+    }
+
+    @Override
+    public int executeTasks(String taskQueue) {
+        return executeTasksAsync(taskQueue).join();
+    }
+
+    @Override
+    public CompletableFuture<Integer> executeTasksAsync(String taskQueue) {
+        channel.config().setAutoRead(false);
+        return CompletableFuture.supplyAsync(() -> {
+            Queue<Task> toExecute = tasks.get(taskQueue);
+            if(toExecute == null) return 0;
+
+            int executed = 0;
+            while(!toExecute.isEmpty()) {
+                Task task = toExecute.remove();
+                try {
+                    task.run(taskQueue, this);
+                } catch (Throwable th) {
+                    LOGGER.error("An error occurred while executing a task!", th);
+                }
+                executed++;
+            }
+            channel.config().setAutoRead(true);
+            return executed;
+
+        }, channel.eventLoop());
     }
 
     public Channel getChannel() {

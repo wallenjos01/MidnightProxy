@@ -241,6 +241,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
+        conn.executeTasks(Task.CONFIGURE_QUEUE);
+
         tryNextServer();
 
     }
@@ -282,6 +284,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     private void startLogin() {
+
+        conn.executeTasks(Task.PRE_LOGIN_QUEUE);
 
         boolean canConnectImmediately = true;
 
@@ -338,6 +342,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
         }
+
+        conn.executeTasks(Task.POST_LOGIN_QUEUE);
 
         conn.send(new ClientboundLoginFinishedPacket(profile));
     }

@@ -13,6 +13,7 @@ import org.wallentines.midnightlib.registry.Identifier;
 import java.net.InetAddress;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Represents a connected client
@@ -151,6 +152,27 @@ public interface ClientConnection {
      * Disconnects the player without sending a message.
      */
     void disconnect();
+
+    /**
+     * Registers a task to be run in the given queue.
+     * @param taskQueue The task queue name.
+     * @param task The task to run.
+     */
+    void registerTask(String taskQueue, Task task);
+
+    /**
+     * Executes all the tasks in the given queue before returning.
+     * @param taskQueue The task queue name.
+     * @return The number of tasks executed.
+     */
+    int executeTasks(String taskQueue);
+
+    /**
+     * Executes all the tasks in the given queue asynchronously.
+     * @param taskQueue The task queue name.
+     * @return A completable future which will contain the number of tasks executed.
+     */
+    CompletableFuture<Integer> executeTasksAsync(String taskQueue);
 
 
     static void registerPlaceholders(PlaceholderManager manager) {
