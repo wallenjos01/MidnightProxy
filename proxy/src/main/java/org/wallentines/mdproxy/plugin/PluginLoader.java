@@ -55,9 +55,7 @@ public class PluginLoader implements PluginManager {
     private void tryLoad(File f, Proxy proxy) {
 
 
-        try {
-
-            ClassLoader loader = new URLClassLoader(new URL[] { f.toURI().toURL() }, PluginLoader.class.getClassLoader());
+        try(URLClassLoader loader = new URLClassLoader(new URL[] { f.toURI().toURL() }, PluginLoader.class.getClassLoader())) {
 
             PluginInfo info;
             try (InputStream pluginDesc = loader.getResourceAsStream("plugin.json")) {

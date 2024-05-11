@@ -10,7 +10,6 @@ import org.wallentines.mcore.text.Component;
 import org.wallentines.mcore.text.ComponentResolver;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
@@ -36,7 +35,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private String locale;
     private BackendConnectionImpl backend;
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
-
 
 
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
@@ -130,11 +128,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
-    public boolean isForwarding() {
-        return backend != null;
-    }
-
-    @Override
     public boolean hasDisconnected() {
         return !channel.isOpen();
     }
@@ -202,7 +195,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
     }
 
-    public void disconnect(ProtocolPhase phase, Component component) {
+    public void disconnect(Component component) {
 
         if(hasDisconnected()) {
             return;

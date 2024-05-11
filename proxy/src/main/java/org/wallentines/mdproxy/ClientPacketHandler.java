@@ -345,7 +345,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     private void disconnect(Component component) {
-        conn.disconnect(phase, component);
+        conn.disconnect(component);
     }
 
     private void tryNextServer() {

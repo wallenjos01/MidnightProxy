@@ -17,43 +17,130 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+/**
+ * Represents a proxy server instance.
+ */
 public interface Proxy {
 
+    /**
+     * Gets the port the proxy is listening on.
+     * @return The proxy port.
+     */
     int getPort();
 
+    /**
+     * Gets whether the proxy is in online mode (will authenticate players if necessary)
+     * @return Whether the proxy is in online mode
+     */
     boolean isOnlineMode();
 
+    /**
+     * Gets whether the proxy will always attempt to authenticate players
+     * @return Whether authentication is required.
+     */
     boolean requiresAuth();
 
+    /**
+     * Gets the proxy's configuration loaded from config.json.
+     * @return The proxy configuration.
+     */
     ConfigSection getConfig();
 
+    /**
+     * Shuts down the proxy.
+     */
     void shutdown();
 
+    /**
+     * Reloads the configuration from disk.
+     */
     void reload();
 
+    /**
+     * Gets a registry of all backends.
+     * @return The backend registry.
+     */
     RegistryBase<String, Backend> getBackends();
 
+    /**
+     * Gets a list of all status entries.
+     * @return A list of status entries.
+     */
     List<StatusEntry> getStatusEntries();
+
+    /**
+     * Gets a list of all routes, in order
+     * @return A list of routes.
+     */
     List<Route> getRoutes();
 
+    /**
+     * Gets the proxy's status icon cache.
+     * @return The icon cache.
+     */
     IconCache getIconCache();
 
+    /**
+     * Gets the proxy's console command registry.
+     * @return The command registry.
+     */
     StringRegistry<CommandExecutor> getCommands();
 
+    /**
+     * Gets a stream of the UUIDs of all clients connected through the proxy.
+     * @return A stream of client UUIDs.
+     */
     Stream<UUID> getClientIds();
 
+    /**
+     * Gets the connection for the client with the given UUID.
+     * @param uuid The client's UUID.
+     * @return The client's connection.
+     */
     ClientConnection getConnection(UUID uuid);
 
+    /**
+     * Gets the number of players connected through the proxy.
+     * @return The player count.
+     */
     int getOnlinePlayers();
 
+    /**
+     * Gets the proxy's player limit.
+     * @return The player limit.
+     */
     int getPlayerLimit();
 
+    /**
+     * Determines if the player with the given info (username and UUID) should bypass the player limit. Note that player
+     * info can be forged if the connecting player has not authenticated with Mojang.
+     * @param info The player info to check.
+     * @return Whether the player should bypass the player limit.
+     */
     boolean bypassesPlayerLimit(PlayerInfo info);
 
+    /**
+     * Gets the proxy's plugin manager.
+     * @return The plugin manager
+     */
     PluginManager getPluginManager();
 
+    /**
+     * Gets an event fired when a client connects to the proxy.
+     * @return An event handler list.
+     */
     HandlerList<ClientConnection> clientConnectEvent();
+
+    /**
+     * Gets an event fired when a client disconnects from the proxy.
+     * @return An event handler list.
+     */
     HandlerList<ClientConnection> clientDisconnectEvent();
+
+    /**
+     * Gets an event fired when a client connects to a backend server.
+     * @return An event handler list.
+     */
     HandlerList<ClientConnection> clientJoinBackendEvent();
 
 
