@@ -1,0 +1,3 @@
+#!/bin/sh
+
+bash -c "echo '$@' > '${PROXY_STDIN_PATH:-/proxy/stdin}'"
