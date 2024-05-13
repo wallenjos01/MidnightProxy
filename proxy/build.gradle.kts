@@ -72,7 +72,3 @@ val finalCopy = tasks.register<Copy>("copyFinalJar") {
     into(output)
     rename("(.*)\\.jar", "midnightproxy.jar")
 }
-
-tasks.build {
-    dependsOn(finalCopy)
-}
