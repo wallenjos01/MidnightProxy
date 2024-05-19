@@ -132,6 +132,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     @Override
+    public void handle(ServerboundLoginQueryPacket message) {
+
+    }
+
+    @Override
     public void handle(ServerboundEncryptionPacket encrypt) {
         if(!conn.playerInfoAvailable() || challenge == null) {
             throw new IllegalStateException("Received unrequested encryption packet!");

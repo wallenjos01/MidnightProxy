@@ -4,6 +4,7 @@ import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
@@ -65,6 +66,11 @@ public class StatusResponder implements ClientboundPacketHandler {
     public void handle(ClientboundStatusPacket status) {
 
         conn.send(new ClientboundStatusPacket(entry.resolve(status.data(), server.getIconCache())));
+    }
+
+    @Override
+    public void handle(ClientboundLoginQueryPacket message) {
+
     }
 
     @Override
