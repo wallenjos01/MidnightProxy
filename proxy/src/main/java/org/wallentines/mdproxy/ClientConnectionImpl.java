@@ -307,7 +307,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
         CompletableFuture<ServerboundLoginQueryPacket> awaited = loginQueries.remove(packet.messageId());
         if(awaited == null) {
-            LOGGER.warn("Received unsolicited login query in channel {}", packet.channel());
+            LOGGER.warn("Received unsolicited login query #{}", packet.messageId());
             return;
         }
 
