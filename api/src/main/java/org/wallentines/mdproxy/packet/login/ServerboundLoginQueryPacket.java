@@ -9,7 +9,7 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public record ServerboundLoginQueryPacket(int messageId, @Nullable ByteBuf data) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(4, ServerboundLoginQueryPacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(2, ServerboundLoginQueryPacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {

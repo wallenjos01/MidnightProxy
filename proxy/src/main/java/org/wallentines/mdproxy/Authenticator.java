@@ -13,10 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Authenticator {
 
@@ -27,7 +24,7 @@ public class Authenticator {
 
     public Authenticator(ProxyServer server, int maxThreads) {
         this.server = server;
-        this.executor = new ThreadPoolExecutor(1, maxThreads, 5000, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(maxThreads));
+        this.executor = new ThreadPoolExecutor(1, maxThreads, 5000, TimeUnit.MILLISECONDS, new SynchronousQueue<>());
     }
 
     public CompletableFuture<PlayerProfile> authenticate(ClientConnection connection, String serverId) {

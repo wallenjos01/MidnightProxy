@@ -10,7 +10,7 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public record ClientboundTransferPacket(String host, int port) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(10, (ver, phase, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(11, (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 

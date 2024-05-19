@@ -73,9 +73,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundHandshakePacket handshake) {
 
-        LOGGER.info("Received handshake from " + getUsername() + " to " + handshake.address() + " (" + handshake.intent().name() + ")");
+        LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
         this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port());
         this.intent = handshake.intent();
+
+        this.server.clientConnectEvent().invoke(conn);
 
         if(handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {
             changePhase(ProtocolPhase.STATUS);
@@ -127,7 +129,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             this.profile = new PlayerProfile(login.uuid(), login.username());
 
             // Continue with login
-            startLogin();
+            preLogin();
         }
     }
 
@@ -179,7 +181,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         if(cookie.key().equals(RECONNECT_COOKIE)) {
 
             if(cookie.data().length == 0) {
-                startLogin();
+                preLogin();
                 return;
             }
 
@@ -201,7 +203,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             JWT decoded = jwtRes.getOrThrow();
             if(decoded.isExpired()) {
-                startLogin();
+                preLogin();
                 return;
             }
 
@@ -253,9 +255,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
-        conn.executeTasks(Task.CONFIGURE_QUEUE);
-
-        tryNextServer();
+        conn.executeTasksAsync(Task.CONFIGURE_QUEUE).thenRun(this::tryNextServer);
 
     }
 
@@ -295,9 +295,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         });
     }
 
-    private void startLogin() {
+    private void preLogin() {
 
-        conn.executeTasks(Task.PRE_LOGIN_QUEUE);
+        conn.executeTasksAsync(Task.PRE_LOGIN_QUEUE).thenRun(this::startLogin);
+    }
+
+    private void startLogin() {
 
         boolean canConnectImmediately = true;
 
@@ -355,9 +358,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        conn.executeTasks(Task.POST_LOGIN_QUEUE);
+        conn.executeTasksAsync(Task.POST_LOGIN_QUEUE).thenRun(() -> {
+            conn.send(new ClientboundLoginFinishedPacket(profile));
+        });
 
-        conn.send(new ClientboundLoginFinishedPacket(profile));
     }
 
     private void disconnect(Component component) {
@@ -397,7 +401,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             if(res == TestResult.PASS) {
                 toUse = current.resolveBackend(ctx, server.getBackends());
                 if(toUse == null) {
-                    LOGGER.warn("Unable to resolve backend for successful route! (" + current.backend() + ")");
+                    LOGGER.warn("Unable to resolve backend for successful route! ({})", current.backend());
                 } else {
                     break;
                 }

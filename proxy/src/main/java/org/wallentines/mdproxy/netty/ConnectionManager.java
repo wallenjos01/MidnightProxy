@@ -62,7 +62,6 @@ public class ConnectionManager {
 
     public void addClientConnection(ClientPacketHandler handler) {
         this.connected.add(handler);
-        server.clientConnectEvent().invoke(handler.getConnection());
     }
 
     public void removeClientConnection(ClientPacketHandler handler) {

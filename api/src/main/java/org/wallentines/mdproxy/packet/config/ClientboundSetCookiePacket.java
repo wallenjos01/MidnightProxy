@@ -11,7 +11,7 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 public record ClientboundSetCookiePacket(Identifier id, byte[] data) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(9, (ver, phase, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(10, (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 

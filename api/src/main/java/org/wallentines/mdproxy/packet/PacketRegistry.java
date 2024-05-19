@@ -70,8 +70,8 @@ public class PacketRegistry<T> {
     private static final List<PacketType<ClientboundPacketHandler>> STATUS_CLIENTBOUND = List.of(ClientboundStatusPacket.TYPE, ClientboundPingPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> STATUS_SERVERBOUND = List.of(ServerboundStatusPacket.TYPE, ServerboundPingPacket.TYPE);
 
-    private static final List<PacketType<ClientboundPacketHandler>> LOGIN_CLIENTBOUND = List.of(ClientboundKickPacket.TYPE, ClientboundEncryptionPacket.TYPE, ClientboundLoginFinishedPacket.TYPE, ClientboundCookieRequestPacket.TYPE);
-    private static final List<PacketType<ServerboundPacketHandler>> LOGIN_SERVERBOUND = List.of(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
+    private static final List<PacketType<ClientboundPacketHandler>> LOGIN_CLIENTBOUND = List.of(ClientboundKickPacket.TYPE, ClientboundEncryptionPacket.TYPE, ClientboundLoginFinishedPacket.TYPE, ClientboundLoginQueryPacket.TYPE, ClientboundCookieRequestPacket.TYPE);
+    private static final List<PacketType<ServerboundPacketHandler>> LOGIN_SERVERBOUND = List.of(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginQueryPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
 
     private static final List<PacketType<ClientboundPacketHandler>> CONFIG_CLIENTBOUND = List.of(ClientboundCookieRequestPacket.TYPE, ClientboundTransferPacket.TYPE, ClientboundKickPacket.TYPE, ClientboundPluginMessagePacket.TYPE, ClientboundSetCookiePacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> CONFIG_SERVERBOUND = List.of(ServerboundSettingsPacket.TYPE, ServerboundCookiePacket.TYPE, ServerboundPluginMessagePacket.TYPE);

@@ -39,12 +39,15 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private boolean auth;
     private String locale;
     private BackendConnectionImpl backend;
+
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
+
+    private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
+
     private final HandlerList<ServerboundPluginMessagePacket> pluginMessageEvent = new HandlerList<>();
     private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
 
-    private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
 
 
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
@@ -239,16 +242,19 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public void executeTasks(String taskQueue) {
-        executeTasksAsync(taskQueue);
+        executeTasksAsync(taskQueue).join();
     }
 
     @Override
     public CompletableFuture<Void> executeTasksAsync(String taskQueue) {
 
-        channel.config().setAutoRead(false);
         return CompletableFuture.runAsync(() -> {
+
             Queue<Task> toExecute = tasks.get(taskQueue);
-            if(toExecute == null || toExecute.isEmpty()) return;
+
+            if(toExecute == null || toExecute.isEmpty()) {
+                return;
+            }
 
             List<Callable<Object>> toCall = new ArrayList<>(toExecute.size());
             while(!toExecute.isEmpty()) {
@@ -261,15 +267,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
                     }
                 }));
             }
-
             try {
-                channel.eventLoop().invokeAll(toCall);
+                channel.eventLoop().parent().invokeAll(toCall);
             } catch (InterruptedException ex) {
                 LOGGER.error("Unable to complete all tasks!", ex);
             }
-            channel.config().setAutoRead(true);
 
-        }, channel.eventLoop());
+        }, channel.eventLoop().parent());
     }
 
     @Override

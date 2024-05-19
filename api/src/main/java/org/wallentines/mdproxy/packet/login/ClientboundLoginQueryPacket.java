@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public record ClientboundLoginQueryPacket(int messageId, Identifier channel, ByteBuf data) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(2, ClientboundLoginQueryPacket::read);
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(4, ClientboundLoginQueryPacket::read);
 
     private static final AtomicInteger MESSAGE_COUNTER = new AtomicInteger(0);
 

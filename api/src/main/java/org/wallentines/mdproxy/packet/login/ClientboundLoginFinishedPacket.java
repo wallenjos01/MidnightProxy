@@ -41,5 +41,7 @@ public record ClientboundLoginFinishedPacket(PlayerProfile gameProfile) implemen
             PacketBufferUtil.writeUtf(buf, prop.value());
             PacketBufferUtil.writeOptional(buf, prop.signature(), PacketBufferUtil::writeUtf);
         }
+
+        buf.writeBoolean(true); // Strict error handling
     }
 }
