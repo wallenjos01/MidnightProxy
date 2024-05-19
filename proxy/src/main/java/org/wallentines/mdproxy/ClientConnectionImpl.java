@@ -1,5 +1,6 @@
 package org.wallentines.mdproxy;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -14,7 +15,9 @@ import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
+import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -39,6 +42,9 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
     private final HandlerList<ServerboundPluginMessagePacket> pluginMessageEvent = new HandlerList<>();
+    private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
+
+    private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
 
 
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
@@ -272,18 +278,68 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public @Nullable ServerboundPluginMessagePacket awaitPluginMessage(Identifier id, int timeout) {
 
-        CompletableFuture<ServerboundPluginMessagePacket> out = new CompletableFuture<>();
+        CompletableFuture<ServerboundPluginMessagePacket> future = new CompletableFuture<>();
 
-        pluginMessageEvent.register(out, out::complete);
-        out.join();
+        pluginMessageEvent.register(future, msg -> {
+            if(msg.channel().equals(id)) {
+                future.complete(msg);
+            }
+        });
+
+        ServerboundPluginMessagePacket out;
         try {
-            return out.get(timeout, TimeUnit.MILLISECONDS);
+            out = future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException ex) {
-            return null;
+            out = null;
         } catch (InterruptedException | ExecutionException ex) {
             LOGGER.error("An exception occurred while awaiting a plugin message!", ex);
-            return null;
+            out = null;
         }
+        pluginMessageEvent.unregisterAll(future);
+        return out;
+    }
+
+    public HandlerList<ServerboundLoginQueryPacket> loginQueryEvent() {
+        return loginQueryEvent;
+    }
+
+    private void loginQueryReceived(ServerboundLoginQueryPacket packet) {
+
+        CompletableFuture<ServerboundLoginQueryPacket> awaited = loginQueries.remove(packet.messageId());
+        if(awaited == null) {
+            LOGGER.warn("Received unsolicited login query in channel {}", packet.channel());
+            return;
+        }
+
+        awaited.complete(packet);
+    }
+
+    @Override
+    public CompletableFuture<ServerboundLoginQueryPacket> sendLoginQuery(Identifier id, ByteBuf data) {
+
+        ClientboundLoginQueryPacket pck = new ClientboundLoginQueryPacket(id, data);
+        CompletableFuture<ServerboundLoginQueryPacket> out = new CompletableFuture<>();
+        loginQueries.put(pck.messageId(), out);
+
+        send(pck);
+        return out;
+    }
+
+    @Override
+    public ServerboundLoginQueryPacket awaitLoginQuery(Identifier id, ByteBuf data, int timeout) {
+
+        CompletableFuture<ServerboundLoginQueryPacket> future = sendLoginQuery(id, data);
+        ServerboundLoginQueryPacket out;
+        try {
+            out = future.get(timeout, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException ex) {
+            out = null;
+        } catch (InterruptedException | ExecutionException ex) {
+            LOGGER.error("An exception occurred while awaiting a login query!", ex);
+            out = null;
+        }
+        loginQueryEvent.unregisterAll(future);
+        return out;
     }
 
     public Channel getChannel() {

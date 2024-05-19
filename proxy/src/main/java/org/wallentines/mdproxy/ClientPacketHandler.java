@@ -133,7 +133,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundLoginQueryPacket message) {
-
+        conn.loginQueryEvent().invoke(message);
     }
 
     @Override

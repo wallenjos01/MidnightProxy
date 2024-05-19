@@ -1,5 +1,6 @@
 package org.wallentines.mdproxy;
 
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
 import org.wallentines.mcore.lang.PlaceholderManager;
 import org.wallentines.mcore.lang.PlaceholderSupplier;
@@ -9,6 +10,7 @@ import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
+import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -183,11 +185,29 @@ public interface ClientConnection {
     /**
      * Awaits a plugin message in the given channel.
      * @param id The channel ID to wait for a plugin message in.
-     * @param timeout The time to wait for a packet before returning null.
+     * @param timeout The time to wait for a packet before returning null, in milliseconds.
      * @return A plugin message packet, or null if the timeout was reached.
      */
     @Nullable
     ServerboundPluginMessagePacket awaitPluginMessage(Identifier id, int timeout);
+
+    /**
+     * Sends a login query to the client. Only valid during the login phase.
+     * @param id The login query channel ID.
+     * @param data The packet data.
+     * @return A future which will be complete when the client responds.
+     */
+    CompletableFuture<ServerboundLoginQueryPacket> sendLoginQuery(Identifier id, ByteBuf data);
+
+    /**
+     * Sends a login query to the client and awaits a response. Only valid during the login phase.
+     * @param id The login query channel ID.
+     * @param data The packet data.
+     * @param timeout The time to wait for a packet before returning null, in milliseconds.
+     * @return The client's response.
+     */
+    ServerboundLoginQueryPacket awaitLoginQuery(Identifier id, ByteBuf data, int timeout);
+
 
 
     static void registerPlaceholders(PlaceholderManager manager) {
