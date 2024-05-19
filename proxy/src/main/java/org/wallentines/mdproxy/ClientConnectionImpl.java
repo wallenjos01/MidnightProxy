@@ -53,6 +53,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
+
+        loginQueryEvent.register(this, this::loginQueryReceived);
     }
 
     @Override
