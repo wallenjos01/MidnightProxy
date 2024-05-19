@@ -241,7 +241,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundPluginMessagePacket message) {
-        LOGGER.info("Received plugin message in channel {}", message.channel());
+        conn.pluginMessageEvent().invoke(message);
     }
 
     @Override

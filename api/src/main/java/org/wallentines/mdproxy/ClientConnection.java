@@ -7,7 +7,9 @@ import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
+import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.net.InetAddress;
@@ -171,6 +173,21 @@ public interface ClientConnection {
      * @return A completable future which will be complete when all tasks are done.
      */
     CompletableFuture<Void> executeTasksAsync(String taskQueue);
+
+    /**
+     * An event fired whenever a plugin message is received.
+     * @return A plugin message event handler list.
+     */
+    HandlerList<ServerboundPluginMessagePacket> pluginMessageEvent();
+
+    /**
+     * Awaits a plugin message in the given channel.
+     * @param id The channel ID to wait for a plugin message in.
+     * @param timeout The time to wait for a packet before returning null.
+     * @return A plugin message packet, or null if the timeout was reached.
+     */
+    @Nullable
+    ServerboundPluginMessagePacket awaitPluginMessage(Identifier id, int timeout);
 
 
     static void registerPlaceholders(PlaceholderManager manager) {
