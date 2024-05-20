@@ -1,7 +1,7 @@
 plugins {
     id("proxy-build")
+    id("proxy-shadow")
     id("application")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 application.mainClass.set("org.wallentines.mdproxy.Main")
@@ -11,10 +11,7 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 
 repositories {
-    mavenCentral()
-    maven("https://maven.wallentines.org/")
     maven("https://libraries.minecraft.net/")
-    mavenLocal()
 }
 
 configurations.shadow {
@@ -41,10 +38,6 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
 
 java {

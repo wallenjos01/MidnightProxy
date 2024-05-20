@@ -1,3 +1,5 @@
+import build.plugin.Common
+
 plugins {
     id("java")
     id("java-library")
@@ -6,16 +8,18 @@ plugins {
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
 }
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven("https://maven.wallentines.org/releases")
 
     if(GradleVersion.version(version as String).isSnapshot) {
         maven("https://maven.wallentines.org/snapshots")
+        mavenLocal()
     }
 }
 
@@ -24,21 +28,11 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
 }
 
-tasks.withType<Jar>() {
-    val id = project.properties["id"]
-    archiveBaseName = "${id}-${project.name}"
+tasks.withType<Jar> {
+    archiveBaseName.set(Common.getArchiveName(project, rootProject))
 }
 
-tasks.withType<Test>() {
+tasks.withType<Test> {
     useJUnitPlatform()
     workingDir("run/test")
-}
-
-fun getProperties(): Map<String, String> {
-
-    return mapOf(
-            Pair("version", project.version as String),
-            Pair("id", project.properties["id"] as String)
-    )
-
 }
