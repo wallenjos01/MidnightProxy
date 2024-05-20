@@ -44,3 +44,5 @@ bin/
 logs/
 .idea/
 proxy/run/
+api/run
+api-jwt/run
