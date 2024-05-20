@@ -54,6 +54,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
     private final DefaultedSingleton<InetSocketAddress> address;
 
+    private boolean wasReconnected = false;
+
 
     public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server) {
 
@@ -480,6 +482,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     }
 
+    public boolean wasReconnected() {
+        return wasReconnected;
+    }
+
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
@@ -509,8 +515,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .encrypted(rsa, CryptCodec.A128CBC_HS256())
                 .asString().getOrThrow();
 
+        wasReconnected = true;
+
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));
+
     }
 
 
