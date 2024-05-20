@@ -1,3 +1,5 @@
+import build.plugin.Common
+
 plugins {
     id("proxy-build")
 }
@@ -12,21 +14,12 @@ repositories {
     mavenLocal()
 }
 
-dependencies {
+Common.setupResources(project, rootProject, "plugin.json")
 
+dependencies {
     compileOnly(project(":api"))
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-
-
-tasks.withType<ProcessResources>() {
-    filesMatching("plugin.json") {
-        expand(mapOf(
-                Pair("version", project.version as String)
-        ))
-    }
 }

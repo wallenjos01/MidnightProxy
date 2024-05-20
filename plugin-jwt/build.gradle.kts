@@ -1,3 +1,5 @@
+import build.plugin.Common
+
 plugins {
     id("proxy-build")
     id("proxy-publish")
@@ -13,21 +15,13 @@ repositories {
     mavenLocal()
 }
 
-dependencies {
+Common.setupResources(project, rootProject, "plugin.json")
 
+dependencies {
     compileOnly(project(":api"))
     compileOnly(project(":api-jwt"))
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-
-tasks.withType<ProcessResources>() {
-    filesMatching("plugin.json") {
-        expand(mapOf(
-                Pair("version", project.version as String)
-        ))
-    }
 }
