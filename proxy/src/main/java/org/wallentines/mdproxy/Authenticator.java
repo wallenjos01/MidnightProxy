@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Authenticator {
 
@@ -50,7 +53,7 @@ public class Authenticator {
                     return res.getOrThrow();
                 }
 
-                LOGGER.warn("Unable to parse authentication response! " + res.getError());
+                LOGGER.warn("Unable to parse authentication response! {}", res.getError());
                 return null;
 
             } catch (IOException ex) {
@@ -68,7 +71,7 @@ public class Authenticator {
         conn.connect();
 
         if(conn.getResponseCode() != 200) {
-            LOGGER.warn("Received invalid response from " + url);
+            LOGGER.warn("Received invalid response from {}", url);
             return null;
         }
 
@@ -78,12 +81,12 @@ public class Authenticator {
             obj = JSONCodec.minified().decode(ConfigContext.INSTANCE, responseStream);
         } catch (DecodeException ex) {
 
-            LOGGER.warn("Unable to parse response from " + url + "! " + ex.getMessage());
+            LOGGER.warn("Unable to parse response from " + url + "!", ex);
             return new ConfigSection();
         }
         if(!obj.isSection()) {
 
-            LOGGER.warn("Received non-section response from " + url + "! " + obj);
+            LOGGER.warn("Received non-section response from {}! {}", url, obj);
             return new ConfigSection();
         }
 

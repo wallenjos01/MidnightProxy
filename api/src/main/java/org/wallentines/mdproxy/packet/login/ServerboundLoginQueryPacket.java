@@ -4,7 +4,10 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.VarInt;
-import org.wallentines.mdproxy.packet.*;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
+import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public record ServerboundLoginQueryPacket(int messageId, @Nullable ByteBuf data) implements Packet<ServerboundPacketHandler> {

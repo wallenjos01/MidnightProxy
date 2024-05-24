@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.lang.UnresolvedComponent;
-import org.wallentines.mcore.text.Component;
+import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.jwt.*;
@@ -226,11 +226,31 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
-            Backend b = server.getBackends().get(decoded.getClaim("backend").asString());
-            if(b == null) {
-                LOGGER.warn("Unable to find requested reconnect backend {}!", decoded.getClaimAsString("backend"));
-                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
-                return;
+            Backend b;
+            String backendId = decoded.getClaimAsString("backend");
+            if(backendId == null) {
+                // Check for ephemeral backend
+                String ephHost = decoded.getClaimAsString("backend_host");
+                ConfigObject ephPort = decoded.getClaim("backend_port");
+                ConfigObject ephRedirect = decoded.getClaim("backend_redirect");
+                ConfigObject ephHaproxy = decoded.getClaim("backend_haproxy");
+                if(ephHost == null
+                        || ephPort == null || !ephPort.isNumber()
+                        || ephRedirect == null || !ephRedirect.isBoolean()
+                        || ephHaproxy == null || !ephHaproxy.isBoolean()) {
+                    LOGGER.warn("Unable to find any reconnect backend!");
+                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                    return;
+                }
+                b = new Backend(ephHost, ephPort.asNumber().intValue(), ephRedirect.asBoolean(), ephHaproxy.asBoolean());
+
+            } else {
+                b = server.getBackends().get(backendId);
+                if(b == null) {
+                    LOGGER.warn("Unable to find requested reconnect backend {}!", backendId);
+                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                    return;
+                }
             }
 
             connectToBackend(b);
@@ -503,20 +523,35 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         int port = b.redirect() ? b.port() : conn.port();
 
         KeyCodec<PublicKey, PrivateKey> rsa = KeyCodec.RSA_OAEP(server.getReconnectKeyPair());
-        String str = new JWTBuilder()
+        String backendId = server.getBackends().getId(b);
+        JWTBuilder builder = new JWTBuilder()
                 .withClaim("hostname", host)
                 .withClaim("port", port)
                 .withClaim("protocol", conn.protocolVersion())
                 .withClaim("username", conn.username())
-                .withClaim("uuid", conn.uuid().toString())
-                .withClaim("backend", server.getBackends().getId(b))
+                .withClaim("uuid", Objects.toString(conn.uuid()))
                 .withClaim(server.getTokenCache().getIdClaim(), UUID.randomUUID(), Serializer.UUID)
                 .expiresIn(server.getReconnectTimeout())
-                .issuedBy("midnightproxy")
+                .issuedNow()
+                .issuedBy("midnightproxy");
+
+        // Ephemeral Backend
+        if(backendId == null) {
+            backendId = b.toString();
+            builder.withClaim("backend_host", b.hostname())
+                    .withClaim("backend_port", b.port())
+                    .withClaim("backend_redirect", b.redirect())
+                    .withClaim("backend_haproxy", b.haproxy());
+        } else {
+            builder.withClaim("backend", backendId);
+        }
+
+        String str = builder
                 .encrypted(rsa, CryptCodec.A128CBC_HS256())
                 .asString().getOrThrow();
 
         wasReconnected = true;
+        LOGGER.info("Reconnecting {} to {}", getUsername(), backendId);
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
         conn.send(new ClientboundTransferPacket(host, port));
