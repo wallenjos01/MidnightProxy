@@ -19,16 +19,6 @@ public class CryptEncoder extends MessageToByteEncoder<ByteBuf> {
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf data, ByteBuf out) throws Exception {
 
-//        int plainSize = data.readableBytes();
-//        int cryptSize = cipher.getOutputSize(plainSize);
-//        System.out.println("Encrypting " + plainSize + " bytes...");
-//
-//        byte[] plain = new byte[plainSize];
-//        data.readBytes(plain, 0, plainSize);
-//
-//        byte[] crypted = new byte[cryptSize];
-//        out.writeBytes(crypted, 0, cipher.update(plain, 0, plainSize, crypted));
-
         try {
             cipher.cipher(data, out);
 

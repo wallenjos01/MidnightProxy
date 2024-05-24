@@ -21,17 +21,6 @@ public class CryptDecoder  extends MessageToMessageDecoder<ByteBuf> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf data, List<Object> list) throws Exception {
 
-//        int cryptSize = data.readableBytes();
-//        int plainSize = cipher.getOutputSize(cryptSize);
-//
-//        byte[] crypted = new byte[cryptSize];
-//        data.readBytes(crypted, 0, cryptSize);
-//
-//        ByteBuf out = ctx.alloc().heapBuffer(plainSize);
-//        out.writerIndex(cipher.update(crypted, 0, cryptSize, out.array(), out.arrayOffset()));
-//
-//        list.add(out);
-
         try {
             ByteBuf out = ctx.alloc().heapBuffer(cipher.getOutputLength(data.readableBytes()));
             cipher.cipher(data, out);

@@ -56,7 +56,6 @@ public class ProxyServer implements Proxy {
     private boolean preventProxy;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
-
     // Events
     private final HandlerList<ClientConnection> connected = new HandlerList<>();
     private final HandlerList<ClientConnection> disconnected = new HandlerList<>();
@@ -140,7 +139,7 @@ public class ProxyServer implements Proxy {
         StringRegistry<Backend> backends = new StringRegistry<>();
 
         Backend.SERIALIZER.filteredMapOf(
-                (key, err) -> LOGGER.warn("Could not deserialize a Backend with id " + key + "! " + err)
+                (key, err) -> LOGGER.warn("Could not deserialize a Backend with id {}! {}", key, err)
         ).deserialize(ConfigContext.INSTANCE, getConfig().getSection("backends"))
                 .getOrThrow()
                 .forEach(backends::register);

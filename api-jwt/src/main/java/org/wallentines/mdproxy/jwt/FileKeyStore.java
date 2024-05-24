@@ -33,13 +33,13 @@ public class FileKeyStore implements KeyStore {
     public <T> T getKey(String kid, KeyType<T> type) {
 
         if(!extensions.containsKey(type)) {
-            LOGGER.warn("Requested key with unknown type " + type);
+            LOGGER.warn("Requested key with unknown type {}", type);
             return null;
         }
 
         KeyRegistry<?> ureg = allKeys.computeIfAbsent(type, KeyRegistry::new);
         if(ureg.getType() != type) {
-            LOGGER.warn("Unable to create registry for type " + type);
+            LOGGER.warn("Unable to find registry for type {}", type);
             return null;
         }
 
@@ -50,7 +50,7 @@ public class FileKeyStore implements KeyStore {
             byte[] value;
             try(
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    FileInputStream fis = new FileInputStream(keyFile);
+                    FileInputStream fis = new FileInputStream(keyFile)
             ) {
 
                 byte[] buffer = new byte[HMAC_LENGTH];
@@ -81,13 +81,13 @@ public class FileKeyStore implements KeyStore {
     public <T> void setKey(String name, KeyType<T> type, T key) {
 
         if(!extensions.containsKey(type)) {
-            LOGGER.warn("Requested key with unknown type " + type);
+            LOGGER.warn("Attempt to register key with unknown type {}", type);
             return;
         }
 
         KeyRegistry<?> ureg = allKeys.computeIfAbsent(type, KeyRegistry::new);
         if(ureg.getType() != type) {
-            LOGGER.warn("Unable to create registry for type " + type);
+            LOGGER.warn("Unable to create registry for type {}", type);
             return;
         }
 
@@ -99,7 +99,7 @@ public class FileKeyStore implements KeyStore {
         try(FileOutputStream fos = new FileOutputStream(f)) {
             fos.write(type.serialize(key).getOrThrow());
         } catch (Exception ex) {
-            LOGGER.warn("Unable to save key " + name + "!", ex);
+            LOGGER.warn("Unable to save key {}!", name, ex);
         }
     }
 
@@ -112,7 +112,7 @@ public class FileKeyStore implements KeyStore {
         if(allKeys.get(type).clearKey(name) != null) {
             File f = new File(keyFolder, name + "." + extensions.get(type));
             if(!f.delete()) {
-                LOGGER.warn("Unable to delete key file " + f.getName());
+                LOGGER.warn("Unable to delete key file {}", f.getName());
             }
         }
     }
