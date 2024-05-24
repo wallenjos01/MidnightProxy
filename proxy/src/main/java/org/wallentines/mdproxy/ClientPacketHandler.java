@@ -5,6 +5,7 @@ import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
+import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -366,7 +367,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     }
 
-    private void disconnect(Component component) {
+    private void disconnect(UnresolvedComponent component) {
         conn.disconnect(component);
     }
 

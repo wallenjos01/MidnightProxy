@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.LocaleHolder;
+import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mcore.text.Component;
-import org.wallentines.mcore.text.ComponentResolver;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
@@ -210,18 +210,20 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
     }
 
+    public void disconnect(UnresolvedComponent component) {
+        disconnect(component.resolveFor(this));
+    }
+
     public void disconnect(Component component) {
 
         if(hasDisconnected()) {
             return;
         }
 
-        Component cmp = ComponentResolver.resolveComponent(component, this);
-
-        LOGGER.info("Disconnecting player {}: {}", username(), cmp.allText());
+        LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
 
         if(backend == null) {
-            send(new ClientboundKickPacket(cmp));
+            send(new ClientboundKickPacket(component));
         }
         channel.close().awaitUninterruptibly();
     }

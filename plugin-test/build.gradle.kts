@@ -17,6 +17,7 @@ repositories {
 Common.setupResources(project, rootProject, "plugin.json")
 
 dependencies {
+    compileOnly(libs.jetbrains.annotations)
     compileOnly(project(":api"))
 }
 

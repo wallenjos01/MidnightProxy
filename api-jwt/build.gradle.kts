@@ -23,6 +23,8 @@ dependencies {
 
     api(libs.slf4j.api)
 
+    compileOnly(libs.jetbrains.annotations)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.slf4j.simple)
