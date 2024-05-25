@@ -59,12 +59,14 @@ public class Main {
 
         File configFile = new File("config.json");
         FileWrapper<ConfigObject> config = new FileWrapper<>(ConfigContext.INSTANCE, JSONCodec.fileCodec(), configFile, StandardCharsets.UTF_8, DEFAULT_CONFIG);
-
         if(configFile.isFile()) {
             config.load();
         }
-        config.save();
 
+        File currentDir = new File(System.getProperty("user.dir"));
+        if(currentDir.canWrite() && !configFile.exists() || configFile.canWrite()) {
+            config.save();
+        }
 
         File langDir = new File("lang");
         if(!langDir.isDirectory() && !langDir.mkdirs()) {

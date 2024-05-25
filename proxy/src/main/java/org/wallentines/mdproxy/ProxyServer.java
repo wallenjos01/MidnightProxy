@@ -120,7 +120,11 @@ public class ProxyServer implements Proxy {
 
     @Override
     public ConfigSection getConfig() {
-        return config.getRoot().asSection();
+        ConfigObject out = config.getRoot();
+        if(out == null || !out.isSection()) {
+            return new ConfigSection();
+        }
+        return out.asSection();
     }
 
     @Override
