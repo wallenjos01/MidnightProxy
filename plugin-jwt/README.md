@@ -58,7 +58,8 @@ The values in the `output_claims` array will be stored in the connection context
 accessed in a route's `backend` value. The claims are stored with the format `jwt.<claim>`. These claims must be *present*
 in the JWT in order for the check to pass, but the claims' values are not validated in any way.
 
-### Example
+### Examples
+Using a JWT to connect a player to a backend:
 ```json
 {
   "routes": [
@@ -78,6 +79,38 @@ in the JWT in order for the check to pass, but the claims' values are not valida
         "require_auth": false
       },
       "backend": "%jwt.backend%"
+    },
+    {
+      "backend": "lobby"
+    }
+  ]
+}
+```
+
+Using a JWT to connect a player to an ephemeral backend:
+```json
+{
+  "routes": [
+    {
+      "requirement": {
+        "type": "mdp:jwt",
+        "key": "my_key",
+        "cookie": "my_cookie",
+        "expect_claims": {
+          "username": "%client_username%",
+          "uuid": "%client_uuid%"
+        },
+        "output_claims": [
+          "backend_host",
+          "backend_port"
+        ],
+        "single_use_claim": "token_id",
+        "require_auth": false
+      },
+      "backend": {
+        "hostname": "%jwt.backend_hostname%",
+        "port": "%jwt.backend_port%"
+      }
     },
     {
       "backend": "lobby"

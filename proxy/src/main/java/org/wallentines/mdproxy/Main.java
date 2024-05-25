@@ -81,6 +81,7 @@ public class Main {
             throw new IllegalStateException("Unable to load lang defaults!");
         }
 
+        LangManager.registerPlaceholders(PlaceholderManager.INSTANCE);
         LangManager manager = new LangManager(defaults, langDir, reg, PlaceholderManager.INSTANCE);
         manager.saveLanguageDefaults("en_us", defaults);
 
@@ -92,6 +93,7 @@ public class Main {
         PluginLoader loader = new PluginLoader(pluginDir);
 
         ProxyServer ps = new ProxyServer(config, manager, loader);
+
 
         try {
             ps.start();
