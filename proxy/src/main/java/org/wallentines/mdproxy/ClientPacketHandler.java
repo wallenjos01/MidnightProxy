@@ -77,7 +77,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundHandshakePacket handshake) {
 
-        LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
+        if(handshake.intent() != ServerboundHandshakePacket.Intent.STATUS || server.logStatusMessages()) {
+            LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
+        }
+
         this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port());
         this.intent = handshake.intent();
 

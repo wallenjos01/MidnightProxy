@@ -54,6 +54,7 @@ public class ProxyServer implements Proxy {
     private boolean requireAuth;
     private boolean haproxy;
     private boolean preventProxy;
+    private boolean logStatus;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
     // Events
@@ -139,6 +140,7 @@ public class ProxyServer implements Proxy {
         this.reconnectTimeout = getConfig().getInt("reconnect_timeout_sec");
         this.haproxy = getConfig().getBoolean("haproxy_protocol");
         this.preventProxy = getConfig().getBoolean("prevent_proxy_connections");
+        this.logStatus = getConfig().getBoolean("log_status_messages");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -281,5 +283,9 @@ public class ProxyServer implements Proxy {
 
     public boolean preventProxyConnections() {
         return preventProxy;
+    }
+
+    public boolean logStatusMessages() {
+        return logStatus;
     }
 }
