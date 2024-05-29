@@ -21,7 +21,7 @@ public class FrameDecoder extends ByteToMessageDecoder {
 
         SerializeResult<VarInt> vLength = VarInt.readPartial(data, 3);
         if(!vLength.isComplete()) {
-            LOGGER.warn("Found frame with invalid length! " + vLength.getError());
+            LOGGER.warn("Found frame with invalid length! {}", vLength.getError());
             return;
         }
 

@@ -65,7 +65,8 @@ public class ConnectionManager {
     }
 
     public void removeClientConnection(ClientPacketHandler handler) {
-        server.clientDisconnectEvent().invoke(handler.getConnection());
+        ClientConnectionImpl conn = handler.getConnection();
+        if(conn != null) server.clientDisconnectEvent().invoke(conn);
         this.connected.remove(handler);
     }
 

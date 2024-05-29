@@ -49,19 +49,20 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
         try {
             p = registry.read(id, bytes);
             if(bytes.isReadable()) {
-                throw new DecoderException("Found " + bytes.readableBytes() + " extra bytes after the end of a packet!");
+                int readable = bytes.readableBytes();
+                bytes.skipBytes(readable);
+                throw new DecoderException("Found " + readable + " extra bytes after the end of a packet!");
             }
             ctx.fireChannelRead(p);
 
         } catch (Exception ex) {
-            LOGGER.warn("An error occurred while parsing a packet with id {} in phase {}!", id, registry.getPhase().name(), ex);
+            LOGGER.error("An error occurred while parsing a packet with id {} in phase {}!", id, registry.getPhase().name(), ex);
+        }
 
-        } finally {
-            if(bytes.refCnt() == 0) {
-                LOGGER.warn("Packet with id {} in phase {} was already released!", id, registry.getPhase().name());
-            } else {
-                bytes.release();
-            }
+        if(bytes.refCnt() == 0) {
+            LOGGER.warn("Packet with id {} in phase {} was already released!", id, registry.getPhase().name());
+        } else {
+            bytes.release();
         }
     }
 
