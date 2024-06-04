@@ -2,6 +2,6 @@ package org.wallentines.mdproxy;
 
 public interface PlayerCountProvider {
 
-    int getOnlinePlayers();
+    int getOnlinePlayers(Proxy proxy);
 
 }

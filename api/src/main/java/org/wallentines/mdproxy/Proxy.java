@@ -89,14 +89,18 @@ public interface Proxy {
     /**
      * Gets a stream of the UUIDs of all clients connected through the proxy.
      * @return A stream of client UUIDs.
+     * @deprecated Use getPlayerList instead
      */
+    @Deprecated
     Stream<UUID> getClientIds();
 
     /**
      * Gets the connection for the client with the given UUID.
      * @param uuid The client's UUID.
      * @return The client's connection.
+     * @deprecated Use getPlayerList instead
      */
+    @Deprecated
     ClientConnection getConnection(UUID uuid);
 
     /**

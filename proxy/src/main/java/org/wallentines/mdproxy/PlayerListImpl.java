@@ -34,7 +34,7 @@ public class PlayerListImpl implements PlayerList {
     }
 
     @Override
-    public int getOnlinePlayers() {
+    public int getOnlinePlayers(Proxy proxy) {
         return connections.size();
     }
 }

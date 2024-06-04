@@ -25,7 +25,7 @@ import java.security.KeyPair;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class ProxyServer implements Proxy, PlayerCountProvider {
+public class ProxyServer implements Proxy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ProxyServer");
 
@@ -203,13 +203,12 @@ public class ProxyServer implements Proxy, PlayerCountProvider {
 
     @Override
     public Stream<UUID> getClientIds() {
-
-        return listener.getClientIds();
+        return playerList.getPlayerIds();
     }
 
     @Override
     public ClientConnection getConnection(UUID uuid) {
-        return listener.getConnection(uuid);
+        return playerList.getPlayer(uuid);
     }
 
     @Override
@@ -219,7 +218,7 @@ public class ProxyServer implements Proxy, PlayerCountProvider {
 
     @Override
     public int getOnlinePlayers() {
-        return playerCount.getOnlinePlayers();
+        return playerCount.getOnlinePlayers(this);
     }
 
     @Override
