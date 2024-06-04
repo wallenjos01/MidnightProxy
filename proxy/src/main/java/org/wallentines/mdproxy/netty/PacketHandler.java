@@ -22,15 +22,11 @@ public class PacketHandler<T> extends SimpleChannelInboundHandler<Packet<T>> {
 
         try {
             pck.handle(handler);
+        } catch (Throwable ex) {
+            LOGGER.error("An exception occurred while handling a packet!", ex);
+            ctx.channel().close();
         } finally {
             ReferenceCountUtil.release(pck);
         }
-    }
-
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.error("An exception occurred while handling a packet!", cause);
-        ctx.channel().close();
     }
 }

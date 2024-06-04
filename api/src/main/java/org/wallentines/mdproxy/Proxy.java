@@ -100,6 +100,12 @@ public interface Proxy {
     ClientConnection getConnection(UUID uuid);
 
     /**
+     * Gets the player list of players connected through the proxy
+     * @return The proxy's player list
+     */
+    PlayerList getPlayerList();
+
+    /**
      * Gets the number of players connected through the proxy.
      * @return The player count.
      */
@@ -118,6 +124,12 @@ public interface Proxy {
      * @return Whether the player should bypass the player limit.
      */
     boolean bypassesPlayerLimit(PlayerInfo info);
+
+    /**
+     * Changes the player count provider for the proxy.
+     * @param provider The new player count provider.
+     */
+    void setPlayerCountProvider(PlayerCountProvider provider);
 
     /**
      * Gets the proxy's plugin manager.

@@ -70,10 +70,6 @@ public class ConnectionManager {
         this.connected.remove(handler);
     }
 
-    public int getClientCount() {
-        return connected.size();
-    }
-
     private Stream<ClientConnectionImpl> connected() {
         return connected.stream()
                 .map(ClientPacketHandler::getConnection)

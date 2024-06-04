@@ -22,12 +22,10 @@ import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.io.File;
 import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
-public class ProxyServer implements Proxy {
+public class ProxyServer implements Proxy, PlayerCountProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ProxyServer");
 
@@ -46,6 +44,8 @@ public class ProxyServer implements Proxy {
     private final IconCacheImpl iconCache;
     private final int port;
     private final int clientTimeout;
+    private final PlayerListImpl playerList;
+    private PlayerCountProvider playerCount;
 
     private int reconnectTimeout;
     private int backendTimeout;
@@ -69,6 +69,9 @@ public class ProxyServer implements Proxy {
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
         this.reconnectTokenCache = new UsedTokenCache("rcid");
+
+        this.playerList = new PlayerListImpl();
+        this.playerCount = playerList;
 
         File iconCacheDir = new File(getConfig().getString("icon_cache_dir"));
         this.iconCache = new IconCacheImpl(iconCacheDir, getConfig().getInt("icon_cache_size"));
@@ -114,7 +117,6 @@ public class ProxyServer implements Proxy {
         console.stop();
 
         listener.shutdown();
-
         authenticator.close();
 
     }
@@ -211,8 +213,13 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
+    public PlayerList getPlayerList() {
+        return playerList;
+    }
+
+    @Override
     public int getOnlinePlayers() {
-        return listener.getClientCount();
+        return playerCount.getOnlinePlayers();
     }
 
     @Override
@@ -223,6 +230,11 @@ public class ProxyServer implements Proxy {
     @Override
     public boolean bypassesPlayerLimit(PlayerInfo info) {
         return false;
+    }
+
+    @Override
+    public void setPlayerCountProvider(PlayerCountProvider provider) {
+        this.playerCount = provider;
     }
 
     @Override
