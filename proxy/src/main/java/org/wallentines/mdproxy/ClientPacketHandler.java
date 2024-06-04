@@ -298,27 +298,30 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        prepareForwarding();
+        conn.executeTasksAsync(Task.PRE_BACKEND_CONNECT).thenRun(() -> {
+            prepareForwarding();
 
-        BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
-        bconn.connect(channel.eventLoop()).addListener(future -> {
-            if(future.isSuccess()) {
+            BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
+            bconn.connect(channel.eventLoop()).addListener(future -> {
+                if(future.isSuccess()) {
 
-                conn.setBackend(bconn);
+                    conn.setBackend(bconn);
 
-                bconn.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
+                    bconn.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
 
-                bconn.changePhase(ProtocolPhase.LOGIN);
-                bconn.send(conn.loginPacket());
+                    bconn.changePhase(ProtocolPhase.LOGIN);
+                    bconn.send(conn.loginPacket());
 
-                bconn.setupForwarding(channel);
-                setupForwarding(bconn.getChannel());
+                    bconn.setupForwarding(channel);
+                    setupForwarding(bconn.getChannel());
 
-                server.clientJoinBackendEvent().invoke(conn);
+                    server.clientJoinBackendEvent().invoke(conn);
+                    conn.executeTasksAsync(Task.POST_BACKEND_CONNECT);
 
-            } else {
-                disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
-            }
+                } else {
+                    disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
+                }
+            });
         });
     }
 

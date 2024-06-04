@@ -49,7 +49,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
 
 
-
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
         this.channel = channel;
         this.address = address;
@@ -170,6 +169,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void setBackend(BackendConnectionImpl backend) {
         this.backend = backend;
+        this.cookies.clear();
     }
 
     public void send(Packet<ClientboundPacketHandler> packet) {
