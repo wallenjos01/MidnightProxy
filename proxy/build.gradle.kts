@@ -6,10 +6,6 @@ plugins {
 
 application.mainClass.set("org.wallentines.mdproxy.Main")
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
-
-
 repositories {
     maven("https://libraries.minecraft.net/")
 }
@@ -34,7 +30,8 @@ dependencies {
 
     implementation(libs.google.guava)
     implementation(libs.slf4j.api)
-    implementation(libs.slf4j.simple)
+    implementation(libs.logback.core)
+    implementation(libs.logback.classic)
 
     compileOnly(libs.jetbrains.annotations)
 
