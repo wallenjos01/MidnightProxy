@@ -50,13 +50,12 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
             p = registry.read(id, bytes);
             if(bytes.isReadable()) {
                 int extra = bytes.readableBytes();
-                LOGGER.error("Found {} extra bytes after the end of a packet!", extra);
-                ctx.close();
-            } else {
-                ctx.fireChannelRead(p);
+                throw new DecoderException("Found " + extra + " extra bytes after the end of a packet!");
             }
+            ctx.fireChannelRead(p);
+
         } catch (Exception ex) {
-            LOGGER.error("An error occurred while parsing a packet with id {} in phase {}!", id, registry.getPhase().name(), ex);
+            throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase " + registry.getPhase().name() + "!", ex);
         }
 
         if(bytes.refCnt() == 0) {
@@ -66,5 +65,9 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
         }
     }
 
-
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOGGER.error("An error occurred decoding a packet!", cause);
+        ctx.channel().close();
+    }
 }
