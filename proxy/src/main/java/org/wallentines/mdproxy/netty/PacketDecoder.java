@@ -55,7 +55,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(p);
 
         } catch (Exception ex) {
-            throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase " + registry.getPhase().name() + "!", ex);
+            throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase " + registry.getPhase().name() + "[" + registry.getPacketFlow().name() + "]", ex);
         }
 
         if(bytes.refCnt() == 0) {
@@ -67,7 +67,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.error("An error occurred decoding a packet!", cause);
+        LOGGER.error("An error occurred while decoding a packet!", cause);
         ctx.channel().close();
     }
 }

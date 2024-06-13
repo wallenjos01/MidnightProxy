@@ -21,9 +21,10 @@ public class PacketRegistry<T> {
 
     private final GameVersion version;
     private final ProtocolPhase phase;
+    private final PacketFlow flow;
     private final Map<Integer, PacketType<T>> packetTypes;
 
-    public PacketRegistry(GameVersion version, ProtocolPhase phase, Collection<PacketType<T>> packetTypes) {
+    public PacketRegistry(GameVersion version, ProtocolPhase phase, PacketFlow flow, Collection<PacketType<T>> packetTypes) {
 
         Map<Integer, PacketType<T>> tp = new HashMap<>();
         for(PacketType<T> pt : packetTypes) {
@@ -33,11 +34,16 @@ public class PacketRegistry<T> {
         this.packetTypes = Map.copyOf(tp);
         this.version = version;
         this.phase = phase;
+        this.flow = flow;
     }
 
 
     public ProtocolPhase getPhase() {
         return phase;
+    }
+
+    public PacketFlow getPacketFlow() {
+        return flow;
     }
 
     public PacketType<T> getPacketType(int id) {
@@ -65,7 +71,7 @@ public class PacketRegistry<T> {
         return version;
     }
 
-    public static final PacketRegistry<ServerboundPacketHandler> HANDSHAKE = new PacketRegistry<>(GameVersion.MAX, ProtocolPhase.HANDSHAKE, List.of(ServerboundHandshakePacket.TYPE));
+    public static final PacketRegistry<ServerboundPacketHandler> HANDSHAKE = new PacketRegistry<>(GameVersion.MAX, ProtocolPhase.HANDSHAKE, PacketFlow.SERVERBOUND, List.of(ServerboundHandshakePacket.TYPE));
 
     private static final List<PacketType<ClientboundPacketHandler>> STATUS_CLIENTBOUND = List.of(ClientboundStatusPacket.TYPE, ClientboundPingPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> STATUS_SERVERBOUND = List.of(ServerboundStatusPacket.TYPE, ServerboundPingPacket.TYPE);
@@ -80,9 +86,9 @@ public class PacketRegistry<T> {
 
         return switch (phase) {
             case HANDSHAKE -> PacketRegistry.HANDSHAKE;
-            case STATUS -> new PacketRegistry<>(version, phase, STATUS_SERVERBOUND);
-            case LOGIN -> new PacketRegistry<>(version, phase, LOGIN_SERVERBOUND);
-            case CONFIG -> new PacketRegistry<>(version, phase, CONFIG_SERVERBOUND);
+            case STATUS -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, STATUS_SERVERBOUND);
+            case LOGIN -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, LOGIN_SERVERBOUND);
+            case CONFIG -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, CONFIG_SERVERBOUND);
         };
     }
 
@@ -90,9 +96,9 @@ public class PacketRegistry<T> {
 
         return switch (phase) {
             case HANDSHAKE -> throw new IllegalArgumentException("Handshake packets are not sent to the client!");
-            case STATUS -> new PacketRegistry<>(version, phase, PacketRegistry.STATUS_CLIENTBOUND);
-            case LOGIN -> new PacketRegistry<>(version, phase, PacketRegistry.LOGIN_CLIENTBOUND);
-            case CONFIG -> new PacketRegistry<>(version, phase, PacketRegistry.CONFIG_CLIENTBOUND);
+            case STATUS -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.STATUS_CLIENTBOUND);
+            case LOGIN -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.LOGIN_CLIENTBOUND);
+            case CONFIG -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.CONFIG_CLIENTBOUND);
         };
     }
 

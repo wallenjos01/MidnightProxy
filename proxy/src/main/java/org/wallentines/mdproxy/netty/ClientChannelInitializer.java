@@ -47,7 +47,8 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
         manager.addClientConnection(handler);
         channel.closeFuture().addListener(future -> {
-            if(handler.wasReconnected()) LOGGER.info("Client disconnected: {}", handler.getUsername());
+            if(!handler.wasReconnected()) LOGGER.info("Client disconnected: {}", handler.getUsername());
+            LOGGER.debug("Client disconnected: {}", handler.getUsername());
             manager.removeClientConnection(handler);
         });
 

@@ -70,22 +70,6 @@ public class ConnectionManager {
         this.connected.remove(handler);
     }
 
-    private Stream<ClientConnectionImpl> connected() {
-        return connected.stream()
-                .map(ClientPacketHandler::getConnection)
-                .filter(ClientConnectionImpl::playerInfoAvailable)
-                .filter(ClientConnectionImpl::hasBackendConnection);
-    }
-
-    public Stream<UUID> getClientIds() {
-        return connected().map(ClientConnectionImpl::uuid);
-    }
-
-    public ClientConnectionImpl getConnection(UUID uuid) {
-        return connected().filter(conn -> conn.uuid().equals(uuid)).findFirst().orElse(null);
-    }
-
-
     public void shutdown() {
 
         if (channel != null) {
