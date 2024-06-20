@@ -358,4 +358,16 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     public String getLanguage() {
         return locale == null ? "en_us" : locale;
     }
+
+    @Nullable
+    public StatusEntry getStatusEntry(ProxyServer server) {
+
+        PriorityQueue<StatusEntry> ent = new PriorityQueue<>(server.getStatusEntries());
+        for (StatusEntry e : ent) {
+            if (e.canUse(new ConnectionContext(this, server))) {
+                return e;
+            }
+        }
+        return null;
+    }
 }

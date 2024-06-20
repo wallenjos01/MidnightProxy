@@ -43,7 +43,8 @@ public class Main {
             .with("icon_cache_dir", "icons")
             .with("icon_cache_size", 8)
             .with("prevent_proxy_connections", false)
-            .with("log_status_messages", false);
+            .with("log_status_messages", false)
+            .with("reply_to_legacy_ping", true);
 
 
     public static void main(String[] args) {

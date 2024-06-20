@@ -37,6 +37,10 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
         DefaultedSingleton<InetSocketAddress> addr = new DefaultedSingleton<>(((InetSocketAddress) channel.remoteAddress()));
 
+        if(server.replyToLegacyPing()) {
+            channel.pipeline().addFirst("legacy_ping", new LegacyPingHandler(server, addr));
+        }
+
         if(server.useHAProxyProtocol()) {
             channel.pipeline().addFirst("haproxy_decoder", new HAProxyMessageDecoder());
             channel.pipeline().addFirst("haproxy_handler", new HAProxyHandler(addr));

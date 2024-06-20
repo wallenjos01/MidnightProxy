@@ -55,6 +55,7 @@ public class ProxyServer implements Proxy {
     private boolean haproxy;
     private boolean preventProxy;
     private boolean logStatus;
+    private boolean legacyPing;
     private RegistryBase<String, Backend> backends = new StringRegistry<>();
 
     // Events
@@ -135,14 +136,17 @@ public class ProxyServer implements Proxy {
         config.load();
         langManager.reload();
 
-        this.onlineMode = getConfig().getBoolean("online_mode");
-        this.requireAuth = getConfig().getBoolean("force_authentication");
-        this.backendTimeout = getConfig().getInt("backend_timeout_ms");
-        this.playerLimit = getConfig().getInt("player_limit");
-        this.reconnectTimeout = getConfig().getInt("reconnect_timeout_sec");
-        this.haproxy = getConfig().getBoolean("haproxy_protocol");
-        this.preventProxy = getConfig().getBoolean("prevent_proxy_connections");
-        this.logStatus = getConfig().getBoolean("log_status_messages");
+        ConfigSection conf = getConfig();
+
+        this.onlineMode = conf.getBoolean("online_mode");
+        this.requireAuth = conf.getBoolean("force_authentication");
+        this.backendTimeout = conf.getInt("backend_timeout_ms");
+        this.playerLimit = conf.getInt("player_limit");
+        this.reconnectTimeout = conf.getInt("reconnect_timeout_sec");
+        this.haproxy = conf.getBoolean("haproxy_protocol");
+        this.preventProxy = conf.getBoolean("prevent_proxy_connections");
+        this.logStatus = conf.getBoolean("log_status_messages");
+        this.legacyPing = conf.getBoolean("reply_to_legacy_ping");
 
         StringRegistry<Backend> backends = new StringRegistry<>();
 
@@ -299,4 +303,9 @@ public class ProxyServer implements Proxy {
     public boolean logStatusMessages() {
         return logStatus;
     }
+
+    public boolean replyToLegacyPing() {
+        return legacyPing;
+    }
+
 }

@@ -96,16 +96,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundStatusPacket ping) {
 
-        PriorityQueue<StatusEntry> ent = new PriorityQueue<>(server.getStatusEntries());
-        for(StatusEntry e : ent) {
-            if(e.canUse(new ConnectionContext(conn, server))) {
-
-                statusResponder = new StatusResponder(conn, server, e);
-                statusResponder.status(new GameVersion("MidnightProxy", conn.protocolVersion()));
-
-                break;
-            }
+        StatusEntry e = conn.getStatusEntry(server);
+        if(e == null) {
+            close();
         }
+
+        statusResponder = new StatusResponder(conn, server, e);
+        statusResponder.status(new GameVersion("MidnightProxy", conn.protocolVersion()));
     }
 
     @Override
