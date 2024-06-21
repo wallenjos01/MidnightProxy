@@ -61,12 +61,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
             // 1.4-1.5 clients send only FE and the payload. 1.6 Also sends client information as a plugin message.
             ClientConnectionImpl conn;
             if (buf.isReadable()) {
-                ClientConnectionImpl read = readClientInfo(ctx, buf);
-                if(read == null) {
-                    LOGGER.warn("Found extra bytes after a legacy ping!");
-                    return;
-                }
-                conn = read;
+                conn = readClientInfo(ctx, buf);
             } else {
                 conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565);
             }
@@ -92,14 +87,15 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
     private ClientConnectionImpl readClientInfo(ChannelHandlerContext ctx, ByteBuf buf) {
 
-        short channelLength = buf.readShort();
-        if(channelLength != 11) {
-            return null;
+        int packetId = buf.readUnsignedByte();
+        if(packetId != 0xFA) {
+            throw new RuntimeException("Expected packet ID 0xFA, but found " + packetId);
         }
 
-        String channel = buf.readCharSequence(channelLength, StandardCharsets.UTF_16BE).toString();
+        short channelLength = buf.readShort();
+        String channel = buf.readCharSequence(channelLength * 2, StandardCharsets.UTF_16BE).toString();
         if(!channel.equals(PING_CHANNEL)) {
-            return null;
+            throw new RuntimeException("Expected plugin message in channel " + PING_CHANNEL + ", but found " + channel);
         }
 
         buf.readShort();

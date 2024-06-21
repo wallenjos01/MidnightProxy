@@ -140,5 +140,9 @@ public class BackendConnectionImpl implements BackendConnection {
         }
     }
 
+    public void close() {
+        channel.close();
+    }
+
 
 }

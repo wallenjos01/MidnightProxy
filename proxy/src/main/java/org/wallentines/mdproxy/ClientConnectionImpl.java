@@ -35,10 +35,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final int protocolVersion;
     private final String hostname;
     private final int port;
+
     private PlayerInfo playerInfo;
     private boolean auth;
     private String locale;
     private BackendConnectionImpl backend;
+
+    private boolean disconnected = false;
 
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
@@ -143,11 +146,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public boolean hasDisconnected() {
-        return !channel.isOpen();
+        return disconnected;
     }
 
     @Override
-    public BackendConnection getBackendConnection() {
+    public BackendConnectionImpl getBackendConnection() {
         return backend;
     }
 
@@ -215,16 +218,25 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     public void disconnect(Component component) {
+        disconnect(component, true);
+    }
+
+    public void disconnect(Component component, boolean log) {
 
         if(hasDisconnected()) {
             return;
         }
+        if(!channel.isActive()) {
+            return;
+        }
 
-        LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
+        if(log) LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
 
         if(backend == null) {
             send(new ClientboundKickPacket(component));
         }
+        disconnected = true;
+
         channel.close().awaitUninterruptibly();
     }
 
@@ -232,8 +244,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         if(hasDisconnected()) {
             return;
         }
+        if(!channel.isActive()) {
+            return;
+        }
 
         LOGGER.info("Disconnecting player {}", username());
+
+        disconnected = true;
         channel.close();
     }
 

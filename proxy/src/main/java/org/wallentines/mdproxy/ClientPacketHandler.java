@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.lang.UnresolvedComponent;
+import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -38,6 +39,9 @@ import java.security.*;
 import java.util.*;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
+
+
+    private static final Component IGNORE_STATUS_REASON = Component.translate("disconnect.ignoring_status_request");
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
     private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
@@ -98,7 +102,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         StatusEntry e = conn.getStatusEntry(server);
         if(e == null) {
-            close();
+            conn.disconnect(IGNORE_STATUS_REASON, false);
+            return;
         }
 
         statusResponder = new StatusResponder(conn, server, e);
@@ -110,6 +115,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(statusResponder == null) {
             LOGGER.warn("Received ping packet before status packet!");
+            conn.disconnect(IGNORE_STATUS_REASON, false);
             return;
         }
         statusResponder.ping(ping);
