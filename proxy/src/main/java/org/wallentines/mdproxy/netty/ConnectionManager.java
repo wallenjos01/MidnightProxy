@@ -1,67 +1,126 @@
 package org.wallentines.mdproxy.netty;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.haproxy.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mdproxy.ClientConnectionImpl;
-import org.wallentines.mdproxy.ClientPacketHandler;
-import org.wallentines.mdproxy.ProxyServer;
+import org.wallentines.mcore.GameVersion;
+import org.wallentines.mdproxy.*;
+import org.wallentines.mdproxy.packet.PacketRegistry;
 
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
 
 public class ConnectionManager {
 
+
+    private static final WriteBufferWaterMark WATER_MARK = new WriteBufferWaterMark(1 << 20, 1 << 21);
+
     private static final Logger LOGGER = LoggerFactory.getLogger("ConnectionListener");
 
-    private final EventLoopGroup eventLoopGroup;
+    private final ChannelType channelType;
+    private final EventLoopGroup bossGroup;
+    private final EventLoopGroup workerGroup;
     private final ProxyServer server;
     private final Set<ClientPacketHandler> connected;
-    private ChannelFuture channel;
+    private ChannelFuture listenChannel;
 
     public ConnectionManager(ProxyServer server) {
         this.server = server;
-        this.eventLoopGroup = new NioEventLoopGroup();
+
+        this.channelType = ChannelType.getBestChannelType();
+        this.bossGroup = ChannelType.createEventLoopGroup(channelType, "Netty Boss");
+        this.workerGroup = ChannelType.createEventLoopGroup(channelType, "Netty Worker");
+
         this.connected = new HashSet<>();
     }
 
-    public void startup() {
+    public void startListener() {
 
         InetSocketAddress addr = new InetSocketAddress(server.getPort());
 
         ServerBootstrap bootstrap = new ServerBootstrap()
-                .channelFactory(NioServerSocketChannel::new)
+                .channelFactory(channelType.serverSocketChannelFactory)
+                .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, WATER_MARK)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.IP_TOS, 0x18)
                 .childHandler(new ClientChannelInitializer(this, server))
-                .group(eventLoopGroup)
+                .group(bossGroup, workerGroup)
                 .localAddress(addr);
 
-        channel = bootstrap.bind().addListener((ChannelFutureListener) future -> {
-            if(future.isSuccess()) {
-                LOGGER.info("Proxy listening on {}:{}", addr.getHostString(), addr.getPort());
-            } else {
-                LOGGER.error("An error occurred while starting the server!", future.cause());
-                server.shutdown();
-            }
-        });
+        listenChannel = bootstrap.bind().syncUninterruptibly();
+        LOGGER.info("Proxy listening on {}:{}", addr.getHostString(), addr.getPort());
     }
 
-    public ChannelFuture getChannel() {
-        return channel;
+    public CompletableFuture<BackendConnectionImpl> connectToBackend(ClientConnectionImpl conn, Backend backend, GameVersion version, int timeout) {
+        CompletableFuture<BackendConnectionImpl> out = new CompletableFuture<>();
+
+        Bootstrap bootstrap = new Bootstrap()
+                .group(conn.getChannel().eventLoop())
+                .channelFactory(channelType.socketChannelFactory)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeout)
+                .option(ChannelOption.AUTO_READ, false)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) {
+                        ch.pipeline()
+                                .addLast("frame_enc", new FrameEncoder())
+                                .addLast("encoder", new PacketEncoder<>(PacketRegistry.HANDSHAKE));
+
+                        if(backend.haproxy()) {
+                            ch.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
+                        }
+                    }
+                });
+
+
+        bootstrap.connect(backend.hostname(), backend.port())
+                .addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        Channel channel = future.channel();
+                        if(backend.haproxy()) {
+                            InetSocketAddress source = conn.socketAddress();
+                            InetSocketAddress dest = (InetSocketAddress) channel.remoteAddress();
+                            HAProxyProxiedProtocol proto = source.getAddress() instanceof Inet4Address ?
+                                    HAProxyProxiedProtocol.TCP4 :
+                                    HAProxyProxiedProtocol.TCP6;
+
+                            channel.writeAndFlush(new HAProxyMessage(
+                                    HAProxyProtocolVersion.V2,
+                                    HAProxyCommand.PROXY,
+                                    proto,
+                                    source.getAddress().getHostAddress(),
+                                    dest.getAddress().getHostAddress(),
+                                    source.getPort(),
+                                    dest.getPort()
+                            ));
+                        }
+                        out.complete(new BackendConnectionImpl(backend, version, channel));
+
+                    } else {
+                        out.completeExceptionally(future.cause());
+                    }
+                });
+
+        return out;
+    }
+
+    public ChannelFuture getListenChannel() {
+        return listenChannel;
     }
 
     public void addClientConnection(ClientPacketHandler handler) {
         this.connected.add(handler);
+    }
+
+    public int getTotalConnections() {
+        return connected.size();
     }
 
     public void removeClientConnection(ClientPacketHandler handler) {
@@ -70,15 +129,20 @@ public class ConnectionManager {
         this.connected.remove(handler);
     }
 
-    public void shutdown() {
+    public void stop() {
 
-        if (channel != null) {
-            channel.channel().close();
-        }
         for(ClientPacketHandler c : connected) {
             c.close();
         }
-        eventLoopGroup.shutdownGracefully();
+
+        if (listenChannel != null) {
+            listenChannel.channel().close().syncUninterruptibly();
+        }
+
+        bossGroup.shutdownGracefully();
     }
 
+    public EventLoopGroup getBossGroup() {
+        return bossGroup;
+    }
 }

@@ -81,7 +81,7 @@ public class Authenticator {
             obj = JSONCodec.minified().decode(ConfigContext.INSTANCE, responseStream);
         } catch (DecodeException ex) {
 
-            LOGGER.warn("Unable to parse response from " + url + "!", ex);
+            LOGGER.warn("Unable to parse response from {}!", url, ex);
             return new ConfigSection();
         }
         if(!obj.isSection()) {

@@ -37,4 +37,13 @@ public class PlayerListImpl implements PlayerList {
     public int getOnlinePlayers(Proxy proxy) {
         return connections.size();
     }
+
+    public void addPlayer(ClientConnection conn) {
+        assert conn != null;
+        assert conn.playerInfoAvailable();
+
+        UUID playerId = conn.uuid();
+        connections.put(playerId, conn);
+    }
+
 }

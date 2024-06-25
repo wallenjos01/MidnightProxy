@@ -10,7 +10,7 @@ public class ListCommand implements CommandExecutor {
 
         PlayerList pl = sender.getProxy().getPlayerList();
 
-        sender.sendMessage("Clients connected:");
+        sender.sendMessage("There are " + pl.getOnlinePlayers(sender.getProxy()) + " clients connected:");
         pl.getPlayerIds().forEach(uuid -> {
 
             ClientConnection conn = pl.getPlayer(uuid);

@@ -97,14 +97,20 @@ public class Main {
         PluginLoader loader = new PluginLoader(pluginDir);
 
         ProxyServer ps = new ProxyServer(config, manager, loader);
-
-
         try {
             ps.start();
         } catch (Exception ex) {
-            LOGGER.error("An exception occurred while running the server!", ex);
-            ps.shutdown();
+            LOGGER.error("An error occurred while starting the proxy server!", ex);
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread("Proxy Shutdown Thread") {
+            @Override
+            public void run() {
+                ps.shutdown();
+            }
+        });
+
+        ps.getConnectionManager().getBossGroup().terminationFuture().awaitUninterruptibly();
     }
 
 }

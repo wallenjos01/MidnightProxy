@@ -62,6 +62,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
             ClientConnectionImpl conn;
             if (buf.isReadable()) {
                 conn = readClientInfo(ctx, buf);
+                if(conn == null) return;
             } else {
                 conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565);
             }
@@ -89,13 +90,15 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
         int packetId = buf.readUnsignedByte();
         if(packetId != 0xFA) {
-            throw new RuntimeException("Expected packet ID 0xFA, but found " + packetId);
+            LOGGER.debug("Failed to read client info from legacy ping! Expected packet ID 0xFA, but found {}", packetId);
+            return null;
         }
 
         short channelLength = buf.readShort();
         String channel = buf.readCharSequence(channelLength * 2, StandardCharsets.UTF_16BE).toString();
         if(!channel.equals(PING_CHANNEL)) {
-            throw new RuntimeException("Expected plugin message in channel " + PING_CHANNEL + ", but found " + channel);
+            LOGGER.debug("Failed to read client info from legacy ping! Expected plugin message in channel {}, but found {}", PING_CHANNEL, channel);
+            return null;
         }
 
         buf.readShort();

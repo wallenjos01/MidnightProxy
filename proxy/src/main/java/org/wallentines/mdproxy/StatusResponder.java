@@ -38,15 +38,15 @@ public class StatusResponder implements ClientboundPacketHandler {
                 throw new IllegalStateException("Unable to find backend " + backendName + "!");
             }
 
-            backend = new BackendConnectionImpl(conn, b, playerVersion, server.getBackendTimeout());
-            backend.connect(conn.getChannel().eventLoop()).addListener(future -> {
-                if(future.isSuccess()) {
-                    backend.setupStatus(this);
-                    backend.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.STATUS));
-                    backend.changePhase(ProtocolPhase.STATUS);
-                    backend.send(new ServerboundStatusPacket());
-                }
-            });
+            server.getConnectionManager().connectToBackend(conn, b, playerVersion, server.getBackendTimeout())
+                    .thenAccept(backend -> {
+                        backend.setupStatus(this);
+                        backend.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.STATUS));
+                        backend.changePhase(ProtocolPhase.STATUS);
+                        backend.send(new ServerboundStatusPacket());
+                        this.backend = backend;
+                    });
+
             return;
         }
 

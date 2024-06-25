@@ -12,16 +12,14 @@ import java.util.List;
 
 public class FrameDecoder extends ByteToMessageDecoder {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("FrameDecoder");
-
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf data, List<Object> out) {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf data, List<Object> out) {
 
         if(!data.isReadable()) return;
 
         SerializeResult<VarInt> vLength = VarInt.readPartial(data, 3);
         if(!vLength.isComplete()) {
-            LOGGER.warn("Found frame with invalid length! {}", vLength.getError());
+            ctx.channel().close();
             return;
         }
 

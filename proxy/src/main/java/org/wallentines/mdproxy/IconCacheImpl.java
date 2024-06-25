@@ -10,12 +10,14 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class IconCacheImpl implements IconCache {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("IconCacheImpl");
     private final File searchDirectory;
-    private final HashMap<String, String> iconData;
+    private final Map<String, String> iconData;
     private final ArrayDeque<String> cache;
     private final int cacheSize;
     private final Base64.Encoder encoder = Base64.getEncoder();
@@ -23,7 +25,7 @@ public class IconCacheImpl implements IconCache {
     public IconCacheImpl(File file, int cacheSize) {
         this.searchDirectory = file;
         this.cacheSize = cacheSize;
-        this.iconData = new HashMap<>();
+        this.iconData = new ConcurrentHashMap<>();
         this.cache = new ArrayDeque<>(cacheSize);
     }
 

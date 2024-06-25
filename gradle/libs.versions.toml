@@ -1,6 +1,6 @@
 [versions]
 junit = "5.10.1"
-netty = "4.1.105.Final"
+netty = "4.1.111.Final"
 mdcfg = "2.3.0"
 mdlib = "1.6.1"
 mcore = "2.0.0-pre7"

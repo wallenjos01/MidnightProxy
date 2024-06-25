@@ -1,8 +1,10 @@
 package org.wallentines.mdproxy.netty;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.flow.FlowControlHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +33,11 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
     protected void initChannel(Channel channel) throws Exception {
 
         channel.pipeline()
+                .addLast("frame_dec", new FrameDecoder())
                 .addLast(new ReadTimeoutHandler(server.getClientTimeout(), TimeUnit.MILLISECONDS))
                 .addLast("frame_enc", new FrameEncoder())
-                .addLast("encoder", new PacketEncoder<>())
-                .addLast("frame_dec", new FrameDecoder())
-                .addLast("decoder", new PacketDecoder<>(PacketRegistry.HANDSHAKE));
+                .addLast("decoder", new PacketDecoder<>(PacketRegistry.HANDSHAKE))
+                .addLast("encoder", new PacketEncoder<>());
 
         DefaultedSingleton<InetSocketAddress> addr = new DefaultedSingleton<>(((InetSocketAddress) channel.remoteAddress()));
 
@@ -60,10 +62,17 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                     bConn.close();
                     LOGGER.info("Client disconnected: {}", handler.getUsername());
                 }
+                if(conn.playerInfoAvailable()) {
+                    server.getPlayerList().removePlayer(conn.uuid());
+                }
             }
-            LOGGER.debug("Client disconnected: {}", handler.getUsername());
             manager.removeClientConnection(handler);
         });
 
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOGGER.error("An exception occurred while initializing a client channel!", cause);
     }
 }

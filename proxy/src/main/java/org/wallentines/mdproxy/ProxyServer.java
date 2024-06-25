@@ -104,21 +104,22 @@ public class ProxyServer implements Proxy {
     }
 
     public void start() {
-
-        this.listener.startup();
         console.start();
-
+        this.listener.startListener();
     }
 
     @Override
     public void shutdown() {
 
+        if(listener.getBossGroup().isTerminated()) {
+            return;
+        }
+
         LOGGER.info("Shutting down...");
+        authenticator.close();
 
         console.stop();
-
-        listener.shutdown();
-        authenticator.close();
+        listener.stop();
 
     }
 
@@ -306,6 +307,10 @@ public class ProxyServer implements Proxy {
 
     public boolean replyToLegacyPing() {
         return legacyPing;
+    }
+
+    public ConnectionManager getConnectionManager() {
+        return listener;
     }
 
 }

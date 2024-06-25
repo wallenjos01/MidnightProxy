@@ -5,49 +5,70 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ConsoleHandler implements CommandSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ConsoleHandler");
-    private final Scanner scanner;
-    private final ProxyServer server;
-    private boolean running = false;
 
+    private final ProxyServer server;
+
+    private boolean running = false;
+    private Thread thread = null;
 
     public ConsoleHandler(ProxyServer server) {
-
         this.server = server;
-        this.scanner = new Scanner(System.in);
     }
 
     public void start() {
 
+        assert !running;
+        assert thread == null;
+
         running = true;
-        while(running) {
+        thread = new Thread("Console Handler Thread") {
+            @Override
+            public void run() {
 
-            String cmd = scanner.nextLine();
-            String[] parts = cmd.split(" ");
+                BufferedReader lineReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
-            CommandExecutor exe = server.getCommands().get(parts[0]);
-
-            if(exe == null) {
-                System.out.println("Unknown command");
-                continue;
+                try {
+                    String line;
+                    while (running && (line = lineReader.readLine()) != null) {
+                        handleInput(line);
+                    }
+                } catch (IOException ex) {
+                    LOGGER.error("An exception occurred while handling console input!", ex);
+                }
             }
+        };
+        thread.setDaemon(true);
+        thread.start();
+    }
 
-            try {
-                exe.execute(this, parts);
-            } catch (Exception ex) {
-                LOGGER.error("An error occurred while executing a command!", ex);
-            }
+    private void handleInput(String cmd) {
+
+        String[] parts = cmd.split(" ");
+        CommandExecutor exe = server.getCommands().get(parts[0]);
+
+        if(exe == null) {
+            sendMessage("Unknown command");
+            return;
         }
 
+        try {
+            exe.execute(this, parts);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing a command!", ex);
+        }
     }
 
     public void stop() {
         running = false;
-        scanner.close();
     }
 
     @Override

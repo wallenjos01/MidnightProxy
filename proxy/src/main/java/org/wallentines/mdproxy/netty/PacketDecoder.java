@@ -41,7 +41,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
 
         int id = PacketBufferUtil.readVarInt(bytes);
         if(registry.getPacketType(id) == null) {
-            bytes.clear();
+            ctx.channel().close();
             return;
         }
 
@@ -58,9 +58,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
             throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase " + registry.getPhase().name() + "[" + registry.getPacketFlow().name() + "]", ex);
         }
 
-        if(bytes.refCnt() == 0) {
-            LOGGER.warn("Packet with id {} in phase {} was already released!", id, registry.getPhase().name());
-        } else {
+        if(bytes.refCnt() > 0) {
             bytes.release();
         }
     }

@@ -2,6 +2,7 @@ package org.wallentines.mdproxy;
 
 import com.google.common.primitives.Ints;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -302,29 +303,32 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         conn.executeTasksAsync(Task.PRE_BACKEND_CONNECT).thenRun(() -> {
-            prepareForwarding();
 
-            BackendConnectionImpl bconn = new BackendConnectionImpl(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout());
-            bconn.connect(channel.eventLoop()).addListener(future -> {
-                if(future.isSuccess()) {
+            channel.config().setAutoRead(false);
 
-                    conn.setBackend(bconn);
+            server.getConnectionManager()
+                    .connectToBackend(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
+                    .thenAccept(bconn -> {
+                        ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
 
-                    bconn.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
+                        conn.setBackend(bconn);
 
-                    bconn.changePhase(ProtocolPhase.LOGIN);
-                    bconn.send(conn.loginPacket());
+                        bconn.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
 
-                    bconn.setupForwarding(channel);
-                    setupForwarding(bconn.getChannel());
+                        bconn.changePhase(ProtocolPhase.LOGIN);
+                        bconn.send(conn.loginPacket());
 
-                    server.clientJoinBackendEvent().invoke(conn);
-                    conn.executeTasksAsync(Task.POST_BACKEND_CONNECT);
+                        bconn.setupForwarding(channel);
+                        setupForwarding(bconn.getChannel());
 
-                } else {
-                    disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
-                }
-            });
+                        server.clientJoinBackendEvent().invoke(conn);
+                        conn.executeTasksAsync(Task.POST_BACKEND_CONNECT);
+                    })
+                    .exceptionally(ex -> {
+                        LOGGER.error("An error occurred while connecting to a backend server!", ex);
+                        disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
+                        return null;
+                    });
         });
     }
 
@@ -480,9 +484,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     }
 
-    private void prepareForwarding() {
-
-        channel.config().setAutoRead(false);
+    private void setupForwarding(Channel forward) {
 
         channel.pipeline().remove("frame_dec");
         channel.pipeline().remove("decoder");
@@ -494,13 +496,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             channel.pipeline().remove("decrypt");
             channel.pipeline().remove("encrypt");
         }
-    }
 
-    private void setupForwarding(Channel forward) {
-
-        LOGGER.info("User {} connected to backend {}", conn.username(), server.getBackends().getId(conn.getBackendConnection().getBackend()));
         channel.pipeline().addLast("forward", new PacketForwarder(forward));
         channel.config().setAutoRead(true);
+
+        LOGGER.info("User {} connected to backend {}", conn.username(), server.getBackends().getId(conn.getBackendConnection().getBackend()));
     }
 
     public String getUsername() {
@@ -564,7 +564,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         LOGGER.info("Reconnecting {} to {}", getUsername(), backendId);
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));
-        conn.send(new ClientboundTransferPacket(host, port));
+        conn.send(new ClientboundTransferPacket(host, port), ChannelFutureListener.CLOSE);
 
     }
 
