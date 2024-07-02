@@ -9,20 +9,22 @@ configuring.
 
 ## Configuration
 ### Basic Options
-- `port`: The port to listen on. Defaults to 25565
-- `online_mode`: Whether usernames should be verified when connecting to the proxy
-- `player_limit`: The maximum number of players allowed to connect to the proxy. Set to -1 to disable.
-- `icon_cache_dir`: The directory the proxy should look for status icons in
+- `port`: The port to listen on. Defaults to 25565.
+- `online_mode`: Whether usernames should be verified when connecting to the proxy. Defaults to true. 
+- `player_limit`: The maximum number of players allowed to connect to the proxy. Defaults to 100. Set to -1 to disable.
+- `icon_cache_dir`: The directory the proxy should look for status icons in. Defaults to `icons`.
 
 ### Advanced options
-- `reconnect_timeout_sec`: How many seconds a player has to reconnect after being transferred
-- `backend_timeout_ms`: How many milliseconds the proxy should wait while attempting to connect to a backend server before assuming it is offline.
-- `client_timeout_ms`: How many milliseconds the proxy should wait between packets from a client before timing them out.
-- `auth_threads`: How many threads should be available for authentication requests
-- `force_authentication`: Whether the proxy should always attempt to authenticate connecting players, even if routing could be done without it
-- `icon_cache_size`: How many icons should be kept in memory after being loaded.
-- `prevent_proxy_connections`: Whether the server should reject players who attempt to connect from behind their own proxy.
-- `haproxy_protocol`: Whether the proxy expects HAProxy PROXY messages to be sent from joining clients.
+- `reconnect_timeout_sec`: How many seconds a player has to reconnect after being transferred. Defaults to 3.
+- `backend_timeout_ms`: How many milliseconds the proxy should wait while attempting to connect to a backend server before assuming it is offline. Defaults to 5000.
+- `client_timeout_ms`: How many milliseconds the proxy should wait between packets from a client before timing them out. Defaults to 15000.
+- `auth_threads`: How many threads should be available for authentication requests. Defaults to 4.
+- `force_authentication`: Whether the proxy should always attempt to authenticate connecting players, even if routing could be done without it. Defaults to false.
+- `icon_cache_size`: How many icons should be kept in memory after being loaded. Defaults to 8.
+- `prevent_proxy_connections`: Whether the server should reject players who attempt to connect from behind their own proxy. Only checked when doing authentication with Mojang. Defaults to false.
+- `haproxy_protocol`: Whether the proxy expects HAProxy PROXY messages to be sent from joining clients. Defaults to false.
+- `log_status_messages`: Whether the proxy should send a log message when it receives a status handshake (Server ping). Defaults to false.
+- `reply_to_legacy_ping`: Whether the proxy should respond to legacy ping requests (pre-1.7). Defaults to true.
 
 ### Backends
 The `backends` section of the configuration file is used to define the backend servers.
@@ -157,10 +159,10 @@ of the following formats:
 - `"<=N"`: At most N
 - `"[N,M]"`: Between N and M (inclusive)
 - `"(N,M)"`: Between N and M (exclusive)
-- `"{N,M,O}"`: Exactly N, M, or O
+- `"{N,M,O}"`: One of N, M, or O
 
 ### Outputs
-Some requirements (Such as [`mdp:jwt`](plugin-jwt/README.md)) may output values when successfully checked. These values can be accessed in a route's
+Some requirement types (Such as [`mdp:jwt`](plugin-jwt/README.md)) may output values when successfully checked. These values can be accessed in a route's
 `backend` field, by typing the name of the output between `%` characters.
 
 ### Examples
@@ -227,9 +229,15 @@ file at its root with the following contents:
 ```
 A plugin's main class must implement the `Plugin` interface, which requires it implement the method `void initialize(Proxy)`
 The proxy's API is published in the repository at `https://maven.wallentines.org/releases`
-The proxy's API is published with the artifact ID `org.wallentines:midnightproxy-api`. The latest version is `0.4.1`
+The proxy's API is published with the artifact ID `org.wallentines:midnightproxy-api`. The latest version is `0.5.0`
 
-As of now, the plugin API is pretty limited. Plugins can pretty much only add console commands and requirement types.
+Using the plugin API, plugins can:
+- Add console commands. (See `org.wallentines.mdproxy.command.CommandExecutor`)
+- Add requirement types. (See `org.wallentines.mdproxy.requirement.ConnectionCheckType`)
+- Modify the way online players are counted. (See `org.wallentines.mdproxy.PlayerCountProvider`)
+- Run tasks during different phases of the login process. (See `org.wallentines.mdproxy.Task`)
+- Send and await plugin messages during the login and configuration phases.
+
 
 ## Differences From Typical Proxy Software
 *i.e. What makes this different from other Minecraft proxies such as Velocity or BungeeCord?*
@@ -242,7 +250,7 @@ then route packets accordingly. Server switching is done by utilizing the config
 packets. This system gives the proxy a lot of control over communication between client and server, and makes proxying
 multiple servers trivial.
 
-In MidnightProxy, as soon as a connection is routed properly, *all* traffic is passed through directly to the 
+In MidnightProxy, as soon as a connection is routed properly, *all* data is passed through directly to the 
 backend server. This has a number of benefits, including: end-to-end encryption between the player and the backend 
 server, allowing the proxy to work with unmodified vanilla servers in online mode. Or allowing for a proper login phase 
 for each server connection, so mods which utilize custom login query packets work properly out of the box. However, 
@@ -255,9 +263,7 @@ version 24w04a, with the /transfer command, but is limited without additional mo
 - The backend queue will be run through on each server-switch, as if the player connected for the first time, so each 
 server will need some way to differentiate itself. Some ways to do this would be through hostnames, or by having a 
 modified backend server set a cookie before transferring the player.
-  - This can be fixed by installing and configuring the [JWT plugin](plugin-jwt/README.md) on the proxy, and [ServerSwitcher](https://github.com/wallenjos01/serverswitcher)
-  on each backend server. This only works on Fabric backends at the moment.
+  - This can be accomplished by installing and configuring the [JWT plugin](plugin-jwt/README.md) on the proxy, and [ServerSwitcher](https://github.com/wallenjos01/serverswitcher) on each backend server. This only works on Fabric backends at the moment.
 - By default, all connections to backend servers will look like they are coming from the proxy. This breaks IP-banning,
 and prevents servers from enabling `prevent-proxy-connections` in the `server.properties` file. 
-  - This can be fixed by enabling the `haproxy` option for backend servers, and installing [Fabric-HAProxy](https://github.com/wallenjos01/fabric-haproxy)
-  on the backend servers. This only works on Fabric backends at the moment.
+  - This can be fixed by enabling the `haproxy` option for backend servers, and installing [Fabric-HAProxy](https://github.com/wallenjos01/fabric-haproxy) on the backend servers. This only works on Fabric backends at the moment.
