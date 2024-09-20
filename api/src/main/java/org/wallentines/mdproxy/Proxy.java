@@ -6,8 +6,7 @@ import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.RegistryBase;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -60,7 +59,7 @@ public interface Proxy {
      * Gets a registry of all backends.
      * @return The backend registry.
      */
-    RegistryBase<String, Backend> getBackends();
+    Registry<String, Backend> getBackends();
 
     /**
      * Gets a list of all status entries.
@@ -84,7 +83,7 @@ public interface Proxy {
      * Gets the proxy's console command registry.
      * @return The command registry.
      */
-    StringRegistry<CommandExecutor> getCommands();
+    Registry<String, CommandExecutor> getCommands();
 
     /**
      * Gets a stream of the UUIDs of all clients connected through the proxy.

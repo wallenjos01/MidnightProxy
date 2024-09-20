@@ -1,10 +1,8 @@
 package org.wallentines.mdproxy.jwt;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.SerializeResult;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -18,9 +16,8 @@ import java.util.Arrays;
 public class CryptCodec<T> {
 
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final Logger LOGGER = LoggerFactory.getLogger("CryptCodec");
 
-    public static final StringRegistry<Algorithm<?>> ALGORITHMS = new StringRegistry<>();
+    public static final Registry<String, Algorithm<?>> ALGORITHMS = Registry.createStringRegistry();
 
     protected final Algorithm<T> algorithm;
     protected final T key;

@@ -10,7 +10,7 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.requirement.ConnectionRequirement;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.RegistryBase;
+import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.types.Either;
 
 import java.util.Collection;
@@ -35,7 +35,7 @@ public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> bac
         return requirement.test(ctx);
     }
 
-    public @Nullable Backend resolveBackend(ConnectionContext ctx, RegistryBase<String, Backend> backends) {
+    public @Nullable Backend resolveBackend(ConnectionContext ctx, Registry<String, Backend> backends) {
 
         if(backend == null) return null;
 

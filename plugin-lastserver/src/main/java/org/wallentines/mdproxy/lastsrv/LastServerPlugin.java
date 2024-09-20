@@ -23,7 +23,7 @@ public class LastServerPlugin implements Plugin {
         }
         dataManager = new DataManager(configFolder);
 
-        ConnectionCheckType.REGISTRY.register("last_server", LastServerCheck.TYPE);
+        ConnectionCheckType.REGISTRY.tryRegister("last_server", LastServerCheck.TYPE);
     }
 
     @Override

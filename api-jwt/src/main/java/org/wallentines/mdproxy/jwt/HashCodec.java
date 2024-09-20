@@ -1,7 +1,7 @@
 package org.wallentines.mdproxy.jwt;
 
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -10,7 +10,7 @@ import java.security.GeneralSecurityException;
 
 public class HashCodec<T> {
 
-    public static final StringRegistry<Algorithm<?>> ALGORITHMS = new StringRegistry<>();
+    public static final Registry<String, Algorithm<?>> ALGORITHMS = Registry.createStringRegistry();
     private final Algorithm<T> alg;
     private final T key;
 

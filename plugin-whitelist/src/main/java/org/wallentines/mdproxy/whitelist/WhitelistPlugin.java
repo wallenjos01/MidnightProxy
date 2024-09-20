@@ -11,7 +11,7 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import java.io.File;
 
@@ -20,7 +20,7 @@ public class WhitelistPlugin implements Plugin {
     private static final Logger LOGGER = LoggerFactory.getLogger("WhitelistPlugin");
     private static final ConfigSection DEFAULT_CONFIG = new ConfigSection()
             .with("lists", new ConfigSection());
-    private final StringRegistry<Whitelist> lists = new StringRegistry<>();
+    private final Registry<String, Whitelist> lists = Registry.createStringRegistry();
     private FileWrapper<ConfigObject> config;
 
     @Override
@@ -35,12 +35,12 @@ public class WhitelistPlugin implements Plugin {
             config.save();
         }
 
-        ConnectionCheckType.REGISTRY.register("whitelist", WhitelistCheck.TYPE);
+        ConnectionCheckType.REGISTRY.tryRegister("whitelist", WhitelistCheck.TYPE);
 
         reload();
     }
 
-    public StringRegistry<Whitelist> getLists() {
+    public Registry<String, Whitelist> getLists() {
         return lists;
     }
 

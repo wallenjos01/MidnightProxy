@@ -1,9 +1,7 @@
 package org.wallentines.mdproxy.jwt;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -11,8 +9,7 @@ import java.security.*;
 
 public class KeyCodec<E extends Key, D extends Key> {
 
-    public static final StringRegistry<Algorithm<?,?>> ALGORITHMS = new StringRegistry<>();
-    private static final Logger LOGGER = LoggerFactory.getLogger("KeyCodec");
+    public static final Registry<String, Algorithm<?,?>> ALGORITHMS = Registry.createStringRegistry();
 
     private final E encKey;
     private final D decKey;

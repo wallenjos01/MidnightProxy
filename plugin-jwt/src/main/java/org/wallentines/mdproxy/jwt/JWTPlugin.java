@@ -37,7 +37,7 @@ public class JWTPlugin implements Plugin {
         keyStore = new FileKeyStore(keyStoreDir, FileKeyStore.DEFAULT_TYPES);
 
         proxy.getCommands().register("jwt", new JWTCommand());
-        ConnectionCheckType.REGISTRY.register("jwt", JWTCheck.TYPE);
+        ConnectionCheckType.REGISTRY.tryRegister("jwt", JWTCheck.TYPE);
     }
 
     public KeyStore getKeyStore() {

@@ -1,14 +1,13 @@
 [versions]
-junit = "5.10.1"
-netty = "4.1.111.Final"
-mdcfg = "2.3.0"
-mdlib = "1.6.1"
-mcore = "2.0.0-pre7"
+junit = "5.11.0"
+netty = "4.1.113.Final"
+mdcfg = "2.4.0"
+mdlib = "1.7.0"
+mcore = "2.0.0-pre8"
 slf4j = "2.0.11"
-logback = "1.5.6"
-jbr-anno = "24.0.1"
-auth = "6.0.52"
-guava = "33.0.0-jre"
+logback = "1.5.8"
+jbr-anno = "24.1.0"
+guava = "33.3.0-jre"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -21,7 +20,6 @@ midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version
 midnight-cfg-nbt = { module = "org.wallentines:midnightcfg-codec-nbt", version.ref="mdcfg" }
 midnight-lib = { module = "org.wallentines:midnightlib", version.ref="mdlib" }
 midnight-core = { module = "org.wallentines:midnightcore-common", version.ref="mcore" }
-mojang-authlib = { module = "com.mojang:authlib", version.ref="auth" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }

@@ -17,8 +17,7 @@ import org.wallentines.mdproxy.plugin.PluginLoader;
 import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.RegistryBase;
-import org.wallentines.midnightlib.registry.StringRegistry;
+import org.wallentines.midnightlib.registry.Registry;
 
 import java.io.File;
 import java.security.KeyPair;
@@ -33,7 +32,7 @@ public class ProxyServer implements Proxy {
     private final KeyPair reconnectKeyPair;
     private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
-    private final StringRegistry<CommandExecutor> commands;
+    private final Registry<String, CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final List<Route> routes = new ArrayList<>();
     private final ConnectionManager listener;
@@ -56,7 +55,7 @@ public class ProxyServer implements Proxy {
     private boolean preventProxy;
     private boolean logStatus;
     private boolean legacyPing;
-    private RegistryBase<String, Backend> backends = new StringRegistry<>();
+    private Registry<String, Backend> backends = Registry.createStringRegistry();
 
     // Events
     private final HandlerList<ClientConnection> connected = new HandlerList<>();
@@ -88,7 +87,7 @@ public class ProxyServer implements Proxy {
         this.keyPair = CryptUtil.generateKeyPair();
         this.reconnectKeyPair = CryptUtil.generateKeyPair();
         this.authenticator = new Authenticator(this, getConfig().getInt("auth_threads"));
-        this.commands = new StringRegistry<>();
+        this.commands = Registry.createStringRegistry();
 
         this.commands.register("stop", new StopCommand());
         this.commands.register("reload", new ReloadCommand());
@@ -149,7 +148,7 @@ public class ProxyServer implements Proxy {
         this.logStatus = conf.getBoolean("log_status_messages");
         this.legacyPing = conf.getBoolean("reply_to_legacy_ping");
 
-        StringRegistry<Backend> backends = new StringRegistry<>();
+        Registry<String, Backend> backends = Registry.createStringRegistry();
 
         Backend.SERIALIZER.filteredMapOf(
                 (key, err) -> LOGGER.warn("Could not deserialize a Backend with id {}! {}", key, err)
@@ -172,7 +171,7 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
-    public RegistryBase<String, Backend> getBackends() {
+    public Registry<String, Backend> getBackends() {
         return backends;
     }
 
@@ -202,7 +201,7 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
-    public StringRegistry<CommandExecutor> getCommands() {
+    public Registry<String, CommandExecutor> getCommands() {
         return commands;
     }
 
