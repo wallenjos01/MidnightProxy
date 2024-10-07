@@ -1,9 +1,9 @@
 [versions]
 junit = "5.11.0"
 netty = "4.1.113.Final"
-mdcfg = "2.4.0"
+mdcfg = "2.5.0-SNAPSHOT"
 mdlib = "1.7.0"
-mcore = "2.0.0-pre8"
+mcore = "2.0.0-SNAPSHOT"
 slf4j = "2.0.11"
 logback = "1.5.8"
 jbr-anno = "24.1.0"
@@ -16,6 +16,7 @@ netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 midnight-cfg = { module = "org.wallentines:midnightcfg-api", version.ref="mdcfg" }
+midnight-cfg-sql = { module = "org.wallentines:midnightcfg-api-sql", version.ref="mdcfg" }
 midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version.ref="mdcfg" }
 midnight-cfg-nbt = { module = "org.wallentines:midnightcfg-codec-nbt", version.ref="mdcfg" }
 midnight-lib = { module = "org.wallentines:midnightlib", version.ref="mdlib" }

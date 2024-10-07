@@ -1,0 +1,5 @@
+{
+  "name": "SQL",
+  "version": "${version}",
+  "main": "org.wallentines.mdproxy.sql.SQLPlugin"
+}
