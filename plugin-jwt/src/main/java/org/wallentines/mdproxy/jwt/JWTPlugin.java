@@ -26,23 +26,15 @@ public class JWTPlugin implements Plugin {
     public void initialize(Proxy proxy) {
 
         Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("jwt");
-        if(!Files.isDirectory(configFolder)) {
-            try {
-                Files.createDirectories(configFolder);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create lang directory", e);
-            }
+        try { Files.createDirectories(configFolder); } catch (IOException e) {
+            throw new RuntimeException("Could not create lang directory", e);
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
 
         Path keyStoreDir = configFolder.resolve(config.getRoot().asSection().getString("key_store_path"));
-        if(!Files.isDirectory(keyStoreDir)) {
-            try {
-                Files.createDirectories(keyStoreDir);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create key store directory", e);
-            }
+        try { Files.createDirectories(keyStoreDir); } catch (IOException e) {
+            throw new RuntimeException("Could not create key store directory", e);
         }
         keyStore = new FileKeyStore(keyStoreDir, FileKeyStore.DEFAULT_TYPES);
 

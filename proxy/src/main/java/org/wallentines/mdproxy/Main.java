@@ -69,12 +69,8 @@ public class Main {
         }
 
         Path langDir = Paths.get("lang");
-        if(!Files.isDirectory(langDir)) {
-            try {
-                Files.createDirectories(langDir);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create lang directory", e);
-            }
+        try { Files.createDirectories(langDir); } catch (IOException e) {
+            throw new RuntimeException("Could not create lang directory", e);
         }
 
         LangRegistry defaults;
@@ -93,12 +89,8 @@ public class Main {
 
 
         Path pluginDir = Paths.get("plugins");
-        if(!Files.isDirectory(pluginDir)) {
-            try {
-                Files.createDirectories(pluginDir);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create lang directory", e);
-            }
+        try { Files.createDirectories(pluginDir); } catch (IOException e) {
+            throw new RuntimeException("Could not create lang directory", e);
         }
         PluginLoader loader = new PluginLoader(pluginDir);
 

@@ -20,12 +20,8 @@ public class LastServerPlugin implements Plugin {
 
     public LastServerPlugin() {
         Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("lastserver");
-        if(!Files.isDirectory(configFolder)) {
-            try {
-                Files.createDirectories(configFolder);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create config directory", e);
-            }
+        try { Files.createDirectories(configFolder); } catch (IOException e) {
+            throw new RuntimeException("Could not create config directory", e);
         }
 
         dataManager = new DataManager(configFolder);

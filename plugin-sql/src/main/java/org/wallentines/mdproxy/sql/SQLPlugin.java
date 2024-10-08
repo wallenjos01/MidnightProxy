@@ -33,12 +33,8 @@ public class SQLPlugin implements Plugin {
     public void initialize(Proxy proxy) {
 
         Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist");
-        if(!Files.isDirectory(configFolder)) {
-            try {
-                Files.createDirectories(configFolder);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create whitelist directory", e);
-            }
+        try { Files.createDirectories(configFolder); } catch (IOException e) {
+            throw new RuntimeException("Could not create whitelist directory", e);
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);

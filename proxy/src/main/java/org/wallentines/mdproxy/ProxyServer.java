@@ -79,12 +79,8 @@ public class ProxyServer implements Proxy {
         Path iconCacheDir = Paths.get(getConfig().getString("icon_cache_dir"));
         this.iconCache = new IconCacheImpl(iconCacheDir, getConfig().getInt("icon_cache_size"));
 
-        if(!Files.isDirectory(iconCacheDir)) {
-            try {
-                Files.createDirectories(iconCacheDir);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not create icon cache directory", e);
-            }
+        try { Files.createDirectories(iconCacheDir); } catch (IOException e) {
+            throw new RuntimeException("Could not create icon cache directory", e);
         }
 
         this.port = getConfig().getInt("port");
