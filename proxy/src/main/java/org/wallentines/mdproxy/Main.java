@@ -17,10 +17,11 @@ import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.plugin.PluginLoader;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Main {
 
@@ -59,20 +60,21 @@ public class Main {
         FileCodecRegistry reg = MidnightCoreAPI.FILE_CODEC_REGISTRY;
         reg.registerFileCodec(JSONCodec.fileCodec());
 
-        File configFile = new File("config.json");
+        Path configFile = Paths.get("config.json");
         FileWrapper<ConfigObject> config = new FileWrapper<>(ConfigContext.INSTANCE, JSONCodec.fileCodec(), configFile, StandardCharsets.UTF_8, DEFAULT_CONFIG);
-        if(configFile.isFile()) {
-            config.load();
+
+        Path currentDir = Paths.get(System.getProperty("user.dir"));
+        if(!Files.isWritable(currentDir)) {
+            throw new IllegalStateException("Working directory is not writable");
         }
 
-        File currentDir = new File(System.getProperty("user.dir"));
-        if(currentDir.canWrite() && !configFile.exists() || configFile.canWrite()) {
-            config.save();
-        }
-
-        File langDir = new File("lang");
-        if(!langDir.isDirectory() && !langDir.mkdirs()) {
-            throw new IllegalStateException("Unable to create lang directory!");
+        Path langDir = Paths.get("lang");
+        if(!Files.isDirectory(langDir)) {
+            try {
+                Files.createDirectories(langDir);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create lang directory", e);
+            }
         }
 
         LangRegistry defaults;
@@ -90,9 +92,13 @@ public class Main {
         manager.saveLanguageDefaults("en_us", defaults);
 
 
-        File pluginDir = new File("plugins");
-        if(!pluginDir.isDirectory() && !pluginDir.mkdirs()) {
-            throw new IllegalStateException("Unable to create plugins directory!");
+        Path pluginDir = Paths.get("plugins");
+        if(!Files.isDirectory(pluginDir)) {
+            try {
+                Files.createDirectories(pluginDir);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create lang directory", e);
+            }
         }
         PluginLoader loader = new PluginLoader(pluginDir);
 

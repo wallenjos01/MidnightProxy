@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +16,7 @@ public class FileKeyStore implements KeyStore {
     private static final int HMAC_LENGTH = 32;
     private final Map<KeyType<?>, String> extensions;
     private final Map<KeyType<?>, KeyRegistry<?>> allKeys = new HashMap<>();
-    private final File keyFolder;
+    private final Path keyFolder;
 
     public static final Map<KeyType<?>, String> DEFAULT_TYPES = Map.of(
             KeyType.HMAC, "key",
@@ -23,7 +25,7 @@ public class FileKeyStore implements KeyStore {
             KeyType.RSA_PRIVATE, "rsa"
     );
 
-    public FileKeyStore(File keyFolder, Map<KeyType<?>, String> validKeyTypes) {
+    public FileKeyStore(Path keyFolder, Map<KeyType<?>, String> validKeyTypes) {
         this.keyFolder = keyFolder;
         this.extensions = Map.copyOf(validKeyTypes);
     }
@@ -46,11 +48,11 @@ public class FileKeyStore implements KeyStore {
         KeyRegistry<T> reg = (KeyRegistry<T>) ureg;
         if(!reg.hasKey(kid)) {
 
-            File keyFile = new File(keyFolder, kid + "." + extensions.get(type));
+            Path keyFile = keyFolder.resolve(kid + "." + extensions.get(type));
             byte[] value;
             try(
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    FileInputStream fis = new FileInputStream(keyFile)
+                    InputStream fis = Files.newInputStream(keyFile)
             ) {
 
                 byte[] buffer = new byte[HMAC_LENGTH];
@@ -95,8 +97,8 @@ public class FileKeyStore implements KeyStore {
         reg.setKey(name, key);
 
         // Save key file
-        File f = new File(keyFolder, name + "." + extensions.get(type));
-        try(FileOutputStream fos = new FileOutputStream(f)) {
+        Path f = keyFolder.resolve(name + "." + extensions.get(type));
+        try(OutputStream fos = Files.newOutputStream(f)) {
             fos.write(type.serialize(key).getOrThrow());
         } catch (Exception ex) {
             LOGGER.warn("Unable to save key {}!", name, ex);
@@ -110,9 +112,13 @@ public class FileKeyStore implements KeyStore {
             return;
         }
         if(allKeys.get(type).clearKey(name) != null) {
-            File f = new File(keyFolder, name + "." + extensions.get(type));
-            if(!f.delete()) {
-                LOGGER.warn("Unable to delete key file {}", f.getName());
+            Path p = keyFolder.resolve(name + "." + extensions.get(type));
+            try {
+                if (!Files.deleteIfExists(p)) {
+                    LOGGER.warn("Unable to delete key file {}", p.getFileName());
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("An error occurred while deleting key file {}", p.getFileName(), ex);
             }
         }
     }

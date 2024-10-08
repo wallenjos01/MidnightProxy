@@ -11,7 +11,9 @@ import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class JWTPlugin implements Plugin {
     public static final Logger LOGGER = LoggerFactory.getLogger("JWTPlugin");
@@ -23,16 +25,24 @@ public class JWTPlugin implements Plugin {
     @Override
     public void initialize(Proxy proxy) {
 
-        File configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("jwt").toFile();
-        if(!configFolder.isDirectory() && !configFolder.mkdirs()) {
-            throw new IllegalStateException("Unable to create config directory!");
+        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("jwt");
+        if(!Files.isDirectory(configFolder)) {
+            try {
+                Files.createDirectories(configFolder);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create lang directory", e);
+            }
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
 
-        File keyStoreDir = new File(configFolder, config.getRoot().asSection().getString("key_store_path"));
-        if(!keyStoreDir.isDirectory() && !keyStoreDir.mkdirs()) {
-            throw new IllegalStateException("Unable to create key store directory!");
+        Path keyStoreDir = configFolder.resolve(config.getRoot().asSection().getString("key_store_path"));
+        if(!Files.isDirectory(keyStoreDir)) {
+            try {
+                Files.createDirectories(keyStoreDir);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create key store directory", e);
+            }
         }
         keyStore = new FileKeyStore(keyStoreDir, FileKeyStore.DEFAULT_TYPES);
 

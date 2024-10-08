@@ -9,7 +9,9 @@ import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class LastServerPlugin implements Plugin {
 
@@ -17,10 +19,15 @@ public class LastServerPlugin implements Plugin {
     private final DataManager dataManager;
 
     public LastServerPlugin() {
-        File configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("lastserver").toFile();
-        if(!configFolder.isDirectory() && !configFolder.mkdirs()) {
-            throw new IllegalStateException("Unable to create config directory!");
+        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("lastserver");
+        if(!Files.isDirectory(configFolder)) {
+            try {
+                Files.createDirectories(configFolder);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create config directory", e);
+            }
         }
+
         dataManager = new DataManager(configFolder);
 
         ConnectionCheckType.REGISTRY.tryRegister("last_server", LastServerCheck.TYPE);

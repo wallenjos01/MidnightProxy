@@ -10,7 +10,9 @@ import org.wallentines.mdcfg.sql.PresetRegistry;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class SQLPlugin implements Plugin {
 
@@ -30,10 +32,15 @@ public class SQLPlugin implements Plugin {
     @Override
     public void initialize(Proxy proxy) {
 
-        File configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist").toFile();
-        if(!configFolder.isDirectory() && !configFolder.mkdirs()) {
-            throw new IllegalStateException("Unable to create config directory!");
+        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist");
+        if(!Files.isDirectory(configFolder)) {
+            try {
+                Files.createDirectories(configFolder);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create whitelist directory", e);
+            }
         }
+
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
         registry = PresetRegistry.SERIALIZER.deserialize(ConfigContext.INSTANCE, config.getRoot()).getOrThrow();
     }

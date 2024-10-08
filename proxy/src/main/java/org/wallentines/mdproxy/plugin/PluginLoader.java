@@ -7,38 +7,36 @@ import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdcfg.serializer.SerializeException;
 import org.wallentines.mdproxy.Proxy;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 public class PluginLoader implements PluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PluginLoader");
-    private final File pluginFolder;
+    private final Path pluginFolder;
     private final HashMap<String, Plugin> byId;
     private final HashMap<Class<? extends Plugin>, Plugin> byClass;
 
-    public PluginLoader(File pluginFolder) {
+    public PluginLoader(Path pluginFolder) {
         this.pluginFolder = pluginFolder;
         this.byId = new HashMap<>();
         this.byClass = new HashMap<>();
     }
 
     public void loadAll(Proxy proxy) {
-
-        File[] files = pluginFolder.listFiles();
-
-        if(files == null) return;
-
-        for(File f : files) {
-            if(f.getName().endsWith(".jar")) {
+        try(Stream<Path> str = Files.list(pluginFolder)) {
+            str.filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".jar")).forEach(f -> {
                 tryLoad(f, proxy);
-            }
+            });
+        } catch (IOException e) {
+            LOGGER.error("An exception occurred while loading a plugin", e);
         }
     }
 
@@ -52,22 +50,21 @@ public class PluginLoader implements PluginManager {
         return clazz.cast(byClass.get(clazz));
     }
 
-    private void tryLoad(File f, Proxy proxy) {
+    private void tryLoad(Path f, Proxy proxy) {
 
-
-        try(URLClassLoader loader = new URLClassLoader(new URL[] { f.toURI().toURL() }, PluginLoader.class.getClassLoader())) {
+        try(URLClassLoader loader = new URLClassLoader(new URL[] { f.toUri().toURL() }, PluginLoader.class.getClassLoader())) {
 
             PluginInfo info;
             try (InputStream pluginDesc = loader.getResourceAsStream("plugin.json")) {
 
                 if(pluginDesc == null) {
-                    LOGGER.warn("File " + f.getName() + " did not have a plugin description!");
+                    LOGGER.warn("File {} did not have a plugin description!", f.getFileName());
                     return;
                 }
 
                 info = JSONCodec.minified().decode(ConfigContext.INSTANCE, PluginInfo.SERIALIZER, pluginDesc).getOrThrow();
             } catch (DecodeException | SerializeException ex) {
-                LOGGER.error("An error occurred while reading a plugin description for {}!", f.getName(), ex);
+                LOGGER.error("An error occurred while reading a plugin description for {}!", f.getFileName(), ex);
                 return;
             }
 
