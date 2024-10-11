@@ -7,7 +7,6 @@ import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.serializer.ConfigContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
@@ -36,6 +35,14 @@ public class WhitelistPlugin implements Plugin {
         config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
         ConnectionCheckType.REGISTRY.tryRegister("whitelist", WhitelistCheck.TYPE);
 
+        proxy.getCommands().register("whitelist", (sender, args) -> {
+            if(args.length == 0) return;
+            if(args[0].equals("reload")) {
+                reload();
+                sender.sendMessage("Whitelists reloaded");
+            }
+        });
+
         reload();
     }
 
@@ -48,16 +55,12 @@ public class WhitelistPlugin implements Plugin {
         lists.clear();
         config.load();
 
-        ConfigSection listSec = config.getRoot().asSection().getSection("lists");
-        for(String key : listSec.getKeys()) {
-
-            SerializeResult<Whitelist> out = Whitelist.SERIALIZER.deserialize(ConfigContext.INSTANCE, listSec.get(key));
-            if(!out.isComplete()) {
-                LOGGER.warn("Unable to deserialize a whitelist with key " + key + "! " + out.getError());
-            }
-
-            lists.register(key, out.getOrThrow());
-        }
+        Whitelist.SERIALIZER
+                .filteredMapOf((key, err) -> LOGGER.error("Unable to deserialize a whitelist with key {}! {}", key, err))
+                .fieldOf("lists")
+                .deserialize(ConfigContext.INSTANCE, config.getRoot())
+                .getOrThrow()
+                .forEach(lists::register);
     }
 
 }
