@@ -34,9 +34,10 @@ public class Main {
             .with("backends", new ConfigSection())
             .with("status", new ConfigList())
             .with("routes", new ConfigList())
-            .with("online_mode", true)
-            .with("force_authentication", false)
+            .with("auth_routes", new ConfigList().append(new ConfigSection().with("type", Authenticator.MOJANG_ID)))
             .with("auth_threads", 4)
+            .with("use_authentication", true)
+            .with("force_authentication", false)
             .with("reconnect_timeout_sec", 3)
             .with("backend_timeout_ms", 5000)
             .with("client_timeout_ms", 15000)
@@ -87,6 +88,7 @@ public class Main {
         LangManager manager = new LangManager(defaults, langDir, reg, PlaceholderManager.INSTANCE);
         manager.saveLanguageDefaults("en_us", defaults);
 
+        Authenticator.REGISTRY.register(Authenticator.MOJANG_ID, MojangAuthenticator.TYPE);
 
         Path pluginDir = Paths.get("plugins");
         try { Files.createDirectories(pluginDir); } catch (IOException e) {

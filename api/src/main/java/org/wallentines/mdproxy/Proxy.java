@@ -31,7 +31,7 @@ public interface Proxy {
      * Gets whether the proxy is in online mode (will authenticate players if necessary)
      * @return Whether the proxy is in online mode
      */
-    boolean isOnlineMode();
+    boolean usesAuthentication();
 
     /**
      * Gets whether the proxy will always attempt to authenticate players
@@ -72,6 +72,12 @@ public interface Proxy {
      * @return A list of routes.
      */
     List<Route> getRoutes();
+
+    /**
+     * Gets a list of all auth routes, in order
+     * @return A list of auth routes.
+     */
+    List<AuthRoute> getAuthRoutes();
 
     /**
      * Gets the proxy's status icon cache.
@@ -133,6 +139,18 @@ public interface Proxy {
      * @param provider The new player count provider.
      */
     void setPlayerCountProvider(PlayerCountProvider provider);
+
+    /**
+     * Gets the authenticator with the given type
+     * @return An authenticator, or null
+     */
+    Authenticator getAuthenticator(String type);
+
+    /**
+     * Whether the proxy should prevent players from connecting through a proxy, (via Mojang authentication)
+     * @return Whether the proxy should prevent proxy connections.
+     */
+    boolean preventProxyConnections();
 
     /**
      * Gets the proxy's plugin manager.

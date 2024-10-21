@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 public class ProxyServer implements Proxy {
@@ -33,11 +34,13 @@ public class ProxyServer implements Proxy {
 
     private final KeyPair keyPair;
     private final KeyPair reconnectKeyPair;
-    private final Authenticator authenticator;
+    //private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
     private final Registry<String, CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
     private final List<Route> routes = new ArrayList<>();
+    private final List<AuthRoute> authRoutes = new ArrayList<>();
+    private final Map<String, Authenticator> authenticators = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager langManager;
@@ -49,10 +52,12 @@ public class ProxyServer implements Proxy {
     private final PlayerListImpl playerList;
     private PlayerCountProvider playerCount;
 
+    private final ThreadPoolExecutor authExecutor;
+
     private int reconnectTimeout;
     private int backendTimeout;
     private int playerLimit;
-    private boolean onlineMode;
+    private boolean useAuthentication;
     private boolean requireAuth;
     private boolean haproxy;
     private boolean preventProxy;
@@ -88,7 +93,6 @@ public class ProxyServer implements Proxy {
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.reconnectKeyPair = CryptUtil.generateKeyPair();
-        this.authenticator = new Authenticator(this, getConfig().getInt("auth_threads"));
         this.commands = Registry.createStringRegistry();
 
         this.commands.register("stop", new StopCommand());
@@ -97,6 +101,7 @@ public class ProxyServer implements Proxy {
 
         this.listener = new ConnectionManager(this);
         this.console = new ConsoleHandler(this);
+        this.authExecutor = new ThreadPoolExecutor(1, getConfig().getInt("auth_threads"), 5000, TimeUnit.MILLISECONDS, new SynchronousQueue<>());
 
         this.pluginLoader.loadAll(this);
 
@@ -117,8 +122,6 @@ public class ProxyServer implements Proxy {
         }
 
         LOGGER.info("Shutting down...");
-        authenticator.close();
-
         console.stop();
         listener.stop();
 
@@ -140,7 +143,7 @@ public class ProxyServer implements Proxy {
 
         ConfigSection conf = getConfig();
 
-        this.onlineMode = conf.getBoolean("online_mode");
+        this.useAuthentication = conf.getBoolean("use_authentication");
         this.requireAuth = conf.getBoolean("force_authentication");
         this.backendTimeout = conf.getInt("backend_timeout_ms");
         this.playerLimit = conf.getInt("player_limit");
@@ -165,6 +168,9 @@ public class ProxyServer implements Proxy {
 
         this.routes.clear();
         this.routes.addAll(getConfig().getListFiltered("routes", Route.SERIALIZER, LOGGER::warn));
+
+        this.authRoutes.clear();
+        this.authRoutes.addAll(getConfig().getListFiltered("auth_routes", AuthRoute.SERIALIZER.forContext(this), LOGGER::warn));
     }
 
     @Override
@@ -193,8 +199,8 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
-    public boolean isOnlineMode() {
-        return onlineMode;
+    public boolean usesAuthentication() {
+        return useAuthentication;
     }
 
     @Override
@@ -243,6 +249,42 @@ public class ProxyServer implements Proxy {
     }
 
     @Override
+    public Authenticator getAuthenticator(String type) {
+        return authenticators.computeIfAbsent(type, k -> {
+            Authenticator.Type t = Authenticator.REGISTRY.get(k);
+            if(t == null) return null;
+            return t.create(this);
+        });
+    }
+
+    public List<AuthRoute> getAuthRoutes() {
+        return authRoutes;
+    }
+
+    public Executor getAuthExecutor() {
+        return authExecutor;
+    }
+
+    public CompletableFuture<PlayerProfile> authenticate(ConnectionContext context, String serverId) {
+
+        final Queue<AuthRoute> routes = new ArrayDeque<>(authRoutes);
+        if(routes.isEmpty()) return CompletableFuture.completedFuture(null);
+
+        return CompletableFuture.supplyAsync(() -> {
+
+            while(!routes.isEmpty()) {
+                AuthRoute route = routes.poll();
+                PlayerProfile prof = route.authenticate(context, serverId);
+                if(prof != null) return prof;
+            }
+
+            return null;
+
+        }, authExecutor);
+
+    }
+
+    @Override
     public PluginManager getPluginManager() {
         return pluginLoader;
     }
@@ -272,10 +314,6 @@ public class ProxyServer implements Proxy {
 
     public KeyPair getReconnectKeyPair() {
         return reconnectKeyPair;
-    }
-
-    public Authenticator getAuthenticator() {
-        return authenticator;
     }
 
     public UsedTokenCache getTokenCache() {

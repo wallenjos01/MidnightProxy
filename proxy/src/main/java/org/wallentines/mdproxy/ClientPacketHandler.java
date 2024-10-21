@@ -38,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
@@ -51,6 +52,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final Channel channel;
     private byte[] challenge;
     private ClientConnectionImpl conn;
+    private ConnectionContext context;
     private boolean encrypted;
     private PlayerProfile profile;
     private ServerboundHandshakePacket.Intent intent;
@@ -58,6 +60,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private final Random random = new SecureRandom();
     private final Queue<Route> routes;
+    private final Queue<AuthRoute> authRoutes;
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
     private final DefaultedSingleton<InetSocketAddress> address;
 
@@ -72,6 +75,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         this.address = address;
 
         this.routes = new ArrayDeque<>(server.getRoutes());
+        this.authRoutes = new ArrayDeque<>(server.getAuthRoutes());
     }
 
     @Nullable
@@ -87,6 +91,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port());
+        this.context = new ConnectionContext(conn, server);
         this.intent = handshake.intent();
 
         this.server.clientConnectEvent().invoke(conn);
@@ -168,15 +173,26 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Encryption unsuccessful!");
         }
 
-        if (server.isOnlineMode()) {
-
-            LOGGER.info("Starting authentication for {}", conn.username());
+        if (profile != null || !server.usesAuthentication()) {
+            finishAuthentication(profile);
+        } else {
 
             String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
-            server.getAuthenticator().authenticate(conn, serverId).thenAcceptAsync(this::finishAuthentication, channel.eventLoop());
+            if(authRoutes.isEmpty()) {
+                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+                return;
+            }
 
-        } else {
-            finishAuthentication(profile);
+            CompletableFuture.supplyAsync(() -> {
+                while(!routes.isEmpty()) {
+                    AuthRoute route = authRoutes.remove();
+                    PlayerProfile prof = route.authenticate(context, serverId);
+                    if(prof != null) {
+                        return profile;
+                    }
+                }
+                return null;
+            }, server.getAuthExecutor()).thenAcceptAsync(this::finishAuthentication, channel.eventLoop());
         }
     }
 
@@ -378,10 +394,47 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         challenge = Ints.toByteArray(random.nextInt());
-        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, server.isOnlineMode()));
+        if(server.usesAuthentication()) {
+
+            LOGGER.info("Starting authentication for {}", conn.username());
+            if(authRoutes.isEmpty()) {
+                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+                return;
+            }
+
+            CompletableFuture.runAsync(() -> {
+
+                while(!routes.isEmpty()) {
+                    AuthRoute route = authRoutes.peek();
+                    if(route.authenticator().shouldClientAuthenticate()) {
+                        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, true));
+                        return;
+                    }
+                    authRoutes.remove();
+
+                    PlayerProfile prof = route.authenticate(context, null);
+                    if(prof != null) {
+                        this.profile = prof;
+                        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
+                        return;
+                    }
+                }
+
+            }, server.getAuthExecutor());
+
+            server.usesAuthentication();
+
+        } else {
+            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
+        }
     }
 
     private void finishAuthentication(PlayerProfile profile) {
+
+        if(profile == null) {
+            disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+            return;
+        }
 
         this.profile = profile;
         conn.setAuthenticated(true);
@@ -423,8 +476,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 }
             }
 
-            ConnectionContext ctx = new ConnectionContext(conn, server);
-            TestResult res = current.canUse(ctx);
+            TestResult res = current.canUse(context);
 
             if (conn.hasDisconnected()) {
                 return;
@@ -436,7 +488,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
 
             if(res == TestResult.PASS) {
-                toUse = current.resolveBackend(ctx, server.getBackends());
+                toUse = current.resolveBackend(context, server.getBackends());
                 if(toUse == null) {
                     LOGGER.warn("Unable to resolve backend for successful route! ({})", current.backend());
                 } else {
