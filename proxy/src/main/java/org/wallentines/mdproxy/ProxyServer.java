@@ -265,25 +265,6 @@ public class ProxyServer implements Proxy {
         return authExecutor;
     }
 
-    public CompletableFuture<PlayerProfile> authenticate(ConnectionContext context, String serverId) {
-
-        final Queue<AuthRoute> routes = new ArrayDeque<>(authRoutes);
-        if(routes.isEmpty()) return CompletableFuture.completedFuture(null);
-
-        return CompletableFuture.supplyAsync(() -> {
-
-            while(!routes.isEmpty()) {
-                AuthRoute route = routes.poll();
-                PlayerProfile prof = route.authenticate(context, serverId);
-                if(prof != null) return prof;
-            }
-
-            return null;
-
-        }, authExecutor);
-
-    }
-
     @Override
     public PluginManager getPluginManager() {
         return pluginLoader;

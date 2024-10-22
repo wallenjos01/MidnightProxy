@@ -7,9 +7,7 @@ import org.wallentines.mcore.lang.PlaceholderSupplier;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
-import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -96,19 +94,6 @@ public interface ClientConnection {
      */
     @Nullable
     String locale();
-
-    /**
-     * Generates a handshake packet for the client using the given intent.
-     * @param intent The client's intent
-     * @return A new handshake packet
-     */
-    ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent);
-
-    /**
-     * Generates a login packet (player info packet) for the client.
-     * @return A new login packet.
-     */
-    ServerboundLoginPacket loginPacket();
 
     /**
      * Determines if the client has disconnected.

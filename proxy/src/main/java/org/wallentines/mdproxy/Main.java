@@ -61,8 +61,8 @@ public class Main {
         FileCodecRegistry reg = MidnightCoreAPI.FILE_CODEC_REGISTRY;
         reg.registerFileCodec(JSONCodec.fileCodec());
 
-        Path configFile = Paths.get("config.json");
-        FileWrapper<ConfigObject> config = new FileWrapper<>(ConfigContext.INSTANCE, JSONCodec.fileCodec(), configFile, StandardCharsets.UTF_8, DEFAULT_CONFIG);
+        Path workDir = Paths.get(System.getProperty("user.dir"));
+        FileWrapper<ConfigObject> config = reg.findOrCreate(ConfigContext.INSTANCE, "config", workDir, StandardCharsets.UTF_8, DEFAULT_CONFIG);
 
         Path currentDir = Paths.get(System.getProperty("user.dir"));
         if(!Files.isWritable(currentDir)) {

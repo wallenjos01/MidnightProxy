@@ -186,9 +186,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             CompletableFuture.supplyAsync(() -> {
                 while(!routes.isEmpty()) {
                     AuthRoute route = authRoutes.remove();
-                    PlayerProfile prof = route.authenticate(context, serverId);
-                    if(prof != null) {
-                        return profile;
+                    if(route.canUse(context)) {
+                        PlayerProfile prof = route.authenticate(context, serverId);
+                        if (prof != null) {
+                            return profile;
+                        } else if (route.kickOnFail()) {
+                            disconnect(server.getLangManager().component(route.kickMessage(), conn));
+                            return null;
+                        }
                     }
                 }
                 return null;
@@ -329,10 +334,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
                         conn.setBackend(bconn);
 
-                        bconn.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.LOGIN));
+                        bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
 
                         bconn.changePhase(ProtocolPhase.LOGIN);
-                        bconn.send(conn.loginPacket());
+                        bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
 
                         bconn.setupForwarding(channel);
                         setupForwarding(bconn.getChannel());
@@ -412,13 +417,19 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     }
                     authRoutes.remove();
 
-                    PlayerProfile prof = route.authenticate(context, null);
-                    if(prof != null) {
-                        this.profile = prof;
-                        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
-                        return;
+                    if(route.canUse(context)) {
+                        PlayerProfile prof = route.authenticate(context, null);
+                        if (prof != null) {
+                            this.profile = prof;
+                            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
+                            return;
+                        } else if(route.kickOnFail()) {
+                            disconnect(server.getLangManager().component(route.kickMessage(), conn));
+                        }
                     }
                 }
+
+                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
 
             }, server.getAuthExecutor());
 

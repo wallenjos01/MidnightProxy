@@ -41,7 +41,7 @@ public class StatusResponder implements ClientboundPacketHandler {
             server.getConnectionManager().connectToBackend(conn, b, playerVersion, server.getBackendTimeout())
                     .thenAccept(backend -> {
                         backend.setupStatus(this);
-                        backend.send(conn.handshakePacket(ServerboundHandshakePacket.Intent.STATUS));
+                        backend.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.STATUS));
                         backend.changePhase(ProtocolPhase.STATUS);
                         backend.send(new ServerboundStatusPacket());
                         this.backend = backend;

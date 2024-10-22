@@ -12,11 +12,9 @@ import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
-import org.wallentines.mdproxy.packet.login.ServerboundLoginPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -132,16 +130,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public String locale() {
         return locale;
-    }
-
-    @Override
-    public ServerboundHandshakePacket handshakePacket(ServerboundHandshakePacket.Intent intent) {
-        return new ServerboundHandshakePacket(protocolVersion, hostname, port, intent);
-    }
-
-    @Override
-    public ServerboundLoginPacket loginPacket() {
-        return new ServerboundLoginPacket(playerInfo.username(), playerInfo.uuid());
     }
 
     @Override
