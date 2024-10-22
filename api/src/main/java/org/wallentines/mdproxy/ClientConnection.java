@@ -25,8 +25,16 @@ public interface ClientConnection {
     /**
      * Determines whether the client's player info is available
      * @return Whether player info is available
+     * @deprecated Use profileAvailable
      */
+    @Deprecated
     boolean playerInfoAvailable();
+
+    /**
+     * Determines whether the client's game profile is available
+     * @return Whether player info is available
+     */
+    boolean profileAvailable();
 
     /**
      * Determines if this client is authenticated
@@ -76,9 +84,18 @@ public interface ClientConnection {
     /**
      * Gets the client's player info, if available, including username and UUID.
      * @return The client's player info.
+     * @deprecated Use profile()
      */
     @Nullable
+    @Deprecated
     PlayerInfo playerInfo();
+
+    /**
+     * Gets the client's player profile, if available, including username, UUID, and properties.
+     * @return The client's profile.
+     */
+    @Nullable
+    PlayerProfile profile();
 
     /**
      * Gets the client's cookie with the given ID. Will be null if the cookie was not requested by any route, or

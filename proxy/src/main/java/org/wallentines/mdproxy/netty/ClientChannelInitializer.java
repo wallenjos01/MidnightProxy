@@ -4,7 +4,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import io.netty.handler.flow.FlowControlHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +61,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                     bConn.close();
                     LOGGER.info("Client disconnected: {}", handler.getUsername());
                 }
-                if(conn.playerInfoAvailable()) {
+                if(conn.profileAvailable()) {
                     server.getPlayerList().removePlayer(conn.uuid());
                 }
             }

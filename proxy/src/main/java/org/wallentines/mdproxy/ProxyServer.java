@@ -34,7 +34,6 @@ public class ProxyServer implements Proxy {
 
     private final KeyPair keyPair;
     private final KeyPair reconnectKeyPair;
-    //private final Authenticator authenticator;
     private final FileWrapper<ConfigObject> config;
     private final Registry<String, CommandExecutor> commands;
     private final List<StatusEntry> statusEntries = new ArrayList<>();
@@ -240,6 +239,11 @@ public class ProxyServer implements Proxy {
 
     @Override
     public boolean bypassesPlayerLimit(PlayerInfo info) {
+        return false;
+    }
+
+    @Override
+    public boolean bypassesPlayerLimit(PlayerProfile info) {
         return false;
     }
 

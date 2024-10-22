@@ -132,7 +132,17 @@ public interface Proxy {
      * @param info The player info to check.
      * @return Whether the player should bypass the player limit.
      */
+    @Deprecated
     boolean bypassesPlayerLimit(PlayerInfo info);
+
+    /**
+     * Determines if the player with the given info (username and UUID) should bypass the player limit. Note that player
+     * info can be forged if the connecting player has not authenticated with Mojang.
+     * @param info The player info to check.
+     * @return Whether the player should bypass the player limit.
+     */
+    boolean bypassesPlayerLimit(PlayerProfile info);
+
 
     /**
      * Changes the player count provider for the proxy.

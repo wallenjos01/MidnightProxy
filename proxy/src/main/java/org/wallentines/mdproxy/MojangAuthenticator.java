@@ -43,7 +43,7 @@ public class MojangAuthenticator implements Authenticator {
 
     public PlayerProfile authenticate(ClientConnection connection, String serverId) {
 
-        if(!connection.playerInfoAvailable()) {
+        if(!connection.profileAvailable()) {
             return null;
         }
 

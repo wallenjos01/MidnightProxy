@@ -40,7 +40,7 @@ public class PlayerListImpl implements PlayerList {
 
     public void addPlayer(ClientConnection conn) {
         assert conn != null;
-        assert conn.playerInfoAvailable();
+        assert conn.profileAvailable();
 
         UUID playerId = conn.uuid();
         connections.put(playerId, conn);

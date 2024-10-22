@@ -54,7 +54,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private ClientConnectionImpl conn;
     private ConnectionContext context;
     private boolean encrypted;
-    private PlayerProfile profile;
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
 
@@ -135,15 +134,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        conn.setPlayerInfo(new PlayerInfo(login.username(), login.uuid()));
+        conn.setProfile(new PlayerProfile(login.uuid(), login.username()));
 
         if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
 
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
-            this.profile = new PlayerProfile(login.uuid(), login.username());
-
             // Continue with login
             preLogin();
         }
@@ -156,7 +153,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundEncryptionPacket encrypt) {
-        if(!conn.playerInfoAvailable() || challenge == null) {
+        if(!conn.profileAvailable() || challenge == null) {
             throw new IllegalStateException("Received unrequested encryption packet!");
         }
 
@@ -173,6 +170,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Encryption unsuccessful!");
         }
 
+        PlayerProfile profile = conn.profile();
         if (profile != null || !server.usesAuthentication()) {
             finishAuthentication(profile);
         } else {
@@ -189,7 +187,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     if(route.canUse(context)) {
                         PlayerProfile prof = route.authenticate(context, serverId);
                         if (prof != null) {
-                            return profile;
+                            return prof;
                         } else if (route.kickOnFail()) {
                             disconnect(server.getLangManager().component(route.kickMessage(), conn));
                             return null;
@@ -217,8 +215,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
-            PlayerInfo pi = conn.playerInfo();
-            if(pi == null) {
+            PlayerProfile profile = conn.profile();
+            if(profile == null) {
                 LOGGER.error("Received reconnect cookie before player info!");
                 disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
                 return;
@@ -245,8 +243,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     .enforceSingleUse(server.getTokenCache())
                     .withClaim("hostname", conn.hostname())
                     .withClaim("port", conn.port())
-                    .withClaim("username", pi.username())
-                    .withClaim("uuid", pi.uuid().toString())
+                    .withClaim("username", profile.username())
+                    .withClaim("uuid", profile.uuid().toString())
                     .withClaim("protocol", conn.protocolVersion());
 
             if(!verifier.verify(decoded)) {
@@ -336,6 +334,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
                         bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
 
+                        PlayerProfile profile = conn.profile();
+
                         bconn.changePhase(ProtocolPhase.LOGIN);
                         bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
 
@@ -420,7 +420,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     if(route.canUse(context)) {
                         PlayerProfile prof = route.authenticate(context, null);
                         if (prof != null) {
-                            this.profile = prof;
+                            conn.setProfile(prof);
                             conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
                             return;
                         } else if(route.kickOnFail()) {
@@ -447,7 +447,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        this.profile = profile;
+        conn.setProfile(profile);
         conn.setAuthenticated(true);
 
         LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.uuid());
@@ -459,9 +459,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        conn.executeTasksAsync(Task.POST_LOGIN_QUEUE).thenRun(() -> {
-            conn.send(new ClientboundLoginFinishedPacket(profile));
-        });
+        conn.executeTasksAsync(Task.POST_LOGIN_QUEUE).thenRun(() -> conn.send(new ClientboundLoginFinishedPacket(profile)));
 
     }
 
@@ -568,10 +566,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     public String getUsername() {
 
+        if(conn == null) return channel.remoteAddress().toString();
+
+        PlayerProfile profile = conn.profile();
         return profile == null
-                ? conn != null && conn.playerInfoAvailable()
-                        ? conn.username()
-                        : channel.remoteAddress().toString()
+                ? channel.remoteAddress().toString()
                 : profile.username();
 
     }

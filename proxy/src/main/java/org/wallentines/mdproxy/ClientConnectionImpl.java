@@ -34,7 +34,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final String hostname;
     private final int port;
 
-    private PlayerInfo playerInfo;
+    private PlayerProfile profile;
     private boolean auth;
     private String locale;
     private BackendConnectionImpl backend;
@@ -60,10 +60,18 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         loginQueryEvent.register(this, this::loginQueryReceived);
     }
 
+    @Deprecated
     @Override
     public boolean playerInfoAvailable() {
-        return playerInfo != null;
+        return profile != null;
     }
+
+
+    @Override
+    public boolean profileAvailable() {
+        return profile != null;
+    }
+
 
     @Override
     public boolean authenticated() {
@@ -89,7 +97,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
             return TestResult.NOT_ENOUGH_INFO;
         }
 
-        return server.bypassesPlayerLimit(playerInfo) ? TestResult.PASS : TestResult.FAIL;
+        return server.bypassesPlayerLimit(profile) ? TestResult.PASS : TestResult.FAIL;
     }
 
     @Override
@@ -109,17 +117,22 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public String username() {
-        return playerInfo == null ? channel.remoteAddress().toString() : playerInfo.username();
+        return profile == null ? channel.remoteAddress().toString() : profile.username();
     }
 
     @Override
     public UUID uuid() {
-        return playerInfo == null ? null : playerInfo.uuid();
+        return profile == null ? null : profile.uuid();
     }
 
+    @Deprecated
     @Override
     public PlayerInfo playerInfo() {
-        return playerInfo;
+        return new PlayerInfo(profile.username(), profile.uuid());
+    }
+
+    public PlayerProfile profile() {
+        return profile;
     }
 
     @Override
@@ -142,8 +155,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         return backend;
     }
 
-    public void setPlayerInfo(PlayerInfo playerInfo) {
-        this.playerInfo = playerInfo;
+    @Deprecated
+    public void setPlayerInfo(PlayerInfo profile) {
+        this.profile = new PlayerProfile(profile.uuid(), profile.username());
+    }
+
+    public void setProfile(PlayerProfile profile) {
+        this.profile = profile;
     }
 
     public void setAuthenticated(boolean auth) {
