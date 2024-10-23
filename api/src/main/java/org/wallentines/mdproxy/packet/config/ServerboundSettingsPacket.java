@@ -8,7 +8,7 @@ import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-public record ServerboundSettingsPacket(String locale, byte renderDistance, ChatMode chatMode, boolean chatColors, byte skinLayers, MainHand hand, boolean textFiltering, boolean allowListings) implements Packet<ServerboundPacketHandler> {
+public record ServerboundSettingsPacket(String locale, byte renderDistance, ChatMode chatMode, boolean chatColors, byte skinLayers, MainHand hand, boolean textFiltering, boolean allowListings, int particleStatus) implements Packet<ServerboundPacketHandler> {
 
     public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(0, ServerboundSettingsPacket::read);
     @Override
@@ -35,7 +35,12 @@ public record ServerboundSettingsPacket(String locale, byte renderDistance, Chat
         boolean filtering = buf.readBoolean();
         boolean serverListing = buf.readBoolean();
 
-        return new ServerboundSettingsPacket(locale, renderDistance, mode, chatColors, skinLayers, hand, filtering, serverListing);
+        int particles = 0;
+        if(version.getProtocolVersion() > 767) {
+            particles = PacketBufferUtil.readVarInt(buf);
+        }
+
+        return new ServerboundSettingsPacket(locale, renderDistance, mode, chatColors, skinLayers, hand, filtering, serverListing, particles);
     }
 
 

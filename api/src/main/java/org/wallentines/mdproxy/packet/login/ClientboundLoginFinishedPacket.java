@@ -42,6 +42,8 @@ public record ClientboundLoginFinishedPacket(PlayerProfile gameProfile) implemen
             PacketBufferUtil.writeOptional(buf, prop.signature(), PacketBufferUtil::writeUtf);
         }
 
-        buf.writeBoolean(true); // Strict error handling
+        if(version.getProtocolVersion() < 768) {
+            buf.writeBoolean(true); // Strict error handling
+        }
     }
 }
