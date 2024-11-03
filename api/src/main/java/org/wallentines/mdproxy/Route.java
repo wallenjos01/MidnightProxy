@@ -37,7 +37,10 @@ public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> bac
 
     public @Nullable Backend resolveBackend(ConnectionContext ctx, Registry<String, Backend> backends) {
 
-        if(backend == null) return null;
+        if(backend == null) {
+            LOGGER.warn("Route has no backend!");
+            return null;
+        }
 
         Backend out;
         if(backend.hasLeft()) {
@@ -45,11 +48,12 @@ public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> bac
             out = backends.get(id);
             if(out == null) {
                 LOGGER.warn("No backend with ID {} was found!", id);
+                return null;
             }
         } else {
             SerializeResult<Backend> res = backend.rightOrThrow().resolve(ctx.toPlaceholderContext());
             if(!res.isComplete()) {
-                LOGGER.warn(res.getError());
+                LOGGER.warn("Unable to resolve unresolved backend! {}", res.getError());
                 return null;
             }
             out = res.getOrThrow();
