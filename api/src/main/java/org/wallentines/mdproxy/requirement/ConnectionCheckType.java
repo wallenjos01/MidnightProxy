@@ -29,4 +29,9 @@ public abstract class ConnectionCheckType implements CheckType<ConnectionContext
     public static final ConnectionCheckType COOKIE = REGISTRY.tryRegister("cookie", CookieCheck.TYPE);
     public static final ConnectionCheckType COMPOSITE = REGISTRY.tryRegister("composite", Composite.TYPE);
 
+    public static final ConnectionCheckType HOSTNAME_REGEX = REGISTRY.tryRegister("hostname_regex", RegexCheck.type(ConnectionContext::hostname, false));
+    public static final ConnectionCheckType ADDRESS_REGEX = REGISTRY.tryRegister("ip_address_regex", RegexCheck.type(ConnectionContext::addressString, false));
+    public static final ConnectionCheckType USERNAME_REGEX = REGISTRY.tryRegister("username_regex", RegexCheck.type(ConnectionContext::username, true));
+    public static final ConnectionCheckType LOCALE_REGEX = REGISTRY.tryRegister("locale_regex", RegexCheck.type(ConnectionContext::locale, true));
+
 }
