@@ -15,7 +15,7 @@ import org.wallentines.mdcfg.codec.FileCodecRegistry;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
-import org.wallentines.mdproxy.plugin.PluginLoader;
+import org.wallentines.mdproxy.plugin.PluginManagerImpl;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -94,7 +94,7 @@ public class Main {
         try { Files.createDirectories(pluginDir); } catch (IOException e) {
             throw new RuntimeException("Could not create lang directory", e);
         }
-        PluginLoader loader = new PluginLoader(pluginDir);
+        PluginManagerImpl loader = new PluginManagerImpl(pluginDir);
 
         ProxyServer ps = new ProxyServer(config, manager, loader);
         try {

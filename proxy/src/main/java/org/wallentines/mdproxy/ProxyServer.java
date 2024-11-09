@@ -13,8 +13,8 @@ import org.wallentines.mdproxy.command.ReloadCommand;
 import org.wallentines.mdproxy.command.StopCommand;
 import org.wallentines.mdproxy.jwt.UsedTokenCache;
 import org.wallentines.mdproxy.netty.ConnectionManager;
-import org.wallentines.mdproxy.plugin.PluginLoader;
 import org.wallentines.mdproxy.plugin.PluginManager;
+import org.wallentines.mdproxy.plugin.PluginManagerImpl;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Registry;
@@ -43,7 +43,7 @@ public class ProxyServer implements Proxy {
     private final ConnectionManager listener;
     private final ConsoleHandler console;
     private final LangManager langManager;
-    private final PluginLoader pluginLoader;
+    private final PluginManagerImpl pluginLoader;
     private final UsedTokenCache reconnectTokenCache;
     private final IconCacheImpl iconCache;
     private final int port;
@@ -70,7 +70,7 @@ public class ProxyServer implements Proxy {
     private final HandlerList<ClientConnection> joined = new HandlerList<>();
 
 
-    public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginLoader pluginLoader) {
+    public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginManagerImpl pluginLoader) {
 
         this.config = config;
         this.langManager = langManager;

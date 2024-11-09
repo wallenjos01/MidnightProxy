@@ -1,5 +1,5 @@
 package org.wallentines.mdproxy.plugin;
 
-public record LoadedPlugin(PluginInfo info, Plugin plugin) {
+public record LoadedPlugin(PluginClassLoader loader, PluginInfo info, Plugin plugin) {
 
 }
