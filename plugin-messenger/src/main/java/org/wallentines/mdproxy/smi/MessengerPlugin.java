@@ -11,6 +11,8 @@ import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.smi.Messenger;
 import org.wallentines.smi.MessengerType;
+import org.wallentines.smi.MessengerManager;
+import org.wallentines.smi.MessengerManagerImpl;
 import org.wallentines.smi.AmqpMessenger;
 
 
@@ -29,7 +31,7 @@ public class MessengerPlugin implements Plugin {
                     )
             );
 
-    private Map<String, Messenger> messengers = new HashMap<>();
+    private MessengerManagerImpl manager;
 
     @Override
     public void initialize(Proxy proxy) {
@@ -40,11 +42,24 @@ public class MessengerPlugin implements Plugin {
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
-        messengers = Messenger.createSerializer(REGISTRY).mapOf().deserialize(ConfigContext.INSTANCE, config.getRoot().asSection().getSection("messengers")).getOrThrow();
+        manager = new MessengerManagerImpl(REGISTRY);
+        manager.loadAll(config.getRoot().asSection().getSection("messengers"));
+
+        if(MessengerManager.Holder.gInstance == null) {
+            MessengerManagerImpl.register(manager);
+        }
+
+        proxy.shutdownEvent().register(this, prx -> {
+
+            if(MessengerManager.Holder.gInstance == manager) {
+                MessengerManager.Holder.gInstance = null;
+            }
+        });
+
     }
 
     public Messenger getMessenger(String name) {
-        return messengers.get(name);
+        return manager.messenger(name);
     }
 
     private static final Registry<Identifier, MessengerType<?>> REGISTRY = Registry.create("smi");

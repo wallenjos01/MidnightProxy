@@ -187,6 +187,13 @@ public interface Proxy {
     HandlerList<ClientConnection> clientJoinBackendEvent();
 
 
+    /**
+     * Gets the event fired when the proxy shuts down
+     * @return An event handler list
+     */
+    HandlerList<Proxy> shutdownEvent();
+
+
     static void registerPlaceholders(PlaceholderManager manager) {
 
         manager.registerSupplier("proxy_online_players", PlaceholderSupplier.inline(ctx -> ctx.onValue(Proxy.class, prx -> prx.getOnlinePlayers() + "")));

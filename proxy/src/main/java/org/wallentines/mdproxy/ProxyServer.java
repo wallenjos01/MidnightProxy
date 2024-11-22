@@ -68,6 +68,7 @@ public class ProxyServer implements Proxy {
     private final HandlerList<ClientConnection> connected = new HandlerList<>();
     private final HandlerList<ClientConnection> disconnected = new HandlerList<>();
     private final HandlerList<ClientConnection> joined = new HandlerList<>();
+    private final HandlerList<Proxy> shutdown = new HandlerList<>();
 
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginManagerImpl pluginLoader) {
@@ -119,6 +120,8 @@ public class ProxyServer implements Proxy {
         if(listener.getBossGroup().isTerminated()) {
             return;
         }
+
+        shutdownEvent().invoke(this);
 
         LOGGER.info("Shutting down...");
         console.stop();
@@ -287,6 +290,11 @@ public class ProxyServer implements Proxy {
     @Override
     public HandlerList<ClientConnection> clientJoinBackendEvent() {
         return joined;
+    }
+
+    @Override
+    public HandlerList<Proxy> shutdownEvent() {
+        return shutdown;
     }
 
     public int getReconnectTimeout() {
