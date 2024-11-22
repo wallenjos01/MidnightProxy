@@ -34,9 +34,9 @@ public class MessengerPlugin implements Plugin {
     @Override
     public void initialize(Proxy proxy) {
 
-        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist");
+        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("messenger");
         try { Files.createDirectories(configFolder); } catch (IOException e) {
-            throw new RuntimeException("Could not create whitelist directory", e);
+            throw new RuntimeException("Could not create messenger directory", e);
         }
 
         FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);

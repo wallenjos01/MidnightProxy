@@ -22,6 +22,10 @@ dependencies {
 
     implementation(libs.smi)
     implementation(libs.smi.amqp)
+
+    shadow(libs.smi)
+    shadow(libs.smi.amqp)
+    shadow(libs.rabbitmq.client) { isTransitive = false }
 }
 
 tasks.test {
