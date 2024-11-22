@@ -23,7 +23,8 @@ midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version
 midnight-cfg-nbt = { module = "org.wallentines:midnightcfg-codec-nbt", version.ref="mdcfg" }
 midnight-lib = { module = "org.wallentines:midnightlib", version.ref="mdlib" }
 midnight-core = { module = "org.wallentines:midnightcore-common", version.ref="mcore" }
-smi = { module = "org.wallentines:smi-api", version.ref = "smi" }
+smi-api = { module = "org.wallentines:smi-api", version.ref = "smi" }
+smi-base = { module = "org.wallentines:smi-base", version.ref = "smi" }
 smi-amqp = { module = "org.wallentines:smi-impl-amqp", version.ref = "smi" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }

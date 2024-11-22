@@ -20,10 +20,12 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(project(":api"))
 
-    implementation(libs.smi)
+    implementation(libs.smi.api)
+    implementation(libs.smi.base)
     implementation(libs.smi.amqp)
 
-    shadow(libs.smi)
+    shadow(libs.smi.api)
+    shadow(libs.smi.base)
     shadow(libs.smi.amqp)
     shadow(libs.rabbitmq.client) { isTransitive = false }
 }
