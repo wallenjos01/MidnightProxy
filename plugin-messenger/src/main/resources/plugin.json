@@ -1,0 +1,5 @@
+{
+  "name": "Messenger",
+  "version": "${version}",
+  "main": "org.wallentines.mdproxy.smi.MessengerPlugin"
+}
