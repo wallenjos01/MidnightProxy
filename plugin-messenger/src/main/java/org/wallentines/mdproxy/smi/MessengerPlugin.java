@@ -29,10 +29,9 @@ public class MessengerPlugin implements Plugin {
                     )
             );
 
-    private MessengerManagerImpl manager;
+    private final MessengerManagerImpl manager;
 
-    @Override
-    public void initialize(Proxy proxy) {
+    public MessengerPlugin() {
 
         Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("messenger");
         try { Files.createDirectories(configFolder); } catch (IOException e) {
@@ -46,14 +45,18 @@ public class MessengerPlugin implements Plugin {
         if(MessengerManager.Holder.gInstance == null) {
             MessengerManagerImpl.register(manager);
         }
+    }
+
+    @Override
+    public void initialize(Proxy proxy) {
 
         proxy.shutdownEvent().register(this, prx -> {
 
+            manager.clear();
             if(MessengerManager.Holder.gInstance == manager) {
                 MessengerManager.Holder.gInstance = null;
             }
         });
-
     }
 
     public Messenger getMessenger(String name) {

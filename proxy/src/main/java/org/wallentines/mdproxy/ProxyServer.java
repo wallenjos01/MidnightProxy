@@ -69,6 +69,7 @@ public class ProxyServer implements Proxy {
     private final HandlerList<ClientConnection> disconnected = new HandlerList<>();
     private final HandlerList<ClientConnection> joined = new HandlerList<>();
     private final HandlerList<Proxy> shutdown = new HandlerList<>();
+    private final HandlerList<Proxy> started = new HandlerList<>();
 
 
     public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginManagerImpl pluginLoader) {
@@ -106,12 +107,13 @@ public class ProxyServer implements Proxy {
         this.pluginLoader.loadAll(this);
 
         reload();
-
     }
 
     public void start() {
         console.start();
         this.listener.startListener();
+
+        started.invoke(this);
     }
 
     @Override
@@ -290,6 +292,11 @@ public class ProxyServer implements Proxy {
     @Override
     public HandlerList<ClientConnection> clientJoinBackendEvent() {
         return joined;
+    }
+
+    @Override
+    public HandlerList<Proxy> startupEvent() {
+        return started;
     }
 
     @Override

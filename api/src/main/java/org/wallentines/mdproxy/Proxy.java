@@ -186,6 +186,11 @@ public interface Proxy {
      */
     HandlerList<ClientConnection> clientJoinBackendEvent();
 
+    /**
+     * Gets the event fired when the proxy starts up
+     * @return An event handler list
+     */
+    HandlerList<Proxy> startupEvent();
 
     /**
      * Gets the event fired when the proxy shuts down
