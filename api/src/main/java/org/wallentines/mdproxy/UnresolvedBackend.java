@@ -16,7 +16,11 @@ public record UnresolvedBackend(UnresolvedComponent hostname, @Nullable Unresolv
 
         try {
             if (this.port != null) {
-                port = Integer.parseInt(this.port.resolveFlat(ctx));
+                try {
+                    port = Integer.parseInt(this.port.resolveFlat(ctx));
+                } catch (NumberFormatException e) {
+                    return SerializeResult.failure("Unable to resolve port! Not a number");
+                }
             }
 
             if(port < 1 || port > 65535) {

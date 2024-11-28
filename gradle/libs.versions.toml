@@ -2,7 +2,7 @@
 junit = "5.11.0"
 netty = "4.1.115.Final"
 mdcfg = "2.5.0-SNAPSHOT"
-mdlib = "1.7.0"
+mdlib = "1.7.2-SNAPSHOT"
 mcore = "2.0.0-SNAPSHOT"
 smi = "0.1.0-SNAPSHOT"
 slf4j = "2.0.11"

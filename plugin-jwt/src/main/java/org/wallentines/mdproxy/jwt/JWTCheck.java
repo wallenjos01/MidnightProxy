@@ -9,6 +9,7 @@ import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class JWTCheck implements ConnectionCheck {
@@ -37,7 +38,8 @@ public class JWTCheck implements ConnectionCheck {
     public boolean check(ConnectionContext ctx) {
 
         byte[] data = ctx.getConnection().getCookie(cookie);
-        if(data.length == 0) {
+        if(data == null || data.length == 0) {
+            JWTPlugin.LOGGER.warn("Unable to find JWT cookie called {} for {}", cookie, ctx.username());
             return false;
         }
 
@@ -52,10 +54,10 @@ public class JWTCheck implements ConnectionCheck {
 
         KeyStore store = ctx.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore();
 
-        String str = new String(data);
+        String str = new String(data, StandardCharsets.US_ASCII);
         SerializeResult<JWT> jwtRes = JWTReader.readAny(str, KeySupplier.fromHeader(store, keyType, key));
         if(!jwtRes.isComplete()) {
-            JWTPlugin.LOGGER.warn("Unable to parse JWT! " + jwtRes.getError());
+            JWTPlugin.LOGGER.warn("Unable to parse JWT for {}! {}", ctx.username(), jwtRes.getError());
             return false;
         }
 
@@ -72,7 +74,7 @@ public class JWTCheck implements ConnectionCheck {
         }
 
         if(!verifier.verify(jwt)) {
-            JWTPlugin.LOGGER.warn("Unable to verify JWT!");
+            JWTPlugin.LOGGER.warn("Unable to verify JWT for {}!", ctx.username());
             return false;
         }
 

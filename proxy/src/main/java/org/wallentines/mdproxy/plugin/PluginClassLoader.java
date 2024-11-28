@@ -20,8 +20,7 @@ public class PluginClassLoader extends URLClassLoader {
             // Ignore
         }
 
-        for(LoadedPlugin lp : pluginManager.loaded()) {
-            PluginClassLoader cl = lp.loader();
+        for(PluginClassLoader cl : pluginManager.loaders()) {
             if(cl == this) continue;
             try {
                 return cl.loadOwnClass(className, resolveClass);
