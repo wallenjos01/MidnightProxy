@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wallentines.mdproxy.jwt.KeyCodec;
 
+import javax.crypto.SecretKey;
 import java.security.*;
 import java.util.Base64;
 import java.util.Random;
@@ -22,7 +23,6 @@ public class TestKeyCodec {
         byte[] deciphered = codec.decode(enciphered);
 
         Assertions.assertArrayEquals(key, deciphered);
-
     }
 
     @Test
@@ -40,7 +40,48 @@ public class TestKeyCodec {
         byte[] deciphered = decCodec.decode(enciphered);
 
         Assertions.assertArrayEquals(key, deciphered);
+    }
 
+    @Test
+    public void testAES128() throws GeneralSecurityException {
+
+        Random rand = new Random();
+        byte[] key = new byte[16];
+        rand.nextBytes(key);
+
+        KeyCodec<SecretKey, SecretKey> codec = KeyCodec.A128KW(key);
+        byte[] enciphered = codec.encode(key);
+        byte[] deciphered = codec.decode(enciphered);
+
+        Assertions.assertArrayEquals(key, deciphered);
+    }
+
+    @Test
+    public void testAES192() throws GeneralSecurityException {
+
+        Random rand = new Random();
+        byte[] key = new byte[24];
+        rand.nextBytes(key);
+
+        KeyCodec<SecretKey, SecretKey> codec = KeyCodec.A192KW(key);
+        byte[] enciphered = codec.encode(key);
+        byte[] deciphered = codec.decode(enciphered);
+
+        Assertions.assertArrayEquals(key, deciphered);
+    }
+
+    @Test
+    public void testAES256() throws GeneralSecurityException {
+
+        Random rand = new Random();
+        byte[] key = new byte[32];
+        rand.nextBytes(key);
+
+        KeyCodec<SecretKey, SecretKey> codec = KeyCodec.A256KW(key);
+        byte[] enciphered = codec.encode(key);
+        byte[] deciphered = codec.decode(enciphered);
+
+        Assertions.assertArrayEquals(key, deciphered);
     }
 
     @Test

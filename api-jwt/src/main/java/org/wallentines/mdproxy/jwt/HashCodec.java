@@ -78,31 +78,27 @@ public class HashCodec<T> {
 
     public static class HMAC extends Algorithm<byte[]> {
 
-        private final Mac mac;
+        private final String algorithm;
 
         protected HMAC(String alg, KeyType<byte[]> keyType) {
             super(keyType);
-            try {
-                this.mac = Mac.getInstance(alg);
-            } catch (GeneralSecurityException ex) {
-                throw new IllegalStateException("Unable to find HMAC algorithm: " + alg);
-            }
+            this.algorithm = alg;
         }
 
         @Override
         public byte[] hash(byte[] key, byte[]... input) {
 
-            SecretKey secret = new SecretKeySpec(key, mac.getAlgorithm());
             try {
+                Mac mac = Mac.getInstance(algorithm);
+                SecretKey secret = new SecretKeySpec(key, mac.getAlgorithm());
                 mac.init(secret);
+                for(byte[] bs : input) {
+                    mac.update(bs);
+                }
+                return mac.doFinal();
             } catch (GeneralSecurityException ex) {
                 throw new IllegalStateException("Unable to initialize HMAC!");
             }
-            for(byte[] bs : input) {
-                mac.update(bs);
-            }
-
-            return mac.doFinal();
         }
     }
     public static final Algorithm<Void> ALG_NONE = new Algorithm<>(null) {

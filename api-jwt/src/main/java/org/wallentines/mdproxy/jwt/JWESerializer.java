@@ -34,7 +34,7 @@ public class JWESerializer {
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
 
         // Header
-        String headerB64;
+        byte[] headerB64;
         try(ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
 
             JSONCodec.minified().encode(ConfigContext.INSTANCE, jwt.header()
@@ -43,8 +43,8 @@ public class JWESerializer {
                     bos,
                     StandardCharsets.UTF_8
             );
-            headerB64 = encoder.encodeToString(bos.toByteArray());
-            out.append(headerB64);
+            headerB64 = encoder.encode(bos.toByteArray());
+            out.append(new String(headerB64));
         } catch(IOException ex) {
             return SerializeResult.failure("An error occurred while writing a JWE header!");
         }
@@ -66,7 +66,7 @@ public class JWESerializer {
         } catch(IOException ex) {
             return SerializeResult.failure("An error occurred while writing JWE ciphertext!");
         }
-        output = contentCodec.encrypt(payload, headerB64.getBytes(StandardCharsets.US_ASCII));
+        output = contentCodec.encrypt(payload, headerB64);
 
         out.append(".").append(encoder.encodeToString(output.cipherText()));
 
@@ -115,13 +115,7 @@ public class JWESerializer {
 
         CryptCodec.Algorithm<?> cryptAlg = CryptCodec.ALGORITHMS.get(header.getString("enc"));
         if(cryptAlg == null) {
-
-            StringBuilder bld = new StringBuilder("Encryption algorithm " + header.getString("enc") + " not found! Valid Algorithms:");
-            for(String s : CryptCodec.ALGORITHMS.getIds()) {
-                bld.append("\n - ").append(s);
-            }
-
-            return SerializeResult.failure(bld.toString());
+            return SerializeResult.failure("Encryption algorithm " + header.getString("enc") + " not found!");
         }
 
         // Decode IV

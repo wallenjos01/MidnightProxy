@@ -57,7 +57,6 @@ public class TestCryptCodec {
         byte[] data = "my secret data".getBytes();
         byte[] encrypted = codec.encrypt(data,new byte[0]).cipherText();
 
-
         // Cycle cipherText
         String b64 = encoder.encodeToString(encrypted);
         byte[] parsedB64 = decoder.decode(b64);
