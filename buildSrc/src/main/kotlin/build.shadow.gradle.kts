@@ -1,9 +1,8 @@
-import build.plugin.Common
+import buildlogic.Utils
 
 plugins {
-    id("java")
-    id("java-library")
-    id("com.github.johnrengelman.shadow")
+    id("build.common")
+    id("com.gradleup.shadow")
 }
 
 tasks {
@@ -16,7 +15,7 @@ tasks {
 }
 
 tasks.shadowJar {
-    archiveBaseName.set(Common.getArchiveName(project, rootProject))
+    archiveBaseName.set(Utils.getArchiveName(project, rootProject))
     archiveClassifier.set("")
 }
 

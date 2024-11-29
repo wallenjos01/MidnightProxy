@@ -1,17 +1,12 @@
 plugins {
-    id("proxy-build")
-    id("proxy-shadow")
-    id("application")
+    id("build.application")
+    id("build.shadow")
 }
 
 application.mainClass.set("org.wallentines.mdproxy.Main")
 
 repositories {
     maven("https://libraries.minecraft.net/")
-}
-
-configurations.shadow {
-    extendsFrom(configurations.implementation.get())
 }
 
 dependencies {
@@ -32,6 +27,24 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.logback.core)
     implementation(libs.logback.classic)
+
+
+    shadow(project(":api"))
+    shadow(project(":api-jwt"))
+
+    shadow(libs.midnight.cfg)
+    shadow(libs.midnight.cfg.json)
+    shadow(libs.midnight.cfg.nbt)
+
+    shadow(libs.midnight.lib)
+    shadow(libs.midnight.core)
+
+    shadow(libs.netty.all)
+
+    shadow(libs.google.guava)
+    shadow(libs.slf4j.api)
+    shadow(libs.logback.core)
+    shadow(libs.logback.classic)
 
     compileOnly(libs.jetbrains.annotations)
 
