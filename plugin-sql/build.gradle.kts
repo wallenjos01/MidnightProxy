@@ -26,3 +26,17 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+val copyOutputTask = tasks.register<Copy>("copyOutputFiles") {
+
+    dependsOn(tasks.shadowJar)
+    from(tasks.shadowJar.get().archiveFile)
+
+    val output = rootDir.resolve("build").resolve("plugins")
+
+    into(output)
+}
+
+tasks.build {
+    dependsOn(copyOutputTask)
+}

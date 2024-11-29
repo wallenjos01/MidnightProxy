@@ -2,6 +2,7 @@ package org.wallentines.mdproxy.jwt;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 
 import java.io.*;
@@ -68,7 +69,7 @@ public class FileKeyStore implements KeyStore {
 
             SerializeResult<T> key = type.create(value);
             if(!key.isComplete()) {
-                LOGGER.warn("Unable to read key! " + key.getError());
+                LOGGER.warn("Unable to read key! {}", key.getError());
                 return null;
             }
 
@@ -121,6 +122,27 @@ public class FileKeyStore implements KeyStore {
                 LOGGER.warn("An error occurred while deleting key file {}", p.getFileName(), ex);
             }
         }
+    }
+
+    @Override
+    public KeySupplier supplier(String name) {
+        return new KeySupplier() {
+            @Override
+            public <T> T getKey(ConfigSection joseHeader, KeyType<T> type) {
+                return FileKeyStore.this.getKey(name, type);
+            }
+        };
+    }
+
+    @Override
+    public <K> KeySupplier supplier(String name, KeyType<K> requiredType) {
+        return new KeySupplier() {
+            @Override
+            public <T> T getKey(ConfigSection joseHeader, KeyType<T> type) {
+                if(requiredType != type) return null;
+                return FileKeyStore.this.getKey(name, type);
+            }
+        };
     }
 
 }

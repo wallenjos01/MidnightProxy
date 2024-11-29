@@ -98,9 +98,9 @@ public class CryptCodec<T> {
 
         byte[] bytes = new byte[48];
         RANDOM.nextBytes(bytes);
-        CompoundKey ck = ALG_A128CBC_HS256.keyType.create(bytes).getOrThrow();
+        CompoundKey ck = ALG_A192CBC_HS384.keyType.create(bytes).getOrThrow();
 
-        return new CryptCodec<>(ALG_A128CBC_HS256, ck);
+        return new CryptCodec<>(ALG_A192CBC_HS384, ck);
     }
 
     public static CryptCodec<CompoundKey> A192CBC_HS384(CompoundKey key) {
@@ -111,9 +111,9 @@ public class CryptCodec<T> {
 
         byte[] bytes = new byte[64];
         RANDOM.nextBytes(bytes);
-        CompoundKey ck = ALG_A128CBC_HS256.keyType.create(bytes).getOrThrow();
+        CompoundKey ck = ALG_A256CBC_HS512.keyType.create(bytes).getOrThrow();
 
-        return new CryptCodec<>(ALG_A128CBC_HS256, ck);
+        return new CryptCodec<>(ALG_A256CBC_HS512, ck);
     }
     public static CryptCodec<CompoundKey> A256CBC_HS512(CompoundKey key) {
         return new CryptCodec<>(ALG_A256CBC_HS512, key);

@@ -51,16 +51,16 @@ tasks.withType<JavaExec> {
     standardInput = System.`in`
 }
 
-val finalCopy = tasks.register<Copy>("copyFinalJar") {
+val copyOutputTask = tasks.register<Copy>("copyOutputFiles") {
 
     dependsOn(tasks.shadowJar)
     from(tasks.shadowJar.get().archiveFile)
 
-    var output = "build/output"
-    if(project.hasProperty("outputDir")) {
-        output = project.properties["outputDir"] as String
-    }
+    val output = rootDir.resolve("build")
 
     into(output)
-    rename("(.*)\\.jar", "midnightproxy.jar")
+}
+
+tasks.build {
+    dependsOn(copyOutputTask)
 }

@@ -11,6 +11,10 @@ public interface KeyStore {
 
     <T> void clearKey(String name, KeyType<T> type);
 
+    KeySupplier supplier(String name);
+
+    <T> KeySupplier supplier(String name, KeyType<T> requiredType);
+
     class KeyRegistry<T> {
         private final KeyType<T> type;
         private final Map<String, T> keys = new HashMap<>();
