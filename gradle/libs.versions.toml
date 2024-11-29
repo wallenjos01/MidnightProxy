@@ -14,9 +14,15 @@ rabbitmq = "5.21.0"
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
-netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
+
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
+netty-codec-haproxy = { module = "io.netty:netty-codec-haproxy", version.ref="netty" }
+netty-handler = { module = "io.netty:netty-handler", version.ref="netty" }
+netty-transport = { module = "io.netty:netty-transport", version.ref="netty" }
+netty-transport-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref="netty" }
+netty-transport-kqueue = { module = "io.netty:netty-transport-native-kqueue", version.ref="netty" }
+
 midnight-cfg = { module = "org.wallentines:midnightcfg-api", version.ref="mdcfg" }
 midnight-cfg-sql = { module = "org.wallentines:midnightcfg-api-sql", version.ref="mdcfg" }
 midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version.ref="mdcfg" }

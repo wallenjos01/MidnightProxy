@@ -21,7 +21,13 @@ dependencies {
     implementation(libs.midnight.lib)
     implementation(libs.midnight.core)
 
-    implementation(libs.netty.all)
+    implementation(libs.netty.buffer)
+    implementation(libs.netty.codec)
+    implementation(libs.netty.codec.haproxy)
+    implementation(libs.netty.handler)
+    implementation(libs.netty.transport)
+    implementation(libs.netty.transport.epoll)
+    implementation(libs.netty.transport.kqueue)
 
     implementation(libs.google.guava)
     implementation(libs.slf4j.api)
@@ -39,7 +45,13 @@ dependencies {
     shadow(libs.midnight.lib)
     shadow(libs.midnight.core)
 
-    shadow(libs.netty.all)
+    shadow(libs.netty.buffer)
+    shadow(libs.netty.codec)
+    shadow(libs.netty.codec.haproxy)
+    shadow(libs.netty.handler)
+    shadow(libs.netty.transport)
+    shadow(libs.netty.transport.epoll)
+    shadow(libs.netty.transport.kqueue)
 
     shadow(libs.google.guava)
     shadow(libs.slf4j.api)
