@@ -81,7 +81,10 @@ public class JWTCheck implements ConnectionCheck {
         for(String s : outputClaims) {
 
             String claimStr = jwt.getClaimAsString(s);
-            if(claimStr == null) return false;
+            if(claimStr == null) {
+                JWTPlugin.LOGGER.warn("Unable to find claim {} for {}", s, ctx.username());
+                return false;
+            }
 
             ctx.setMetaProperty("jwt." + s, claimStr);
         }
