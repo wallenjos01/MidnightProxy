@@ -10,6 +10,7 @@ import org.wallentines.mcore.GameVersion;
 import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.ConfigObject;
+import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.jwt.*;
@@ -305,7 +306,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
-        conn.executeTasksAsync(Task.CONFIGURE_QUEUE).thenRun(this::tryNextServer);
+        conn.enterConfigurationEvent().invoke(conn);
+        tryNextServer();
 
     }
 
@@ -321,41 +323,42 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        conn.executeTasksAsync(Task.PRE_BACKEND_CONNECT).thenRun(() -> {
+        conn.preConnectBackendEvent().invoke(new Tuples.T2<>(b, conn));
 
-            channel.config().setAutoRead(false);
+        channel.config().setAutoRead(false);
 
-            server.getConnectionManager()
-                    .connectToBackend(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
-                    .thenAccept(bconn -> {
-                        ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
+        server.getConnectionManager()
+                .connectToBackend(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
+                .thenAccept(bconn -> {
+                    ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
 
-                        conn.setBackend(bconn);
+                    conn.setBackend(bconn);
 
-                        bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
+                    bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
 
-                        PlayerProfile profile = conn.profile();
+                    PlayerProfile profile = conn.profile();
 
-                        bconn.changePhase(ProtocolPhase.LOGIN);
-                        bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
+                    bconn.changePhase(ProtocolPhase.LOGIN);
+                    bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
 
-                        bconn.setupForwarding(channel);
-                        setupForwarding(bconn.getChannel());
+                    bconn.setupForwarding(channel);
+                    setupForwarding(bconn.getChannel());
 
-                        server.clientJoinBackendEvent().invoke(conn);
-                        conn.executeTasksAsync(Task.POST_BACKEND_CONNECT);
-                    })
-                    .exceptionally(ex -> {
-                        LOGGER.error("An error occurred while connecting to a backend server!", ex);
-                        disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
-                        return null;
-                    });
-        });
+                    server.clientJoinBackendEvent().invoke(conn);
+                    conn.postConnectBackendEvent().invoke(new Tuples.T2<>(b, conn));
+
+                })
+                .exceptionally(ex -> {
+                    LOGGER.error("An error occurred while connecting to a backend server!", ex);
+                    disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
+                    return null;
+                });
     }
 
     private void preLogin() {
 
-        conn.executeTasksAsync(Task.PRE_LOGIN_QUEUE).thenRun(this::startLogin);
+        conn.preLoginEvent().invoke(conn);
+        startLogin();
     }
 
     private void startLogin() {
@@ -459,7 +462,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        conn.executeTasksAsync(Task.POST_LOGIN_QUEUE).thenRun(() -> conn.send(new ClientboundLoginFinishedPacket(profile)));
+        conn.postLoginEvent().invoke(conn);
+        conn.send(new ClientboundLoginFinishedPacket(profile));
 
     }
 

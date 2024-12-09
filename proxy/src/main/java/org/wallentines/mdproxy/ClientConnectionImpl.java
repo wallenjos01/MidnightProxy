@@ -10,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.lang.LocaleHolder;
 import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
+import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -42,6 +44,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private boolean disconnected = false;
 
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
+
+    @Deprecated
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
 
     private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
@@ -50,12 +54,26 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
 
 
+    private final ConcurrentHandlerList<ClientConnection> preLoginEvent;
+    private final ConcurrentHandlerList<ClientConnection> postLoginEvent;
+    private final ConcurrentHandlerList<ClientConnection> enterConfigurationEvent;
+    private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent;
+    private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent;
+
+
+
     public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
         this.channel = channel;
         this.address = address;
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
+
+        this.preLoginEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
+        this.postLoginEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
+        this.enterConfigurationEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
+        this.preConnectBackendEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
+        this.postConnectBackendEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
 
         loginQueryEvent.register(this, this::loginQueryReceived);
     }
@@ -260,16 +278,28 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         channel.close();
     }
 
+    @Deprecated
     @Override
     public void registerTask(String taskQueue, Task task) {
-        tasks.computeIfAbsent(taskQueue, k -> new ArrayDeque<>()).add(task);
+
+        switch (taskQueue) {
+            case Task.PRE_LOGIN_QUEUE -> preLoginEvent.register(this, conn -> task.run(taskQueue, conn));
+            case Task.POST_LOGIN_QUEUE -> postLoginEvent.register(this, conn -> task.run(taskQueue, conn));
+            case Task.CONFIGURE_QUEUE -> enterConfigurationEvent.register(this, conn -> task.run(taskQueue, conn));
+            case Task.PRE_BACKEND_CONNECT -> preConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
+            case Task.POST_BACKEND_CONNECT -> postConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
+            default -> tasks.computeIfAbsent(taskQueue, k -> new ArrayDeque<>()).add(task);
+        }
+
     }
 
+    @Deprecated
     @Override
     public void executeTasks(String taskQueue) {
         executeTasksAsync(taskQueue).join();
     }
 
+    @Deprecated
     @Override
     public CompletableFuture<Void> executeTasksAsync(String taskQueue) {
 
@@ -371,6 +401,31 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
         loginQueryEvent.unregisterAll(future);
         return out;
+    }
+
+    @Override
+    public ConcurrentHandlerList<ClientConnection> preLoginEvent() {
+        return preLoginEvent;
+    }
+
+    @Override
+    public ConcurrentHandlerList<ClientConnection> postLoginEvent() {
+        return postLoginEvent;
+    }
+
+    @Override
+    public ConcurrentHandlerList<ClientConnection> enterConfigurationEvent() {
+        return enterConfigurationEvent;
+    }
+
+    @Override
+    public ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent() {
+        return preConnectBackendEvent;
+    }
+
+    @Override
+    public ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent() {
+        return postConnectBackendEvent;
     }
 
     public Channel getChannel() {

@@ -235,7 +235,7 @@ Using the plugin API, plugins can:
 - Add console commands. (See `org.wallentines.mdproxy.command.CommandExecutor`)
 - Add requirement types. (See `org.wallentines.mdproxy.requirement.ConnectionCheckType`)
 - Modify the way online players are counted. (See `org.wallentines.mdproxy.PlayerCountProvider`)
-- Run tasks during different phases of the login process. (See `org.wallentines.mdproxy.Task`)
+- Listen for events fired during the lifecycle of the proxy or individual connections
 - Send and await plugin messages during the login and configuration phases.
 
 

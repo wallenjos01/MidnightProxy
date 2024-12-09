@@ -5,10 +5,12 @@ import org.jetbrains.annotations.Nullable;
 import org.wallentines.mcore.lang.PlaceholderManager;
 import org.wallentines.mcore.lang.PlaceholderSupplier;
 import org.wallentines.mcore.text.Component;
+import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
+import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
@@ -162,20 +164,26 @@ public interface ClientConnection {
      * Registers a task to be run in the given queue.
      * @param taskQueue The task queue name.
      * @param task The task to run.
+     * @deprecated Use events instead
      */
+    @Deprecated
     void registerTask(String taskQueue, Task task);
 
     /**
      * Executes all the tasks in the given queue before returning.
      * @param taskQueue The task queue name.
+     * @deprecated Use events instead
      */
+    @Deprecated
     void executeTasks(String taskQueue);
 
     /**
      * Executes all the tasks in the given queue asynchronously.
      * @param taskQueue The task queue name.
      * @return A completable future which will be complete when all tasks are done.
+     * @deprecated Use events instead
      */
+    @Deprecated
     CompletableFuture<Void> executeTasksAsync(String taskQueue);
 
     /**
@@ -210,7 +218,12 @@ public interface ClientConnection {
      */
     ServerboundLoginQueryPacket awaitLoginQuery(Identifier id, ByteBuf data, int timeout);
 
-
+    // Events
+    ConcurrentHandlerList<ClientConnection> preLoginEvent();
+    ConcurrentHandlerList<ClientConnection> postLoginEvent();
+    ConcurrentHandlerList<ClientConnection> enterConfigurationEvent();
+    ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent();
+    ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent();
 
     static void registerPlaceholders(PlaceholderManager manager) {
 
