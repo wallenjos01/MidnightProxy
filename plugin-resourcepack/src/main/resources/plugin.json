@@ -1,0 +1,5 @@
+{
+  "name": "ResourcePack",
+  "version": "${version}",
+  "main": "org.wallentines.mdproxy.resources.ResourcePackPlugin"
+}
