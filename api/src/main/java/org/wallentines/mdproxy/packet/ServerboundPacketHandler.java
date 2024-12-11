@@ -1,7 +1,9 @@
 package org.wallentines.mdproxy.packet;
 
 import org.wallentines.mdproxy.packet.common.ServerboundCookiePacket;
-import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket;
+import org.wallentines.mdproxy.packet.config.ServerboundFinishConfigurationPacket;
 import org.wallentines.mdproxy.packet.config.ServerboundSettingsPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundEncryptionPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginFinishedPacket;
@@ -32,5 +34,8 @@ public interface ServerboundPacketHandler {
 
     void handle(ServerboundSettingsPacket settings);
 
+    void handle(ServerboundResourcePackStatusPacket packStatus);
+
+    void handle(ServerboundFinishConfigurationPacket packStatus);
 
 }

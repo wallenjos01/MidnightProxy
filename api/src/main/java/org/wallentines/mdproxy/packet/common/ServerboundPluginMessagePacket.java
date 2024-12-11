@@ -1,4 +1,4 @@
-package org.wallentines.mdproxy.packet.config;
+package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
@@ -11,7 +11,14 @@ import org.wallentines.midnightlib.registry.Identifier;
 
 public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 2 : 1, ServerboundPluginMessagePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(
+            (ver, phase) -> {
+                if(phase == ProtocolPhase.CONFIG) {
+                    return ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 2 : 1;
+                }
+                return 20;
+            },
+            ServerboundPluginMessagePacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {

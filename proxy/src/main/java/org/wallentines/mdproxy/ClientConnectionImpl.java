@@ -13,14 +13,18 @@ import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
-import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket;
 import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -36,6 +40,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final String hostname;
     private final int port;
 
+
     private PlayerProfile profile;
     private boolean auth;
     private String locale;
@@ -43,12 +48,16 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     private boolean disconnected = false;
 
+    ProtocolPhase phase = ProtocolPhase.HANDSHAKE;
+    boolean wasReconnected = false;
+
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
 
     @Deprecated
     private final Map<String, Queue<Task>> tasks = new HashMap<>();
 
     private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
+    private final Map<UUID, CompletableFuture<ServerboundResourcePackStatusPacket>> resourcePacks = new HashMap<>();
 
     private final HandlerList<ServerboundPluginMessagePacket> pluginMessageEvent = new HandlerList<>();
     private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
@@ -56,24 +65,29 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     private final ConcurrentHandlerList<ClientConnection> preLoginEvent;
     private final ConcurrentHandlerList<ClientConnection> postLoginEvent;
-    private final ConcurrentHandlerList<ClientConnection> enterConfigurationEvent;
+    private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> enterConfigurationEvent;
     private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent;
     private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent;
 
+    private final ServerboundHandshakePacket.Intent intent;
 
 
-    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port) {
+    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port, ServerboundHandshakePacket.Intent intent) {
         this.channel = channel;
         this.address = address;
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
+        this.intent = intent;
 
-        this.preLoginEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
-        this.postLoginEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
-        this.enterConfigurationEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
-        this.preConnectBackendEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
-        this.postConnectBackendEvent = new ConcurrentHandlerList<>(channel.parent().eventLoop());
+        //ThreadPoolExecutor svc = new ThreadPoolExecutor(1, 4, 5000L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ExecutorService svc = channel.parent().eventLoop();
+
+        this.preLoginEvent = new ConcurrentHandlerList<>(svc);
+        this.postLoginEvent = new ConcurrentHandlerList<>(svc);
+        this.enterConfigurationEvent = new ConcurrentHandlerList<>(svc);
+        this.preConnectBackendEvent = new ConcurrentHandlerList<>(svc);
+        this.postConnectBackendEvent = new ConcurrentHandlerList<>(svc);
 
         loginQueryEvent.register(this, this::loginQueryReceived);
     }
@@ -241,6 +255,11 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         disconnect(component.resolveFor(this));
     }
 
+
+    public void disconnect() {
+        disconnect(null, true);
+    }
+
     public void disconnect(Component component) {
         disconnect(component, true);
     }
@@ -250,32 +269,32 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         if(hasDisconnected()) {
             return;
         }
+        cleanup();
+
         if(!channel.isActive()) {
             return;
         }
 
-        if(log) LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
-
-        if(backend == null) {
-            send(new ClientboundKickPacket(component));
+        if(component == null) {
+            LOGGER.info("Disconnecting player {}", username());
+        } else {
+            if(log) LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
+            if(backend == null) {
+                send(new ClientboundKickPacket(component));
+            }
         }
-        disconnected = true;
 
+        disconnected = true;
         channel.close().awaitUninterruptibly();
     }
 
-    public void disconnect() {
-        if(hasDisconnected()) {
-            return;
+    public void cleanup() {
+        for(CompletableFuture<ServerboundLoginQueryPacket> query : loginQueries.values()) {
+            query.completeExceptionally(new IOException("Client disconnected"));
         }
-        if(!channel.isActive()) {
-            return;
+        for(CompletableFuture<ServerboundResourcePackStatusPacket> packStatus : resourcePacks.values()) {
+            packStatus.completeExceptionally(new IOException("Client disconnected"));
         }
-
-        LOGGER.info("Disconnecting player {}", username());
-
-        disconnected = true;
-        channel.close();
     }
 
     @Deprecated
@@ -285,7 +304,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         switch (taskQueue) {
             case Task.PRE_LOGIN_QUEUE -> preLoginEvent.register(this, conn -> task.run(taskQueue, conn));
             case Task.POST_LOGIN_QUEUE -> postLoginEvent.register(this, conn -> task.run(taskQueue, conn));
-            case Task.CONFIGURE_QUEUE -> enterConfigurationEvent.register(this, conn -> task.run(taskQueue, conn));
+            case Task.CONFIGURE_QUEUE -> enterConfigurationEvent.register(this, conn -> task.run(taskQueue, conn.p2));
             case Task.PRE_BACKEND_CONNECT -> preConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
             case Task.POST_BACKEND_CONNECT -> postConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
             default -> tasks.computeIfAbsent(taskQueue, k -> new ArrayDeque<>()).add(task);
@@ -404,6 +423,53 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
+    public boolean wasReconnected() {
+        return wasReconnected;
+    }
+
+    @Override
+    public CompletableFuture<ServerboundResourcePackStatusPacket> sendResourcePack(ResourcePack pack) {
+
+        if(phase == ProtocolPhase.LOGIN || phase == ProtocolPhase.HANDSHAKE) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Resource packs cannot be applied during " + phase.name()));
+        }
+
+        if(resourcePacks.containsKey(pack.uuid())) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Attempt to apply the same resource pack twice`!"));
+        }
+
+        LOGGER.warn("Sent resource pack push packet: {}", pack);
+
+        CompletableFuture<ServerboundResourcePackStatusPacket> out = new CompletableFuture<>();
+        resourcePacks.put(pack.uuid(), out);
+
+        send(pack.toPacket());
+
+        return out;
+    }
+
+    @Override
+    public ServerboundHandshakePacket.Intent getIntent() {
+        return intent;
+    }
+
+    void onPackResponse(ServerboundResourcePackStatusPacket packet) {
+
+        if(packet.action() == ServerboundResourcePackStatusPacket.Action.ACCEPTED || packet.action() == ServerboundResourcePackStatusPacket.Action.DOWNLOAD_COMPLETE) {
+            // Expect more packets
+            return;
+        }
+
+        CompletableFuture<ServerboundResourcePackStatusPacket> future = resourcePacks.remove(packet.packId());
+        if(future == null) {
+            LOGGER.warn("Received unsolicited resource pack response for pack {}", packet.packId());
+            return;
+        }
+
+        future.complete(packet);
+    }
+
+    @Override
     public ConcurrentHandlerList<ClientConnection> preLoginEvent() {
         return preLoginEvent;
     }
@@ -414,7 +480,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     @Override
-    public ConcurrentHandlerList<ClientConnection> enterConfigurationEvent() {
+    public ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> enterConfigurationEvent() {
         return enterConfigurationEvent;
     }
 

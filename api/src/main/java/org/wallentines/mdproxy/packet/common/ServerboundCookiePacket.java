@@ -12,7 +12,12 @@ import org.wallentines.midnightlib.registry.Identifier;
 public record ServerboundCookiePacket(Identifier key, byte[] data) implements Packet<ServerboundPacketHandler> {
 
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> phase == ProtocolPhase.LOGIN ? 4 : 1, ServerboundCookiePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> switch (phase) {
+        case LOGIN -> 4;
+        case CONFIG -> 1;
+        case PLAY -> 19;
+        default -> throw new IllegalArgumentException("Invalid phase: " + phase);
+    }, ServerboundCookiePacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {

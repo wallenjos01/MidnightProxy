@@ -19,12 +19,8 @@ import org.wallentines.mdproxy.packet.PacketRegistry;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
-import org.wallentines.mdproxy.packet.common.ClientboundCookieRequestPacket;
-import org.wallentines.mdproxy.packet.common.ServerboundCookiePacket;
-import org.wallentines.mdproxy.packet.config.ClientboundSetCookiePacket;
-import org.wallentines.mdproxy.packet.config.ClientboundTransferPacket;
-import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
-import org.wallentines.mdproxy.packet.config.ServerboundSettingsPacket;
+import org.wallentines.mdproxy.packet.common.*;
+import org.wallentines.mdproxy.packet.config.*;
 import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
@@ -57,14 +53,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private boolean encrypted;
     private ServerboundHandshakePacket.Intent intent;
     private StatusResponder statusResponder;
+    private Backend selectedBackend;
 
     private final Random random = new SecureRandom();
     private final Queue<Route> routes;
     private final Queue<AuthRoute> authRoutes;
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
     private final DefaultedSingleton<InetSocketAddress> address;
-
-    private boolean wasReconnected = false;
 
 
     public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server) {
@@ -90,7 +85,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
         }
 
-        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port());
+        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port(), handshake.intent());
         this.context = new ConnectionContext(conn, server);
         this.intent = handshake.intent();
 
@@ -138,7 +133,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.setProfile(new PlayerProfile(login.uuid(), login.username()));
 
         if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
-
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
@@ -208,7 +202,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundCookiePacket cookie) {
-
         if(cookie.key().equals(RECONNECT_COOKIE)) {
 
             if(cookie.data().length == 0) {
@@ -281,6 +274,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 }
             }
 
+            conn.wasReconnected = true;
             connectToBackend(b);
             return;
         }
@@ -306,9 +300,19 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
-        conn.enterConfigurationEvent().invoke(conn);
         tryNextServer();
+    }
 
+    @Override
+    public void handle(ServerboundResourcePackStatusPacket packStatus) {
+        conn.onPackResponse(packStatus);
+    }
+
+    @Override
+    public void handle(ServerboundFinishConfigurationPacket packStatus) {
+
+        changePhase(ProtocolPhase.PLAY);
+        connectToBackendNow();
     }
 
     public void close() {
@@ -317,48 +321,64 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void connectToBackend(Backend b) {
 
-        if(conn.hasDisconnected()) return;
-        if(conn.authenticated()) {
-            reconnect(b);
+        if(conn.hasDisconnected()) {
+            LOGGER.warn("Attempt to connect disconnected player to a backend");
             return;
         }
 
-        conn.preConnectBackendEvent().invoke(new Tuples.T2<>(b, conn));
+        selectedBackend = b;
+        if(wasReconnected()) {
+            connectToBackendNow();
+        } else {
+            conn.enterConfigurationEvent().invokeAsync(new Tuples.T2<>(b, conn)).thenAccept(unused -> {
+                conn.send(new ClientboundFinishConfigurationPacket());
+            });
+        }
+    }
 
-        channel.config().setAutoRead(false);
+    private void connectToBackendNow() {
 
-        server.getConnectionManager()
-                .connectToBackend(conn, b, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
-                .thenAccept(bconn -> {
-                    ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
+        conn.preConnectBackendEvent().invokeAsync(new Tuples.T2<>(selectedBackend, conn)).thenAccept(unused -> {
 
-                    conn.setBackend(bconn);
+            if(conn.authenticated()) {
+                reconnect(selectedBackend);
+                return;
+            }
 
-                    bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
+            channel.config().setAutoRead(false);
 
-                    PlayerProfile profile = conn.profile();
+            server.getConnectionManager()
+                    .connectToBackend(conn, selectedBackend, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
+                    .thenAccept(bconn -> {
+                        ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
 
-                    bconn.changePhase(ProtocolPhase.LOGIN);
-                    bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
+                        conn.setBackend(bconn);
 
-                    bconn.setupForwarding(channel);
-                    setupForwarding(bconn.getChannel());
+                        bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
 
-                    server.clientJoinBackendEvent().invoke(conn);
-                    conn.postConnectBackendEvent().invoke(new Tuples.T2<>(b, conn));
+                        PlayerProfile profile = conn.profile();
 
-                })
-                .exceptionally(ex -> {
-                    LOGGER.error("An error occurred while connecting to a backend server!", ex);
-                    disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
-                    return null;
-                });
+                        bconn.changePhase(ProtocolPhase.LOGIN);
+                        bconn.send(new ServerboundLoginPacket(profile.username(), profile.uuid()));
+
+                        bconn.setupForwarding(channel);
+                        setupForwarding(bconn.getChannel());
+
+                        server.clientJoinBackendEvent().invoke(conn);
+                        conn.postConnectBackendEvent().invokeAsync(new Tuples.T2<>(selectedBackend, conn));
+
+                    })
+                    .exceptionally(ex -> {
+                        LOGGER.error("An error occurred while connecting to a backend server!", ex);
+                        disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
+                        return null;
+                    });
+        });
     }
 
     private void preLogin() {
 
-        conn.preLoginEvent().invoke(conn);
-        startLogin();
+        conn.preLoginEvent().invokeAsync(conn).thenAccept(unused -> startLogin());
     }
 
     private void startLogin() {
@@ -462,8 +482,9 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        conn.postLoginEvent().invoke(conn);
-        conn.send(new ClientboundLoginFinishedPacket(profile));
+        conn.postLoginEvent().invokeAsync(conn).thenAccept(unused -> {
+            conn.send(new ClientboundLoginFinishedPacket(profile));
+        });
 
     }
 
@@ -580,13 +601,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     }
 
     public boolean wasReconnected() {
-        return wasReconnected;
+        return conn.wasReconnected();
     }
 
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
         GameVersion version = new GameVersion("", conn.protocolVersion());
+        conn.phase = phase;
 
         channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
         channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
@@ -626,7 +648,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .encrypted(rsa, CryptCodec.A128CBC_HS256())
                 .asString().getOrThrow();
 
-        wasReconnected = true;
+        conn.wasReconnected = true;
         LOGGER.info("Reconnecting {} to {}", getUsername(), backendId);
 
         conn.send(new ClientboundSetCookiePacket(RECONNECT_COOKIE, str.getBytes()));

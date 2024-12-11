@@ -11,6 +11,7 @@ import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.ProxyServer;
 import org.wallentines.mdproxy.StatusEntry;
 import org.wallentines.mdproxy.StatusMessage;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.midnightlib.types.DefaultedSingleton;
 
 import java.net.InetSocketAddress;
@@ -64,7 +65,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
                 conn = readClientInfo(ctx, buf);
                 if(conn == null) return;
             } else {
-                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565);
+                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS);
             }
 
             handleV1Request(ctx, conn);
@@ -109,14 +110,14 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
         int port = buf.readInt();
 
-        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port);
+        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.STATUS);
     }
 
     private void handleV0Request(ChannelHandlerContext ctx) {
 
         LOGGER.debug("Received legacy ping (pre-1.4) from {}", ctx.channel().remoteAddress());
 
-        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39, ctx.channel().localAddress().toString(), 25565);
+        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS);
         StatusEntry ent = conn.getStatusEntry(server);
         if(ent == null) {
             ctx.channel().close();

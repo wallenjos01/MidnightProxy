@@ -23,11 +23,7 @@ import java.nio.file.Path;
 public class MessengerPlugin implements Plugin {
 
     private static final ConfigSection DEFAULT_CONFIG = new ConfigSection()
-            .with("messengers", new ConfigSection()
-                    .with("default", new ConfigSection()
-                            .with("type", "amqp")
-                    )
-            );
+            .with("messengers", new ConfigSection());
 
     private final MessengerManagerImpl manager;
 

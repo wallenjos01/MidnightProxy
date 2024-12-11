@@ -5,6 +5,7 @@ public enum ProtocolPhase {
     HANDSHAKE,
     STATUS,
     LOGIN,
-    CONFIG
+    CONFIG,
+    PLAY
 
 }

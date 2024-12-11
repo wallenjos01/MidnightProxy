@@ -8,7 +8,9 @@ import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.config.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundPluginMessagePacket;
+import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
@@ -218,10 +220,30 @@ public interface ClientConnection {
      */
     ServerboundLoginQueryPacket awaitLoginQuery(Identifier id, ByteBuf data, int timeout);
 
+    /**
+     * Returns whether the client was reconnected after determining their backend
+     * @return Whether the client was reconnected.
+     */
+    boolean wasReconnected();
+
+    /**
+     * Sends a resource pack to the client
+     * @param pack The resource pack to send
+     * @return A future which will complete with the client's response
+     */
+    CompletableFuture<ServerboundResourcePackStatusPacket> sendResourcePack(ResourcePack pack);
+
+
+    /**
+     * Gets the client's intent they declared when joining the server
+     * @return The client's intent
+     */
+    ServerboundHandshakePacket.Intent getIntent();
+
     // Events
     ConcurrentHandlerList<ClientConnection> preLoginEvent();
     ConcurrentHandlerList<ClientConnection> postLoginEvent();
-    ConcurrentHandlerList<ClientConnection> enterConfigurationEvent();
+    ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> enterConfigurationEvent();
     ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent();
     ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent();
 

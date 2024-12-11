@@ -64,6 +64,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                 if(conn.profileAvailable()) {
                     server.getPlayerList().removePlayer(conn.uuid());
                 }
+                conn.cleanup();
             }
             manager.removeClientConnection(handler);
         });

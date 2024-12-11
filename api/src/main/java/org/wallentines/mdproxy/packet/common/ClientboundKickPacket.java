@@ -14,7 +14,14 @@ import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 public record ClientboundKickPacket(Component message) implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of((ver, phase) -> phase == ProtocolPhase.LOGIN ? 0 : 2, (ver, phase, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(
+            (ver, phase) -> switch(phase) {
+                case LOGIN -> 0;
+                case CONFIG -> 2;
+                case PLAY -> 29;
+                default -> throw new IllegalArgumentException("Invalid phase: " + phase);
+            },
+        (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 

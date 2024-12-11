@@ -6,13 +6,13 @@ import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-public record ClientboundTransferPacket(String host, int port) implements Packet<ClientboundPacketHandler> {
+public class ClientboundFinishConfigurationPacket implements Packet<ClientboundPacketHandler> {
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(11, (ver, phase, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(3, (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
+
 
     @Override
     public PacketType<ClientboundPacketHandler> getType() {
@@ -20,13 +20,10 @@ public record ClientboundTransferPacket(String host, int port) implements Packet
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
-        PacketBufferUtil.writeUtf(buf, host);
-        PacketBufferUtil.writeVarInt(buf, port);
-    }
+    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) { }
 
     @Override
     public void handle(ClientboundPacketHandler handler) {
-        throw new UnsupportedOperationException("Unable to handle clientbound packet");
+        throw new UnsupportedOperationException("Cannot handle clientbound packet!");
     }
 }

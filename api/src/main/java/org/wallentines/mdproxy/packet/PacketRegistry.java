@@ -2,9 +2,7 @@ package org.wallentines.mdproxy.packet;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.common.ClientboundCookieRequestPacket;
-import org.wallentines.mdproxy.packet.common.ClientboundKickPacket;
-import org.wallentines.mdproxy.packet.common.ServerboundCookiePacket;
+import org.wallentines.mdproxy.packet.common.*;
 import org.wallentines.mdproxy.packet.config.*;
 import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ClientboundPingPacket;
@@ -79,8 +77,11 @@ public class PacketRegistry<T> {
     private static final List<PacketType<ClientboundPacketHandler>> LOGIN_CLIENTBOUND = List.of(ClientboundKickPacket.TYPE, ClientboundEncryptionPacket.TYPE, ClientboundLoginFinishedPacket.TYPE, ClientboundLoginQueryPacket.TYPE, ClientboundCookieRequestPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> LOGIN_SERVERBOUND = List.of(ServerboundLoginPacket.TYPE, ServerboundEncryptionPacket.TYPE, ServerboundLoginQueryPacket.TYPE, ServerboundLoginFinishedPacket.TYPE, ServerboundCookiePacket.TYPE);
 
-    private static final List<PacketType<ClientboundPacketHandler>> CONFIG_CLIENTBOUND = List.of(ClientboundCookieRequestPacket.TYPE, ClientboundTransferPacket.TYPE, ClientboundKickPacket.TYPE, ClientboundPluginMessagePacket.TYPE, ClientboundSetCookiePacket.TYPE);
-    private static final List<PacketType<ServerboundPacketHandler>> CONFIG_SERVERBOUND = List.of(ServerboundSettingsPacket.TYPE, ServerboundCookiePacket.TYPE, ServerboundPluginMessagePacket.TYPE);
+    private static final List<PacketType<ClientboundPacketHandler>> CONFIG_CLIENTBOUND = List.of(ClientboundCookieRequestPacket.TYPE, ClientboundPluginMessagePacket.TYPE, ClientboundKickPacket.TYPE, ClientboundFinishConfigurationPacket.TYPE, ClientboundTransferPacket.TYPE,  ClientboundSetCookiePacket.TYPE, ClientboundAddResourcePackPacket.TYPE, ClientboundRemoveResourcePackPacket.TYPE);
+    private static final List<PacketType<ServerboundPacketHandler>> CONFIG_SERVERBOUND = List.of(ServerboundSettingsPacket.TYPE, ServerboundCookiePacket.TYPE, ServerboundPluginMessagePacket.TYPE,  ServerboundFinishConfigurationPacket.TYPE, ServerboundResourcePackStatusPacket.TYPE);
+
+    private static final List<PacketType<ClientboundPacketHandler>> PLAY_CLIENTBOUND = List.of(ClientboundCookieRequestPacket.TYPE, ClientboundTransferPacket.TYPE, ClientboundKickPacket.TYPE, ClientboundPluginMessagePacket.TYPE, ClientboundSetCookiePacket.TYPE, ClientboundAddResourcePackPacket.TYPE, ClientboundRemoveResourcePackPacket.TYPE);
+    private static final List<PacketType<ServerboundPacketHandler>> PLAY_SERVERBOUND = List.of(ServerboundCookiePacket.TYPE, ServerboundPluginMessagePacket.TYPE, ServerboundResourcePackStatusPacket.TYPE);
 
     public static PacketRegistry<ServerboundPacketHandler> getServerbound(GameVersion version, ProtocolPhase phase) {
 
@@ -89,6 +90,7 @@ public class PacketRegistry<T> {
             case STATUS -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, STATUS_SERVERBOUND);
             case LOGIN -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, LOGIN_SERVERBOUND);
             case CONFIG -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, CONFIG_SERVERBOUND);
+            case PLAY -> new PacketRegistry<>(version, phase, PacketFlow.SERVERBOUND, PLAY_SERVERBOUND);
         };
     }
 
@@ -99,6 +101,7 @@ public class PacketRegistry<T> {
             case STATUS -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.STATUS_CLIENTBOUND);
             case LOGIN -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.LOGIN_CLIENTBOUND);
             case CONFIG -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.CONFIG_CLIENTBOUND);
+            case PLAY -> new PacketRegistry<>(version, phase, PacketFlow.CLIENTBOUND, PacketRegistry.PLAY_CLIENTBOUND);
         };
     }
 

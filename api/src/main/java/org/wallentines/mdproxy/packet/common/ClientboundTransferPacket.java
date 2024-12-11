@@ -1,7 +1,6 @@
-package org.wallentines.mdproxy.packet.config;
+package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
-import org.jetbrains.annotations.Nullable;
 import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
@@ -9,14 +8,12 @@ import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
-import java.util.UUID;
+public record ClientboundTransferPacket(String host, int port) implements Packet<ClientboundPacketHandler> {
 
-public record ClientboundRemoveResourcePackPacket(@Nullable UUID packId) implements Packet<ClientboundPacketHandler> {
-
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(8, (ver, phase, buf) -> {
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(
+            (ver, phase) -> phase == ProtocolPhase.CONFIG ? 11 : 122, (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
-
 
     @Override
     public PacketType<ClientboundPacketHandler> getType() {
@@ -25,7 +22,8 @@ public record ClientboundRemoveResourcePackPacket(@Nullable UUID packId) impleme
 
     @Override
     public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
-        PacketBufferUtil.writeOptional(buf, packId, PacketBufferUtil::writeUUID);
+        PacketBufferUtil.writeUtf(buf, host);
+        PacketBufferUtil.writeVarInt(buf, port);
     }
 
     @Override
