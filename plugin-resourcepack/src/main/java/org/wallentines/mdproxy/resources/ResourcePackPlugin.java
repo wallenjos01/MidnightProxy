@@ -78,7 +78,7 @@ public class ResourcePackPlugin implements Plugin {
     public void initialize(Proxy proxy) {
 
         proxy.getCommands().register("rp", (sender, args) -> {
-            if(args.length == 1 && args[0].equals("reload")) {
+            if(args.length == 2 && args[1].equals("reload")) {
                 reload();
                 sender.sendMessage("Reloaded resource packs");
             }

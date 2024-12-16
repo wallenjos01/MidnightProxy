@@ -36,10 +36,16 @@ public class WhitelistPlugin implements Plugin {
         ConnectionCheckType.REGISTRY.tryRegister("whitelist", WhitelistCheck.TYPE);
 
         proxy.getCommands().register("whitelist", (sender, args) -> {
-            if(args.length == 0) return;
-            if(args[0].equals("reload")) {
+            if(args.length <= 1) {
+                sender.sendMessage("Usage: whitelist [reload]");
+                return;
+            }
+
+            if(args[1].equals("reload")) {
                 reload();
                 sender.sendMessage("Whitelists reloaded");
+            } else {
+                sender.sendMessage("Usage: whitelist [reload]");
             }
         });
 
@@ -51,6 +57,8 @@ public class WhitelistPlugin implements Plugin {
     }
 
     public void reload() {
+
+        lists.forEach(Whitelist::invalidate);
 
         lists.clear();
         config.load();
