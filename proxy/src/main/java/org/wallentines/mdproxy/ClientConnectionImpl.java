@@ -435,10 +435,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
 
         if(resourcePacks.containsKey(pack.uuid())) {
-            return CompletableFuture.failedFuture(new IllegalStateException("Attempt to apply the same resource pack twice`!"));
+            return CompletableFuture.failedFuture(new IllegalStateException("Attempt to apply the same resource pack twice!"));
         }
-
-        LOGGER.warn("Sent resource pack push packet: {}", pack);
 
         CompletableFuture<ServerboundResourcePackStatusPacket> out = new CompletableFuture<>();
         resourcePacks.put(pack.uuid(), out);

@@ -4,16 +4,12 @@ package org.wallentines.mdproxy.requirement;
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.requirement.CheckType;
 import org.wallentines.midnightlib.requirement.CompositeCheck;
-import org.wallentines.midnightlib.requirement.Requirement;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,16 +18,16 @@ public class Composite implements ConnectionCheck {
 
     private final Type type;
     private final List<ConnectionRequirement> requirements;
-    private final Range<Integer> range;
+    private final Range<Integer> count;
 
     private final boolean requireAuth;
     private final Set<Identifier> cookies;
 
 
-    public Composite(Type type, Collection<ConnectionRequirement> checks, Range<Integer> range) {
+    public Composite(Type type, Collection<ConnectionRequirement> checks, Range<Integer> count) {
         this.type = type;
         this.requirements = new ArrayList<>(checks);
-        this.range = range;
+        this.count = count;
 
         this.requireAuth = checks.stream().anyMatch(ConnectionRequirement::requiresAuth);
         this.cookies = checks.stream().flatMap(req -> req.getRequiredCookies().stream()).collect(Collectors.toSet());
@@ -52,12 +48,12 @@ public class Composite implements ConnectionCheck {
     }
 
     public Range<Integer> count() {
-        return range;
+        return count;
     }
 
     @Override
     public boolean check(ConnectionContext data) {
-        return false;
+        return CompositeCheck.checkAll(requirements, count, data);
     }
 
     @Override
@@ -89,32 +85,5 @@ public class Composite implements ConnectionCheck {
             return serializer;
         }
     }
-
-//    public Composite(Serializer<ConnectionRequirement> general, Range<Integer> range, Collection<ConnectionRequirement> values) {
-//        super(general, range, values);
-//    }
-//    @Override
-//    public boolean requiresAuth() {
-//        for(ConnectionRequirement r : requirements) {
-//            if(r.requiresAuth()) return true;
-//        }
-//        return false;
-//    }
-//    @Override
-//    public @NotNull Collection<Identifier> getRequiredCookies() {
-//        Set<Identifier> out = new HashSet<>();
-//        for(ConnectionRequirement r : requirements) {
-//            Collection<Identifier> cookies = r.getRequiredCookies();
-//            if(cookies != null) out.addAll(cookies);
-//        }
-//        return out;
-//    }
-//
-//    public static final ConnectionCheckType TYPE = new ConnectionCheckType() {
-//        @Override
-//        protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-//            return CompositeCheck.serializer(ConnectionRequirement.SERIALIZER, Composite::new).deserialize(ctx, value).flatMap(cmp -> cmp);
-//        }
-//    };
 
 }
