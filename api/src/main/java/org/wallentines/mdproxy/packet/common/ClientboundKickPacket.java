@@ -34,7 +34,7 @@ public record ClientboundKickPacket(Component message) implements Packet<Clientb
     public void write(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
 
         if (phase == ProtocolPhase.LOGIN) {
-            PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, ModernSerializer.INSTANCE.serialize(ConfigContext.INSTANCE, message, ver).getOrThrow()));
+            PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, ModernSerializer.INSTANCE.serialize(GameVersion.context(ver), message).getOrThrow()));
         } else {
             PacketBufferUtil.writeNBTComponent(buf, message);
         }

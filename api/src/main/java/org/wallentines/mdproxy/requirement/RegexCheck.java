@@ -1,56 +1,81 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class RegexCheck implements ConnectionCheck {
 
-    private final Function<ConnectionContext, String> getter;
+    private final Type type;
     private final Pattern pattern;
-    private final boolean requireAuth;
 
-    public RegexCheck(Function<ConnectionContext, String> getter, Pattern pattern, boolean requireAuth) {
-        this.getter = getter;
+    public RegexCheck(Type type, Pattern pattern) {
+        this.type = type;
         this.pattern = pattern;
-        this.requireAuth = requireAuth;
     }
 
     @Override
     public boolean requiresAuth() {
-        return requireAuth;
+        return type.requireAuth;
     }
 
     @Override
     public @NotNull Collection<Identifier> getRequiredCookies() {
-        return List.of();
+        return Collections.emptyList();
     }
 
     @Override
     public boolean check(ConnectionContext data) {
-        return pattern.matcher(getter.apply(data)).matches();
+        return pattern.matcher(type.getter.apply(data)).matches();
     }
 
     @Override
-    public <O> SerializeResult<O> serialize(SerializeContext<O> context) {
-        return SerializeResult.ofNullable(context.toString(pattern.pattern()));
+    public CheckType<ConnectionContext, ?> type() {
+        return type;
     }
 
-    public static ConnectionCheckType type(Function<ConnectionContext, String> getter, boolean requireAuth) {
-        return new ConnectionCheckType() {
-            @Override
-            protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-                return Serializer.STRING.fieldOf("value").deserialize(ctx, value).flatMap(str -> new RegexCheck(getter, Pattern.compile(str), requireAuth));
-            }
-        };
+    public Pattern pattern() {
+        return pattern;
+    }
+
+    public static class Type implements ConnectionCheckType<RegexCheck> {
+
+        final Function<ConnectionContext, String> getter;
+        final boolean requireAuth;
+
+        final Serializer<RegexCheck> serializer;
+
+        public Type(Function<ConnectionContext, String> getter, boolean requireAuth) {
+            this.getter = getter;
+            this.requireAuth = requireAuth;
+
+            this.serializer = Serializer.STRING
+                    .flatMap(Pattern::pattern, Pattern::compile)
+                    .fieldOf("value")
+                    .flatMap(RegexCheck::pattern, pattern -> new RegexCheck(this, pattern));
+        }
+
+        @Override
+        public TypeReference<RegexCheck> type() {
+            return new TypeReference<RegexCheck>() {};
+        }
+
+        @Override
+        public Serializer<RegexCheck> serializer() {
+            return serializer;
+        }
     }
 
 }

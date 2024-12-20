@@ -160,7 +160,7 @@ public class ProxyServer implements Proxy {
         Registry<String, Backend> backends = Registry.createStringRegistry();
 
         Backend.SERIALIZER.filteredMapOf(
-                (key, err) -> LOGGER.warn("Could not deserialize a Backend with id {}! {}", key, err)
+                (key, err) -> LOGGER.warn("Could not deserialize a Backend with id {}!", key, err)
         ).deserialize(ConfigContext.INSTANCE, getConfig().getSection("backends"))
                 .getOrThrow()
                 .forEach(backends::register);
@@ -168,13 +168,19 @@ public class ProxyServer implements Proxy {
         this.backends = backends.freeze();
 
         this.statusEntries.clear();
-        this.statusEntries.addAll(getConfig().getListFiltered("status", StatusEntry.SERIALIZER, LOGGER::warn));
+        this.statusEntries.addAll(getConfig().getListFiltered("status", StatusEntry.SERIALIZER, ex -> {
+            LOGGER.warn("Unable to decode a status entry!", ex);
+        }));
 
         this.routes.clear();
-        this.routes.addAll(getConfig().getListFiltered("routes", Route.SERIALIZER, LOGGER::warn));
+        this.routes.addAll(getConfig().getListFiltered("routes", Route.SERIALIZER, ex -> {
+            LOGGER.warn("Unable to decode a route!", ex);
+        }));
 
         this.authRoutes.clear();
-        this.authRoutes.addAll(getConfig().getListFiltered("auth_routes", AuthRoute.SERIALIZER.forContext(this), LOGGER::warn));
+        this.authRoutes.addAll(getConfig().getListFiltered("auth_routes", AuthRoute.serializer(this), ex -> {
+            LOGGER.warn("Unable to decode an auth route!", ex);
+        }));
     }
 
     @Override

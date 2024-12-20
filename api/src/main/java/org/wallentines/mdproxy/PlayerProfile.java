@@ -38,12 +38,10 @@ public record PlayerProfile(UUID uuid, String username, List<Property> propertie
         @Override
         public <O> SerializeResult<java.util.UUID> deserialize(SerializeContext<O> ctx, O o) {
 
-            String s = ctx.asString(o);
-            if(s == null) {
-                return SerializeResult.failure("Unable to deserialize UUID!");
-            }
-            String id = s.substring(0,8) + "-" + s.substring(8,12) + "-" + s.substring(12,16) + "-" + s.substring(16,20) + "-" + s.substring(20,32);
-            return Serializer.UUID.deserialize(ctx, ctx.toString(id));
+            return ctx.asString(o).map(s -> {
+                String id = s.substring(0,8) + "-" + s.substring(8,12) + "-" + s.substring(12,16) + "-" + s.substring(16,20) + "-" + s.substring(20,32);
+                return Serializer.UUID.deserialize(ctx, ctx.toString(id));
+            });
         }
     };
 

@@ -1,29 +1,35 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.TypeReference;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.requirement.CheckType;
 import org.wallentines.midnightlib.requirement.NumberCheck;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
-public class ConnectionInt extends NumberCheck<ConnectionContext, Integer> implements ConnectionCheck{
+public class ConnectionInt implements ConnectionCheck {
 
-    private final boolean requireAuth;
+    private final Type type;
+    private final Range<Integer> range;
 
-    public ConnectionInt(Function<ConnectionContext, Integer> getter, Range<Integer> valid, boolean requireAuth) {
-        super(Range.INTEGER, getter, valid);
-        this.requireAuth = requireAuth;
+    public ConnectionInt(Type type, Range<Integer> range) {
+        this.type = type;
+        this.range = range;
     }
 
     @Override
     public boolean requiresAuth() {
-        return requireAuth;
+        return type.requireAuth;
     }
 
     @Override
@@ -31,12 +37,42 @@ public class ConnectionInt extends NumberCheck<ConnectionContext, Integer> imple
         return Collections.emptyList();
     }
 
-    public static ConnectionCheckType type(Function<ConnectionContext, Integer> getter, boolean requireAuth) {
-        return new ConnectionCheckType() {
-            @Override
-            protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-                return Range.INTEGER.fieldOf("value").deserialize(ctx, value).flatMap(str -> new ConnectionInt(getter, str, requireAuth));
-            }
-        };
+    @Override
+    public boolean check(ConnectionContext data) {
+        return range.isWithin(type.getter.apply(data));
+    }
+
+    @Override
+    public Type type() {
+        return type;
+    }
+
+    public Range<Integer> range() {
+        return range;
+    }
+
+    public static class Type implements ConnectionCheckType<ConnectionInt> {
+
+        final Function<ConnectionContext, Integer> getter;
+        final boolean requireAuth;
+
+        final Serializer<ConnectionInt> serializer;
+
+        public Type(Function<ConnectionContext, Integer> getter, boolean requireAuth) {
+            this.getter = getter;
+            this.requireAuth = requireAuth;
+
+            this.serializer = Range.INTEGER.fieldOf("value").flatMap(ConnectionInt::range, range -> new ConnectionInt(this, range));
+        }
+
+        @Override
+        public TypeReference<ConnectionInt> type() {
+            return new TypeReference<ConnectionInt>() {};
+        }
+
+        @Override
+        public Serializer<ConnectionInt> serializer() {
+            return serializer;
+        }
     }
 }

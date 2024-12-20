@@ -1,6 +1,5 @@
 package org.wallentines.mdproxy.requirement;
 
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -13,12 +12,12 @@ import org.wallentines.midnightlib.requirement.Requirement;
 import java.util.Collection;
 import java.util.Collections;
 
-public class ConnectionRequirement extends Requirement<ConnectionContext, ConnectionCheckType> {
+public class ConnectionRequirement extends Requirement<ConnectionContext> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ConnectionRequirement");
 
-    public ConnectionRequirement(@Nullable ConnectionCheckType type, Check<ConnectionContext> check, boolean invert) {
-        super(type, check, invert);
+    public ConnectionRequirement(Check<ConnectionContext> check, boolean invert) {
+        super(check, invert);
     }
 
 

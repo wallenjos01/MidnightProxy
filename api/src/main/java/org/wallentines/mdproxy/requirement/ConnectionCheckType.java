@@ -1,37 +1,33 @@
 package org.wallentines.mdproxy.requirement;
 
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.requirement.Check;
 import org.wallentines.midnightlib.requirement.CheckType;
 
-public abstract class ConnectionCheckType implements CheckType<ConnectionContext> {
+public interface ConnectionCheckType<T extends Check<ConnectionContext>> extends CheckType<ConnectionContext, T> {
 
-    @Override
-    public final <O> SerializeResult<Check<ConnectionContext>> deserialize(SerializeContext<O> ctx, O value) {
-        return deserializeCheck(ctx, value).flatMap(cc -> cc);
+    Registry<Identifier, CheckType<ConnectionContext, ?>> REGISTRY = Registry.create("mdp");
+
+    static <T extends Check<ConnectionContext>> CheckType<ConnectionContext, T> register(String key, CheckType<ConnectionContext, T> type) {
+        REGISTRY.tryRegister(key, type);
+        return type;
     }
 
-    protected abstract <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value);
+    CheckType<ConnectionContext, DateCheck> DATE = register("date", DateCheck.TYPE);
+    CheckType<ConnectionContext, ConnectionString> HOSTNAME = register("hostname", new ConnectionString.Type(ConnectionContext::hostname, false));
+    CheckType<ConnectionContext, ConnectionInt> PORT = register("port", new ConnectionInt.Type(ConnectionContext::port, false));
+    CheckType<ConnectionContext, ConnectionString> ADDRESS = register("ip_address", new ConnectionString.Type(ConnectionContext::addressString, false));
+    CheckType<ConnectionContext, ConnectionString> USERNAME = register("username", new ConnectionString.Type(ConnectionContext::username, true));
+    CheckType<ConnectionContext, ConnectionString> UUID = register("uuid", new ConnectionString.Type(ConnectionContext::uuidString, true));
+    CheckType<ConnectionContext, ConnectionString> LOCALE = register("locale", new ConnectionString.Type(ConnectionContext::locale, true));
+    CheckType<ConnectionContext, CookieCheck> COOKIE = register("cookie", CookieCheck.TYPE);
 
+    CheckType<ConnectionContext, RegexCheck> HOSTNAME_REGEX = register("hostname_regex", new RegexCheck.Type(ConnectionContext::hostname, false));
+    CheckType<ConnectionContext, RegexCheck> ADDRESS_REGEX = register("ip_address_regex", new RegexCheck.Type(ConnectionContext::addressString, false));
+    CheckType<ConnectionContext, RegexCheck> USERNAME_REGEX = register("username_regex", new RegexCheck.Type(ConnectionContext::username, true));
+    CheckType<ConnectionContext, RegexCheck> LOCALE_REGEX = register("locale_regex", new RegexCheck.Type(ConnectionContext::locale, true));
 
-    public static final Registry<Identifier, ConnectionCheckType> REGISTRY = Registry.create("mdp");
-    public static final ConnectionCheckType DATE = REGISTRY.tryRegister("date", DateCheck.TYPE);
-    public static final ConnectionCheckType HOSTNAME = REGISTRY.tryRegister("hostname", ConnectionString.type(ConnectionContext::hostname, false));
-    public static final ConnectionCheckType PORT = REGISTRY.tryRegister("port", ConnectionInt.type(ConnectionContext::port, false));
-    public static final ConnectionCheckType ADDRESS = REGISTRY.tryRegister("ip_address", ConnectionString.type(ConnectionContext::addressString, false));
-    public static final ConnectionCheckType USERNAME = REGISTRY.tryRegister("username", ConnectionString.type(ConnectionContext::username, true));
-    public static final ConnectionCheckType UUID = REGISTRY.tryRegister("uuid", ConnectionString.type(ConnectionContext::uuidString, true));
-    public static final ConnectionCheckType LOCALE = REGISTRY.tryRegister("locale", ConnectionString.type(ConnectionContext::locale, true));
-    public static final ConnectionCheckType COOKIE = REGISTRY.tryRegister("cookie", CookieCheck.TYPE);
-    public static final ConnectionCheckType COMPOSITE = REGISTRY.tryRegister("composite", Composite.TYPE);
-
-    public static final ConnectionCheckType HOSTNAME_REGEX = REGISTRY.tryRegister("hostname_regex", RegexCheck.type(ConnectionContext::hostname, false));
-    public static final ConnectionCheckType ADDRESS_REGEX = REGISTRY.tryRegister("ip_address_regex", RegexCheck.type(ConnectionContext::addressString, false));
-    public static final ConnectionCheckType USERNAME_REGEX = REGISTRY.tryRegister("username_regex", RegexCheck.type(ConnectionContext::username, true));
-    public static final ConnectionCheckType LOCALE_REGEX = REGISTRY.tryRegister("locale_regex", RegexCheck.type(ConnectionContext::locale, true));
-
+    CheckType<ConnectionContext, Composite> COMPOSITE = register("composite", Composite.TYPE);
 }

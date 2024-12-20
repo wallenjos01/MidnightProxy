@@ -23,7 +23,7 @@ public record StatusMessage(GameVersion version, int playersOnline, int maxPlaye
                         .with("online", playersOnline)
                         .with("sample", playerSample, PlayerInfo.SERIALIZER.filteredListOf())
                 )
-                .with("description", message, ModernSerializer.INSTANCE.forContext(version))
+                .with("description", ModernSerializer.INSTANCE.serialize(GameVersion.context(version), message).getOrThrow())
                 .with("favicon", favicon)
                 .with("enforcesSecureChat", secureChat)
                 .with("previewsChat", previewChat);

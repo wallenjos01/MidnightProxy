@@ -58,7 +58,7 @@ public record StatusEntry(int priority, Integer playersOverride, Integer maxPlay
             out.getOrCreateSection("players").set("sample", playerSample, PlayerInfo.SERIALIZER.listOf());
         }
         if(message != null) {
-            out.set("description", message, ModernSerializer.INSTANCE.forContext(ver));
+            out.set("description", message, ModernSerializer.INSTANCE);
         }
         if(icon != null) {
             String iconB64 = cache.getIconB64(icon);

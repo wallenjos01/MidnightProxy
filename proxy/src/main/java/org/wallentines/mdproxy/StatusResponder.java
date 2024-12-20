@@ -63,7 +63,7 @@ public class StatusResponder implements ClientboundPacketHandler {
         }
 
         conn.send(new ClientboundPingPacket(pck.value()));
-
+        conn.disconnect();
     }
 
     @Override

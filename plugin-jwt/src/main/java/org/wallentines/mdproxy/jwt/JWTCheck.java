@@ -3,11 +3,13 @@ package org.wallentines.mdproxy.jwt;
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mcore.lang.PlaceholderContext;
 import org.wallentines.mcore.lang.UnresolvedComponent;
+import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.*;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -39,7 +41,6 @@ public class JWTCheck implements ConnectionCheck {
 
         byte[] data = ctx.getConnection().getCookie(cookie);
         if(data == null || data.length == 0) {
-            JWTPlugin.LOGGER.warn("Unable to find JWT cookie called {} for {}", cookie, ctx.username());
             return false;
         }
 
@@ -57,7 +58,7 @@ public class JWTCheck implements ConnectionCheck {
         String str = new String(data, StandardCharsets.US_ASCII);
         SerializeResult<JWT> jwtRes = JWTReader.readAny(str, KeySupplier.fromHeader(store, keyType, key));
         if(!jwtRes.isComplete()) {
-            JWTPlugin.LOGGER.warn("Unable to parse JWT for {}! {}", ctx.username(), jwtRes.getError());
+            JWTPlugin.LOGGER.warn("Unable to parse JWT for {}!", ctx.username(), jwtRes.getError());
             return false;
         }
 
@@ -93,6 +94,11 @@ public class JWTCheck implements ConnectionCheck {
     }
 
     @Override
+    public Type type() {
+        return TYPE;
+    }
+
+    @Override
     public boolean requiresAuth() {
         return requireAuth;
     }
@@ -100,11 +106,6 @@ public class JWTCheck implements ConnectionCheck {
     @Override
     public @NotNull Collection<Identifier> getRequiredCookies() {
         return Set.of(cookie);
-    }
-
-    @Override
-    public <O> SerializeResult<O> serialize(SerializeContext<O> ctx) {
-        return SERIALIZER.serialize(ctx, this);
     }
 
     private String getIdClaim() {
@@ -135,11 +136,19 @@ public class JWTCheck implements ConnectionCheck {
             JWTCheck::new
     );
 
+    public static class Type implements ConnectionCheckType<JWTCheck> {
 
-    public static final ConnectionCheckType TYPE = new ConnectionCheckType() {
         @Override
-        protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-            return SERIALIZER.deserialize(ctx, value).flatMap(jwt -> jwt);
+        public TypeReference<JWTCheck> type() {
+            return new TypeReference<JWTCheck>() {};
         }
-    };
+
+        @Override
+        public Serializer<JWTCheck> serializer() {
+            return SERIALIZER;
+        }
+    }
+
+
+    public static final Type TYPE = new Type();
 }

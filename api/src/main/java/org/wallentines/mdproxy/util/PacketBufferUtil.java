@@ -10,7 +10,6 @@ import org.wallentines.mcore.text.Component;
 import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.codec.EncodeException;
 import org.wallentines.mdcfg.codec.NBTCodec;
-import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.VarInt;
 
 import java.io.IOException;
@@ -160,7 +159,7 @@ public class PacketBufferUtil {
 
     public static void writeNBTComponent(ByteBuf buf, Component component) {
         try(ByteBufOutputStream bos = new ByteBufOutputStream(buf)) {
-            new NBTCodec(false).encode(ConfigContext.INSTANCE, ModernSerializer.INSTANCE.forContext(GameVersion.MAX), component, bos);
+            new NBTCodec(false).encode(GameVersion.context(GameVersion.MAX), ModernSerializer.INSTANCE, component, bos);
         } catch (IOException | EncodeException ex) {
             throw new EncoderException("Unable to encode NBT component!", ex);
         }

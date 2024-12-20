@@ -1,6 +1,7 @@
 package org.wallentines.mdproxy.lastsrv;
 
 import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
@@ -9,6 +10,7 @@ import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,8 +50,8 @@ public class LastServerCheck implements ConnectionCheck {
     }
 
     @Override
-    public <O> SerializeResult<O> serialize(SerializeContext<O> ctx) {
-        return SERIALIZER.serialize(ctx, this);
+    public Type type() {
+        return TYPE;
     }
 
     private static final Serializer<LastServerCheck> SERIALIZER = ObjectSerializer.create(
@@ -57,10 +59,18 @@ public class LastServerCheck implements ConnectionCheck {
             LastServerCheck::new
     );
 
-    public static final ConnectionCheckType TYPE = new ConnectionCheckType() {
+    public static class Type implements ConnectionCheckType<LastServerCheck> {
+
         @Override
-        protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-            return SERIALIZER.deserialize(ctx, value).flatMap(o -> o);
+        public TypeReference<LastServerCheck> type() {
+            return new TypeReference<>() {};
         }
-    };
+
+        @Override
+        public Serializer<LastServerCheck> serializer() {
+            return SERIALIZER;
+        }
+    }
+
+    public static final Type TYPE = new Type();
 }

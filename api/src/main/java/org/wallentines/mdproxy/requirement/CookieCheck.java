@@ -1,24 +1,26 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
+import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.StringCheck;
+import org.wallentines.midnightlib.requirement.CheckType;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 
 public class CookieCheck implements ConnectionCheck {
+
+    private final Type type;
     private final Identifier cookie;
     private final Set<String> values;
 
-    public CookieCheck(Identifier cookie, Collection<String> values) {
+    public CookieCheck(Type type, Identifier cookie, Set<String> values) {
+        this.type = type;
         this.cookie = cookie;
-        this.values = Set.copyOf(values);
+        this.values = values;
     }
 
     @Override
@@ -28,31 +30,52 @@ public class CookieCheck implements ConnectionCheck {
 
     @Override
     public @NotNull Collection<Identifier> getRequiredCookies() {
-        return Set.of(cookie);
+        return Collections.singleton(cookie);
     }
 
     @Override
-    public boolean check(ConnectionContext ctx) {
-        byte[] c = ctx.getConnection().getCookie(cookie);
+    public boolean check(ConnectionContext data) {
+        byte[] c = data.getConnection().getCookie(cookie);
         String str = c == null ? "" : new String(c);
         return values.contains(str);
     }
 
     @Override
-    public <O> SerializeResult<O> serialize(SerializeContext<O> ctx) {
-        return SERIALIZER.serialize(ctx, this);
+    public Type type() {
+        return type;
     }
 
-    public static final Serializer<CookieCheck> SERIALIZER = ObjectSerializer.create(
-            Identifier.serializer("minecraft").entry("cookie", c -> c.cookie),
-            StringCheck.STRING_SERIALIZER.entry("value", c -> c.values),
-            CookieCheck::new
-    );
+    public Identifier cookie() {
+        return cookie;
+    }
 
-    public static final ConnectionCheckType TYPE = new ConnectionCheckType() {
-        @Override
-        protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-            return SERIALIZER.deserialize(ctx, value).flatMap(cook -> cook);
+    public Set<String> values() {
+        return values;
+    }
+
+    public static final Type TYPE = new Type();
+
+    public static class Type implements ConnectionCheckType<CookieCheck> {
+
+        final Serializer<CookieCheck> serializer;
+
+        public Type() {
+            this.serializer = ObjectSerializer.create(
+                    Identifier.serializer("minecraft").entry("cookie", CookieCheck::cookie),
+                    Serializer.STRING.listOf().mapToSet()
+                            .or(Serializer.STRING.map(set -> SerializeResult.ofNullable(set.stream().findFirst().orElse(null)), str -> SerializeResult.success(Collections.singleton(str))))
+                            .entry("values", CookieCheck::values),
+                    (cookie, values) -> new CookieCheck(this, cookie, values));
         }
-    };
+
+        @Override
+        public TypeReference<CookieCheck> type() {
+            return new TypeReference<CookieCheck>() {};
+        }
+
+        @Override
+        public Serializer<CookieCheck> serializer() {
+            return serializer;
+        }
+    }
 }
