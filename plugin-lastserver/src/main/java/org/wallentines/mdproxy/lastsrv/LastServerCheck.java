@@ -1,16 +1,14 @@
 package org.wallentines.mdproxy.lastsrv;
 
 import org.jetbrains.annotations.NotNull;
+import org.wallentines.mcore.data.DataManager;
 import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -42,11 +40,14 @@ public class LastServerCheck implements ConnectionCheck {
             return false;
         }
 
-        String data = pl.getDataManager().getData(ctx.getConnection().uuid().toString()).getOrDefault("last_server", (String) null);
-        if(data == null) return false;
+        DataManager dm = pl.getDataManager();
+        synchronized (dm) {
+            String data = dm.getData(ctx.getConnection().uuid().toString()).getOrDefault("last_server", (String) null);
+            if (data == null) return false;
 
-        ctx.setMetaProperty("last_server.backend", data);
-        return true;
+            ctx.setMetaProperty("last_server.backend", data);
+            return true;
+        }
     }
 
     @Override
