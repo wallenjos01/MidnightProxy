@@ -9,7 +9,6 @@ import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;

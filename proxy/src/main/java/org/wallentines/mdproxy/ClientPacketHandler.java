@@ -327,7 +327,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         selectedBackend = b;
-        if(wasReconnected()) {
+        if(wasReconnected() || !conn.authenticated()) {
             connectToBackendNow();
         } else {
             conn.enterConfigurationEvent().invokeAsync(new Tuples.T2<>(b, conn)).thenAccept(unused -> {

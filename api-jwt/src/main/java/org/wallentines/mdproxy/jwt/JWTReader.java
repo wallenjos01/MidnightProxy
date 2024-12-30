@@ -26,7 +26,7 @@ public class JWTReader {
         try {
             header = json.decode(ConfigContext.INSTANCE, new ByteArrayInputStream(decoder.decode(headerStr))).asSection();
         } catch (Exception ex) {
-            return SerializeResult.failure("Unable to read JWT header!");
+            return SerializeResult.failure("Unable to read JWT header!", ex);
         }
 
         // JWE
