@@ -279,16 +279,16 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             return;
         }
 
-        if(requestedCookies.remove(cookie.key())) {
-            conn.setCookie(cookie.key(), cookie.data());
-        } else {
-            LOGGER.warn("Received unsolicited cookie with ID {} from user {}!", cookie.key(), getUsername());
-        }
+        conn.onCookieResponse(cookie.key(), cookie.data());
+        if(conn.phase == ProtocolPhase.LOGIN) {
+            if (requestedCookies.remove(cookie.key())) {
+                conn.setCookie(cookie.key(), cookie.data());
 
-        if(requestedCookies.isEmpty()) {
-            tryNextServer();
+                if (requestedCookies.isEmpty()) {
+                    tryNextServer();
+                }
+            }
         }
-
     }
 
     @Override

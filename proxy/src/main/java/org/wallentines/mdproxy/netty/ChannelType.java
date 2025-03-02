@@ -35,13 +35,13 @@ public enum ChannelType {
         this.socketChannelFactory = socketChannelFactory;
     }
 
-    public static EventLoopGroup createEventLoopGroup(ChannelType type, String name) {
+    public EventLoopGroup createEventLoopGroup(String name, int threads) {
 
         ThreadFactory tf = createThreadFactory(name);
-        return switch (type) {
-            case NIO -> new NioEventLoopGroup(0, tf);
-            case EPOLL -> new EpollEventLoopGroup(0,tf);
-            case KQUEUE -> new KQueueEventLoopGroup(0, tf);
+        return switch (this) {
+            case NIO -> new NioEventLoopGroup(threads, tf);
+            case EPOLL -> new EpollEventLoopGroup(threads, tf);
+            case KQUEUE -> new KQueueEventLoopGroup(threads, tf);
         };
     }
 

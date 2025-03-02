@@ -36,6 +36,7 @@ public class Main {
             .with("routes", new ConfigList())
             .with("auth_routes", new ConfigList().append(new ConfigSection().with("type", Authenticator.MOJANG_ID)))
             .with("auth_threads", 4)
+            .with("auth_timeout_ms", 5000)
             .with("use_authentication", true)
             .with("force_authentication", false)
             .with("reconnect_timeout_sec", 3)
@@ -46,7 +47,9 @@ public class Main {
             .with("icon_cache_size", 8)
             .with("prevent_proxy_connections", false)
             .with("log_status_messages", false)
-            .with("reply_to_legacy_ping", true);
+            .with("reply_to_legacy_ping", true)
+            .with("boss_threads", 1)
+            .with("worker_threads", 4);
 
 
     public static void main(String[] args) {

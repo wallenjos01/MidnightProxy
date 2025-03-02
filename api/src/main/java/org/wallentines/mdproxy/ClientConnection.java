@@ -110,6 +110,13 @@ public interface ClientConnection {
     byte @Nullable [] getCookie(Identifier id);
 
     /**
+     * Requests the client's cookie with the given ID.
+     * @param id The cookie ID.
+     * @return A completable future which will complete when the client sends their cookie.
+     */
+    CompletableFuture<byte[]> requestCookie(Identifier id);
+
+    /**
      * Gets the client's locale. Will be null before receiving client info from the config state.
      * @return The client's locale.
      */
@@ -233,6 +240,16 @@ public interface ClientConnection {
      */
     CompletableFuture<ServerboundResourcePackStatusPacket> sendResourcePack(ResourcePack pack);
 
+    /**
+     * Removes a server resource pack from the client
+     * @param pack The UUID of the pack to remove.
+     */
+    void removeResourcePack(UUID pack);
+
+    /**
+     * Removes all server resource packs from the client
+     */
+    void clearResourcePacks();
 
     /**
      * Gets the client's intent they declared when joining the server

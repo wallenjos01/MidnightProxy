@@ -89,8 +89,10 @@ public class ProxyServer implements Proxy {
             throw new RuntimeException("Could not create icon cache directory", e);
         }
 
-        this.port = getConfig().getInt("port");
-        this.clientTimeout = getConfig().getInt("client_timeout_ms");
+        ConfigSection conf = getConfig();
+
+        this.port = conf.getInt("port");
+        this.clientTimeout = conf.getInt("client_timeout_ms");
 
         this.keyPair = CryptUtil.generateKeyPair();
         this.reconnectKeyPair = CryptUtil.generateKeyPair();
@@ -100,9 +102,9 @@ public class ProxyServer implements Proxy {
         this.commands.register("reload", new ReloadCommand());
         this.commands.register("list", new ListCommand());
 
-        this.listener = new ConnectionManager(this);
+        this.listener = new ConnectionManager(this, conf.getInt("boss_threads"), conf.getInt("worker_threads"));
         this.console = new ConsoleHandler(this);
-        this.authExecutor = new ThreadPoolExecutor(1, getConfig().getInt("auth_threads"), 5000, TimeUnit.MILLISECONDS, new SynchronousQueue<>());
+        this.authExecutor = new ThreadPoolExecutor(1, conf.getInt("auth_threads"), conf.getInt("auth_timeout_ms"), TimeUnit.MILLISECONDS, new SynchronousQueue<>());
 
         this.pluginLoader.loadAll(this);
 

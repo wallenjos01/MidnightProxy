@@ -31,12 +31,12 @@ public class ConnectionManager {
     private final Set<ClientPacketHandler> connected;
     private ChannelFuture listenChannel;
 
-    public ConnectionManager(ProxyServer server) {
+    public ConnectionManager(ProxyServer server, int bossThreads, int workerThreads) {
         this.server = server;
 
         this.channelType = ChannelType.getBestChannelType();
-        this.bossGroup = ChannelType.createEventLoopGroup(channelType, "Netty Boss");
-        this.workerGroup = ChannelType.createEventLoopGroup(channelType, "Netty Worker");
+        this.bossGroup = channelType.createEventLoopGroup("Netty Boss", bossThreads);
+        this.workerGroup = channelType.createEventLoopGroup("Netty Worker", workerThreads);
 
         this.connected = new HashSet<>();
     }
@@ -49,7 +49,7 @@ public class ConnectionManager {
                 .channelFactory(channelType.serverSocketChannelFactory)
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, WATER_MARK)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.IP_TOS, 0x18)
+                .childOption(ChannelOption.IP_TOS, 0x20)
                 .childHandler(new ClientChannelInitializer(this, server))
                 .group(bossGroup, workerGroup)
                 .localAddress(addr);

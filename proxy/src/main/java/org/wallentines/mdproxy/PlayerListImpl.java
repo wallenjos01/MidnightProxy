@@ -43,7 +43,11 @@ public class PlayerListImpl implements PlayerList {
         assert conn.profileAvailable();
 
         UUID playerId = conn.uuid();
-        connections.put(playerId, conn);
+        ClientConnection prev = connections.put(playerId, conn);
+
+        if(prev != null) {
+            prev.disconnect(Component.translate("multiplayer.disconnect.duplicate_login"));
+        }
     }
 
 }

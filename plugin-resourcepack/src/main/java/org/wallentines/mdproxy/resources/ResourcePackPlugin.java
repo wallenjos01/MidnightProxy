@@ -1,5 +1,6 @@
 package org.wallentines.mdproxy.resources;
 
+import com.google.common.collect.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wallentines.mcore.MidnightCoreAPI;
@@ -14,6 +15,7 @@ import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket;
 import org.wallentines.mdproxy.plugin.Plugin;
+import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 
 
@@ -22,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class ResourcePackPlugin implements Plugin {
 
@@ -29,8 +32,11 @@ public class ResourcePackPlugin implements Plugin {
             .with("packs", new ConfigSection())
             .with("routes", new ConfigSection())
             .with("global", new ConfigList());
-    private static final Logger log = LoggerFactory.getLogger(ResourcePackPlugin.class);
+
     private static final Component DEFAULT_KICK_MESSAGE = Component.translate("multiplayer.requiredTexturePrompt.disconnect");
+
+    private static final Identifier REMOVE_ID = new Identifier("mdp", "clear_packs");
+    private static final Logger log = LoggerFactory.getLogger(ResourcePackPlugin.class);
 
     private final FileWrapper<ConfigObject> config;
 
@@ -89,28 +95,40 @@ public class ResourcePackPlugin implements Plugin {
             if(client.getIntent() == ServerboundHandshakePacket.Intent.STATUS) return;
             client.preConnectBackendEvent().register(this, ev -> {
 
-                if(ev.p2.wasReconnected()) {
+                if(ev.p2.wasReconnected() || !ev.p2.authenticated()) {
                     return;
                 }
 
-                if(!ev.p2.authenticated()) {
-                    log.info("Player {} is not authenticated!", ev.p2.username());
-                    return;
-                }
-
-                List<CompletableFuture<?>> futures = new ArrayList<>();
-                for(ResourcePackEntry pack : globalPacks) {
-                    futures.add(ev.p2.sendResourcePack(pack.toPack()).thenAccept(pck -> onComplete(client, pck)));
-                }
+                List<ResourcePackEntry> packs = new ArrayList<>(globalPacks);
+                Set<UUID> packIds = new HashSet<>(packs.stream().map(ResourcePackEntry::uuid).toList());
 
                 String id = proxy.getBackends().getId(ev.p1);
                 if(id != null && routePacks.containsKey(id)) {
                     for(ResourcePackEntry pack : routePacks.get(id)) {
-                        futures.add(ev.p2.sendResourcePack(pack.toPack()).thenAccept(pck -> onComplete(client, pck)));
+                        packs.add(pack);
+                        packIds.add(pack.uuid());
                     }
                 }
 
-                CompletableFuture.allOf(futures.toArray(CompletableFuture<?>[]::new)).join();
+                CompletableFuture.allOf(Streams.concat(
+                        Stream.of(client.requestCookie(REMOVE_ID).thenAccept(data -> {
+                            if(data != null) {
+                                List<UUID> ids = Arrays.stream(new String(data).split(";"))
+                                        .filter(str -> !str.isEmpty())
+                                        .map(UUID::fromString)
+                                        .toList();
+                                for(UUID packId : ids) {
+                                    log.info("Attempting to remove {}", packId);
+                                    if(!packIds.contains(packId)) {
+                                        log.info("Removing {}", packId);
+                                        ev.p2.removeResourcePack(packId);
+                                    }
+                                }
+                            }
+                        })),
+                        packs.stream()
+                                .map(pack -> ev.p2.sendResourcePack(pack.toPack()))
+                ).toArray(CompletableFuture<?>[]::new)).join();
             });
         });
     }
