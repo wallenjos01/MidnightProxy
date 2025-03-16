@@ -128,6 +128,8 @@ public class ProxyServer implements Proxy {
         shutdownEvent().invoke(this);
 
         LOGGER.info("Shutting down...");
+
+        authExecutor.shutdown();
         console.stop();
         listener.stop();
 

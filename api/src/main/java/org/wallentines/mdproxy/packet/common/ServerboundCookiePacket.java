@@ -2,22 +2,20 @@ package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketType;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 public record ServerboundCookiePacket(Identifier key, byte[] data) implements Packet<ServerboundPacketHandler> {
 
+    private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
+            .inPhase(ProtocolPhase.LOGIN, 4)
+            .inPhase(ProtocolPhase.CONFIG, 1)
+            .orElse(19)
+            .build();
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of((ver, phase) -> switch (phase) {
-        case LOGIN -> 4;
-        case CONFIG -> 1;
-        case PLAY -> 19;
-        default -> throw new IllegalArgumentException("Invalid phase: " + phase);
-    }, ServerboundCookiePacket::read);
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
+            ServerboundCookiePacket::read);
 
     @Override
     public PacketType<ServerboundPacketHandler> getType() {

@@ -2,23 +2,22 @@ package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketType;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
+import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 public record ClientboundCookieRequestPacket(Identifier key) implements Packet<ClientboundPacketHandler> {
 
+    private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
+            .inPhase(ProtocolPhase.LOGIN, 5)
+            .inPhase(ProtocolPhase.CONFIG, 10)
+            .afterVersion(770, 229, 20)
+            .orElse(22)
+            .build();
 
-    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(
-            (ver, phase) -> switch (phase) {
-                case LOGIN -> 5;
-                case CONFIG -> 0;
-                case PLAY -> 22;
-                default -> throw new IllegalArgumentException("Invalid phase: " + phase);
-            }, (ver, phase, buf) -> {
+
+    public static final PacketType<ClientboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
+            (ver, phase, buf) -> {
         throw new UnsupportedOperationException("Cannot deserialize clientbound packet!");
     });
 

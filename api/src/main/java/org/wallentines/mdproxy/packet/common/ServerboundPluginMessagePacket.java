@@ -2,22 +2,20 @@ package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketType;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 
 public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(
-            (ver, phase) -> {
-                if(phase == ProtocolPhase.CONFIG) {
-                    return ver.hasFeature(GameVersion.Feature.TRANSFER_PACKETS) ? 2 : 1;
-                }
-                return 20;
-            },
+    private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
+            .afterVersionInPhase(766, 171, ProtocolPhase.CONFIG, 2)
+            .inPhase(ProtocolPhase.CONFIG, 1)
+            .orElse(20)
+            .build();
+
+
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
             ServerboundPluginMessagePacket::read);
 
     @Override

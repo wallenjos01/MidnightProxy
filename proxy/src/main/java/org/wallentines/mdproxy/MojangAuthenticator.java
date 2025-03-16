@@ -12,6 +12,7 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -61,13 +62,13 @@ public class MojangAuthenticator implements Authenticator {
         }
 
         try {
-            ConfigSection response = makeHttpRequest(new URL(url.toString()));
+            ConfigSection response = makeHttpRequest(URI.create(url.toString()).toURL());
             SerializeResult<PlayerProfile> res = PlayerProfile.SERIALIZER.deserialize(ConfigContext.INSTANCE, response);
             if(res.isComplete()) {
                 return res.getOrThrow();
             }
 
-            LOGGER.warn("Unable to parse authentication response! {}", res.getError());
+            LOGGER.warn("Unable to parse authentication response!", res.getError());
             return null;
 
         } catch (IOException ex) {

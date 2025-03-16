@@ -139,6 +139,7 @@ public class ConnectionManager {
             listenChannel.channel().close().syncUninterruptibly();
         }
 
+        workerGroup.shutdownGracefully();
         bossGroup.shutdownGracefully();
     }
 

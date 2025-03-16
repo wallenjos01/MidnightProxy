@@ -433,12 +433,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             CompletableFuture.runAsync(() -> {
 
                 while(!routes.isEmpty()) {
-                    AuthRoute route = authRoutes.peek();
+                    AuthRoute route = authRoutes.remove();
                     if(route.authenticator().shouldClientAuthenticate()) {
                         conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, true));
                         return;
                     }
-                    authRoutes.remove();
 
                     if(route.canUse(context)) {
                         PlayerProfile prof = route.authenticate(context, null);

@@ -2,18 +2,19 @@ package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.packet.Packet;
-import org.wallentines.mdproxy.packet.PacketType;
-import org.wallentines.mdproxy.packet.ProtocolPhase;
-import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
+import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
 import java.util.UUID;
 
 public record ServerboundResourcePackStatusPacket(UUID packId, Action action) implements Packet<ServerboundPacketHandler> {
 
-    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(
-            (ver, phase) -> phase == ProtocolPhase.CONFIG ? 6 : 47,
+    private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
+            .inPhase(ProtocolPhase.CONFIG, 6)
+            .orElse(47)
+            .build();
+
+    public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
             (version, phase, data) ->
                     new ServerboundResourcePackStatusPacket(PacketBufferUtil.readUUID(data), Action.values()[PacketBufferUtil.readVarInt(data)]));
 
