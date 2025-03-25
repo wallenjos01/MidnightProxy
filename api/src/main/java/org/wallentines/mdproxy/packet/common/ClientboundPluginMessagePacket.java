@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -26,7 +25,7 @@ public record ClientboundPluginMessagePacket(Identifier channel, ByteBuf data) i
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeUtf(buf, channel.toString());
         buf.writeBytes(data);
     }

@@ -7,9 +7,6 @@ import io.netty.channel.ChannelFutureListener;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.lang.LocaleHolder;
-import org.wallentines.mcore.lang.UnresolvedComponent;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
@@ -18,9 +15,15 @@ import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.mdproxy.packet.common.*;
 import org.wallentines.mdproxy.packet.login.ClientboundLoginQueryPacket;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
+import org.wallentines.mdproxy.util.MessageUtil;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.pseudonym.PipelineContext;
+import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.lang.LocaleHolder;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.TextUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -249,8 +252,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
     }
 
-    public void disconnect(UnresolvedComponent component) {
-        disconnect(component.resolveFor(this));
+    public void disconnect(UnresolvedMessage<String> component) {
+        disconnect(TextUtil.COMPONENT_RESOLVER.accept(component, PipelineContext.of(this)));
     }
 
 
@@ -276,7 +279,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         if(component == null) {
             LOGGER.info("Disconnecting player {}", username());
         } else {
-            if(log) LOGGER.info("Disconnecting player {}: {}", username(), component.allText());
+            if(log) LOGGER.info("Disconnecting player {}: {}", username(), MessageUtil.flatten(component));
             if(backend == null) {
                 send(new ClientboundKickPacket(component));
             }

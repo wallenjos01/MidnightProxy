@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.status;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
@@ -22,7 +21,7 @@ public record ClientboundPingPacket(long value) implements Packet<ClientboundPac
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase,  ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase,  ByteBuf buf) {
         buf.writeLong(value);
     }
 }

@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
@@ -17,7 +16,7 @@ public class ServerboundLoginFinishedPacket implements Packet<ServerboundPacketH
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) { }
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) { }
 
     @Override
     public void handle(ServerboundPacketHandler handler) {

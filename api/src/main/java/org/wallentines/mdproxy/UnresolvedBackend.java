@@ -1,23 +1,26 @@
 package org.wallentines.mdproxy;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.lang.PlaceholderContext;
-import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdproxy.util.MessageUtil;
+import org.wallentines.pseudonym.PipelineContext;
+import org.wallentines.pseudonym.UnresolvedMessage;
 
-public record UnresolvedBackend(UnresolvedComponent hostname, @Nullable UnresolvedComponent port, @Nullable UnresolvedComponent redirect, @Nullable UnresolvedComponent haproxy) {
+public record UnresolvedBackend(UnresolvedMessage<String> hostname, @Nullable UnresolvedMessage<String> port, @Nullable UnresolvedMessage<String> redirect, @Nullable UnresolvedMessage<String> haproxy) {
 
-    public SerializeResult<Backend> resolve(PlaceholderContext ctx) {
 
-        String hostname = this.hostname.resolveFlat(ctx);
+
+    public SerializeResult<Backend> resolve(PipelineContext ctx) {
+
+        String hostname = UnresolvedMessage.resolve(this.hostname, ctx);
         int port = 25565;
 
         try {
             if (this.port != null) {
                 try {
-                    port = Integer.parseInt(this.port.resolveFlat(ctx));
+                    port = Integer.parseInt(UnresolvedMessage.resolve(this.port, ctx));
                 } catch (NumberFormatException e) {
                     return SerializeResult.failure("Unable to resolve port! Not a number");
                 }
@@ -34,22 +37,22 @@ public record UnresolvedBackend(UnresolvedComponent hostname, @Nullable Unresolv
 
         boolean redirect = false;
         if (this.redirect != null) {
-            redirect = Boolean.parseBoolean(this.redirect.resolveFlat(ctx));
+            redirect = Boolean.parseBoolean(UnresolvedMessage.resolve(this.redirect, ctx));
         }
 
         boolean haproxy = false;
         if (this.haproxy != null) {
-            haproxy = Boolean.parseBoolean(this.haproxy.resolveFlat(ctx));
+            haproxy = Boolean.parseBoolean(UnresolvedMessage.resolve(this.haproxy, ctx));
         }
 
         return SerializeResult.success(new Backend(hostname, port, redirect, haproxy));
     }
 
     public static final Serializer<UnresolvedBackend> SERIALIZER = ObjectSerializer.create(
-            UnresolvedComponent.SERIALIZER.entry("hostname", UnresolvedBackend::hostname),
-            UnresolvedComponent.SERIALIZER.entry("port", UnresolvedBackend::port).optional(),
-            UnresolvedComponent.SERIALIZER.entry("redirect", UnresolvedBackend::redirect).optional(),
-            UnresolvedComponent.SERIALIZER.entry("haproxy", UnresolvedBackend::haproxy).optional(),
+            MessageUtil.PARSE_SERIALIZER.entry("hostname", UnresolvedBackend::hostname),
+            MessageUtil.PARSE_SERIALIZER.entry("port", UnresolvedBackend::port).optional(),
+            MessageUtil.PARSE_SERIALIZER.entry("redirect", UnresolvedBackend::redirect).optional(),
+            MessageUtil.PARSE_SERIALIZER.entry("haproxy", UnresolvedBackend::haproxy).optional(),
             UnresolvedBackend::new
     );
 

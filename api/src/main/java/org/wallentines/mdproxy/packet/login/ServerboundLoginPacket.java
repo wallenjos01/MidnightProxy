@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
@@ -20,7 +19,7 @@ public record ServerboundLoginPacket(String username, UUID uuid) implements Pack
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
 
         PacketBufferUtil.writeUtf(buf, username, 16);
         PacketBufferUtil.writeUUID(buf, uuid);
@@ -30,7 +29,7 @@ public record ServerboundLoginPacket(String username, UUID uuid) implements Pack
         handler.handle(this);
     }
 
-    public static ServerboundLoginPacket read(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundLoginPacket read(int ver, ProtocolPhase phase, ByteBuf buf) {
 
         String name = PacketBufferUtil.readUtf(buf, 16);
         UUID uid = PacketBufferUtil.readUUID(buf);

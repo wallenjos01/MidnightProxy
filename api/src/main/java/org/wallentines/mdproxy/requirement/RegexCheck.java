@@ -1,9 +1,6 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -11,8 +8,6 @@ import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -65,11 +60,6 @@ public class RegexCheck implements ConnectionCheck {
                     .flatMap(Pattern::pattern, Pattern::compile)
                     .fieldOf("value")
                     .flatMap(RegexCheck::pattern, pattern -> new RegexCheck(this, pattern));
-        }
-
-        @Override
-        public TypeReference<RegexCheck> type() {
-            return new TypeReference<RegexCheck>() {};
         }
 
         @Override

@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 
@@ -22,7 +21,7 @@ public record ClientboundTransferPacket(String host, int port) implements Packet
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeUtf(buf, host);
         PacketBufferUtil.writeVarInt(buf, port);
     }

@@ -1,7 +1,7 @@
 package org.wallentines.mdproxy.packet;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
+import org.wallentines.mdproxy.GameVersion;
 import org.wallentines.mdproxy.packet.common.*;
 import org.wallentines.mdproxy.packet.config.*;
 import org.wallentines.mdproxy.packet.login.*;
@@ -17,20 +17,20 @@ import java.util.Map;
 
 public class PacketRegistry<T> {
 
-    private final GameVersion version;
+    private final int protocolVersion;
     private final ProtocolPhase phase;
     private final PacketFlow flow;
     private final Map<Integer, PacketType<T>> packetTypes;
 
-    public PacketRegistry(GameVersion version, ProtocolPhase phase, PacketFlow flow, Collection<PacketType<T>> packetTypes) {
+    public PacketRegistry(int protocolVersion, ProtocolPhase phase, PacketFlow flow, Collection<PacketType<T>> packetTypes) {
 
         Map<Integer, PacketType<T>> tp = new HashMap<>();
         for(PacketType<T> pt : packetTypes) {
-            tp.put(pt.getId(version, phase), pt);
+            tp.put(pt.getId(protocolVersion, phase), pt);
         }
 
         this.packetTypes = Map.copyOf(tp);
-        this.version = version;
+        this.protocolVersion = protocolVersion;
         this.phase = phase;
         this.flow = flow;
     }
@@ -52,12 +52,12 @@ public class PacketRegistry<T> {
         PacketType<T> pck = getPacketType(id);
         if(pck == null) return null;
 
-        return pck.read(version, phase, buf);
+        return pck.read(protocolVersion, phase, buf);
     }
 
     public int getId(Packet<T> packet) {
 
-        int id = packet.getType().getId(version, phase);
+        int id = packet.getType().getId(protocolVersion, phase);
         if(!packetTypes.containsKey(id) || packetTypes.get(id) != packet.getType()) {
             return -1;
         }
@@ -65,11 +65,11 @@ public class PacketRegistry<T> {
         return id;
     }
 
-    public GameVersion getVersion() {
-        return version;
+    public int getProtocolVersion() {
+        return protocolVersion;
     }
 
-    public static final PacketRegistry<ServerboundPacketHandler> HANDSHAKE = new PacketRegistry<>(GameVersion.MAX, ProtocolPhase.HANDSHAKE, PacketFlow.SERVERBOUND, List.of(ServerboundHandshakePacket.TYPE));
+    public static final PacketRegistry<ServerboundPacketHandler> HANDSHAKE = new PacketRegistry<>(GameVersion.MAX.protocolVersion(), ProtocolPhase.HANDSHAKE, PacketFlow.SERVERBOUND, List.of(ServerboundHandshakePacket.TYPE));
 
     private static final List<PacketType<ClientboundPacketHandler>> STATUS_CLIENTBOUND = List.of(ClientboundStatusPacket.TYPE, ClientboundPingPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> STATUS_SERVERBOUND = List.of(ServerboundStatusPacket.TYPE, ServerboundPingPacket.TYPE);
@@ -83,7 +83,7 @@ public class PacketRegistry<T> {
     private static final List<PacketType<ClientboundPacketHandler>> PLAY_CLIENTBOUND = List.of(ClientboundCookieRequestPacket.TYPE, ClientboundTransferPacket.TYPE, ClientboundKickPacket.TYPE, ClientboundPluginMessagePacket.TYPE, ClientboundSetCookiePacket.TYPE, ClientboundAddResourcePackPacket.TYPE, ClientboundRemoveResourcePackPacket.TYPE);
     private static final List<PacketType<ServerboundPacketHandler>> PLAY_SERVERBOUND = List.of(ServerboundCookiePacket.TYPE, ServerboundPluginMessagePacket.TYPE, ServerboundResourcePackStatusPacket.TYPE);
 
-    public static PacketRegistry<ServerboundPacketHandler> getServerbound(GameVersion version, ProtocolPhase phase) {
+    public static PacketRegistry<ServerboundPacketHandler> getServerbound(int version, ProtocolPhase phase) {
 
         return switch (phase) {
             case HANDSHAKE -> PacketRegistry.HANDSHAKE;
@@ -94,7 +94,7 @@ public class PacketRegistry<T> {
         };
     }
 
-    public static PacketRegistry<ClientboundPacketHandler> getClientbound(GameVersion version, ProtocolPhase phase) {
+    public static PacketRegistry<ClientboundPacketHandler> getClientbound(int version, ProtocolPhase phase) {
 
         return switch (phase) {
             case HANDSHAKE -> throw new IllegalArgumentException("Handshake packets are not sent to the client!");

@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.config;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.*;
 
 public class ServerboundFinishConfigurationPacket implements Packet<ServerboundPacketHandler> {
@@ -15,7 +14,7 @@ public class ServerboundFinishConfigurationPacket implements Packet<ServerboundP
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         throw new UnsupportedOperationException("Cannot write serverbound packet");
     }
 

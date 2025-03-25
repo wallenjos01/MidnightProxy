@@ -2,7 +2,6 @@ package org.wallentines.mdproxy.whitelist;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.MidnightCoreAPI;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
@@ -27,12 +26,12 @@ public class WhitelistPlugin implements Plugin {
     @Override
     public void initialize(Proxy proxy) {
 
-        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("whitelist");
+        Path configFolder = proxy.getPluginManager().configFolder().resolve("whitelist");
         try { Files.createDirectories(configFolder); } catch (IOException e) {
             throw new RuntimeException("Could not create config directory", e);
         }
 
-        config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
+        config = proxy.fileCodecRegistry().findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
         ConnectionCheckType.REGISTRY.tryRegister("whitelist", WhitelistCheck.TYPE);
 
         proxy.getCommands().register("whitelist", (sender, args) -> {

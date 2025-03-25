@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.status;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
@@ -17,7 +16,7 @@ public class ServerboundStatusPacket implements Packet<ServerboundPacketHandler>
     }
 
     @Override
-    public void write(GameVersion ver, ProtocolPhase phase, ByteBuf buf) { }
+    public void write(int ver, ProtocolPhase phase, ByteBuf buf) { }
 
     @Override
     public void handle(ServerboundPacketHandler handler) {

@@ -3,19 +3,20 @@ package org.wallentines.mdproxy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.lang.UnresolvedComponent;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdcfg.Either;
 import org.wallentines.mdproxy.requirement.ConnectionRequirement;
+import org.wallentines.mdproxy.util.MessageUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.pseudonym.UnresolvedMessage;
 
 import java.util.Collection;
 import java.util.List;
 
-public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> backend, @Nullable ConnectionRequirement requirement, boolean kickOnFail, String kickMessage) {
+public record Route(@Nullable Either<UnresolvedMessage<String>, UnresolvedBackend> backend, @Nullable ConnectionRequirement requirement, boolean kickOnFail, String kickMessage) {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Route");
 
@@ -43,14 +44,14 @@ public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> bac
 
         Backend out;
         if(backend.hasLeft()) {
-            String id = backend.leftOrThrow().resolveFlat(ctx.toPlaceholderContext());
+            String id = UnresolvedMessage.resolve(backend.leftOrThrow(), ctx.toPipelineContext());
             out = backends.get(id);
             if(out == null) {
                 LOGGER.warn("No backend with ID {} was found!", id);
                 return null;
             }
         } else {
-            SerializeResult<Backend> res = backend.rightOrThrow().resolve(ctx.toPlaceholderContext());
+            SerializeResult<Backend> res = backend.rightOrThrow().resolve(ctx.toPipelineContext());
             if(!res.isComplete()) {
                 LOGGER.warn("Unable to resolve unresolved backend!", res.getError());
                 return null;
@@ -61,7 +62,7 @@ public record Route(@Nullable Either<UnresolvedComponent, UnresolvedBackend> bac
     }
 
     public static final Serializer<Route> SERIALIZER = ObjectSerializer.create(
-            Serializer.either(UnresolvedComponent.SERIALIZER, UnresolvedBackend.SERIALIZER).entry("backend", Route::backend).optional(),
+            Serializer.either(MessageUtil.PARSE_SERIALIZER, UnresolvedBackend.SERIALIZER).entry("backend", Route::backend).optional(),
             ConnectionRequirement.SERIALIZER.entry("requirement", Route::requirement).optional(),
             Serializer.BOOLEAN.entry("kick_on_fail", Route::kickOnFail).orElse(false),
             Serializer.STRING.entry("kick_message", Route::kickMessage).orElse("error.generic_route_failed"),

@@ -5,12 +5,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mcore.text.Component;
-import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.codec.EncodeException;
 import org.wallentines.mdcfg.codec.NBTCodec;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdproxy.GameVersion;
 import org.wallentines.mdproxy.VarInt;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.ProtocolContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -159,10 +160,11 @@ public class PacketBufferUtil {
 
     public static void writeNBTComponent(ByteBuf buf, Component component) {
         try(ByteBufOutputStream bos = new ByteBufOutputStream(buf)) {
-            new NBTCodec(false).encode(GameVersion.context(GameVersion.MAX), ModernSerializer.INSTANCE, component, bos);
+            new NBTCodec(false).encode(new ProtocolContext<>(ConfigContext.INSTANCE, GameVersion.MAX.protocolVersion()), Component.SERIALIZER, component, bos);
         } catch (IOException | EncodeException ex) {
             throw new EncoderException("Unable to encode NBT component!", ex);
         }
     }
 
+    public static final ProtocolContext.Feature TRANSFER_PACKETS = new ProtocolContext.Feature(766, 171);
 }

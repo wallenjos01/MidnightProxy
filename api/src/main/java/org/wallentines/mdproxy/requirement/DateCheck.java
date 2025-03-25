@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
@@ -9,7 +8,6 @@ import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -71,11 +69,6 @@ public class DateCheck implements ConnectionCheck {
     public static class Type implements ConnectionCheckType<DateCheck> {
 
         @Override
-        public TypeReference<DateCheck> type() {
-            return new TypeReference<>() {};
-        }
-
-        @Override
         public Serializer<DateCheck> serializer() {
             return SERIALIZER;
         }
@@ -111,32 +104,6 @@ public class DateCheck implements ConnectionCheck {
             DateCheck::new
     );
 
-//
-//    @Override
-//    public <O> SerializeResult<O> serialize(SerializeContext<O> ctx) {
-//        return SERIALIZER.serialize(ctx, this);
-//    }
-//
-
-//
-//
-//    public static final Serializer<DateCheck> SERIALIZER = ObjectSerializer.create(
-//            ZONE_SERIALIZER.<DateCheck>entry("time_zone", dc -> dc.timeZone).orElse(ZoneId.systemDefault()),
-//            Range.INTEGER.<DateCheck>entry("second", dc -> dc.second).orElse(Range.all()),
-//            Range.INTEGER.<DateCheck>entry("minute", dc -> dc.minute).orElse(Range.all()),
-//            Range.INTEGER.<DateCheck>entry("hour", dc -> dc.hour).orElse(Range.all()),
-//            Range.INTEGER.<DateCheck>entry("day", dc -> dc.day).orElse(Range.all()),
-//            Range.INTEGER.<DateCheck>entry("month", dc -> dc.month).orElse(Range.all()),
-//            Range.INTEGER.<DateCheck>entry("year", dc -> dc.year).orElse(Range.all()),
-//            DateCheck::new
-//    );
-//
-//    public static final ConnectionCheckType TYPE = new ConnectionCheckType() {
-//        @Override
-//        protected <O> SerializeResult<ConnectionCheck> deserializeCheck(SerializeContext<O> ctx, O value) {
-//            return SERIALIZER.deserialize(ctx, value).flatMap(date -> date);
-//        }
-//    };
 
 
 }

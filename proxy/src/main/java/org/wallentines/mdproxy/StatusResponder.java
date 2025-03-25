@@ -1,7 +1,5 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
@@ -10,10 +8,16 @@ import org.wallentines.mdproxy.packet.status.ClientboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ClientboundStatusPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.Content;
+import org.wallentines.pseudonym.text.ImmutableComponent;
+import org.wallentines.pseudonym.text.Style;
+
+import java.util.Collections;
 
 public class StatusResponder implements ClientboundPacketHandler {
 
-    private static final Component HANDLED_MESSAGE = Component.translate("multiplayer.status.request_handled");
+    private static final Component HANDLED_MESSAGE = new ImmutableComponent(new Content.Translate("multiplayer.status.request_handled"), Style.EMPTY, Collections.emptyList());
 
     private final ClientConnectionImpl conn;
     private final ProxyServer server;
@@ -38,7 +42,7 @@ public class StatusResponder implements ClientboundPacketHandler {
                 throw new IllegalStateException("Unable to find backend " + backendName + "!");
             }
 
-            server.getConnectionManager().connectToBackend(conn, b, playerVersion, server.getBackendTimeout())
+            server.getConnectionManager().connectToBackend(conn, b, playerVersion.protocolVersion(), server.getBackendTimeout())
                     .thenAccept(backend -> {
                         backend.setupStatus(this);
                         backend.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.STATUS));

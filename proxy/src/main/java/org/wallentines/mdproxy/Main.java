@@ -4,10 +4,6 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.MidnightCoreAPI;
-import org.wallentines.mcore.lang.LangManager;
-import org.wallentines.mcore.lang.LangRegistry;
-import org.wallentines.mcore.lang.PlaceholderManager;
 import org.wallentines.mdcfg.ConfigList;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
@@ -16,12 +12,21 @@ import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.plugin.PluginManagerImpl;
+import org.wallentines.mdproxy.util.MessageUtil;
+import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.lang.LangManager;
+import org.wallentines.pseudonym.lang.LangProvider;
+import org.wallentines.pseudonym.lang.LangRegistry;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.TextUtil;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
@@ -56,12 +61,10 @@ public class Main {
 
         InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
 
-        MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.set(Path.of("config"));
+        ClientConnection.registerPlaceholders(MessageUtil.PLACEHOLDERS);
+        Proxy.registerPlaceholders(MessageUtil.PLACEHOLDERS);
 
-        ClientConnection.registerPlaceholders(PlaceholderManager.INSTANCE);
-        Proxy.registerPlaceholders(PlaceholderManager.INSTANCE);
-
-        FileCodecRegistry reg = MidnightCoreAPI.FILE_CODEC_REGISTRY;
+        FileCodecRegistry reg = new FileCodecRegistry();
         reg.registerFileCodec(JSONCodec.fileCodec());
 
         Path workDir = Paths.get(System.getProperty("user.dir"));
@@ -77,19 +80,26 @@ public class Main {
             throw new RuntimeException("Could not create lang directory", e);
         }
 
-        LangRegistry defaults;
+
+        LangRegistry<UnresolvedMessage<String>> defaults;
         try {
-            defaults = LangRegistry.fromConfig(
-                    JSONCodec.loadConfig(Main.class.getClassLoader().getResourceAsStream("lang/en_us.json")).asSection(),
-                    PlaceholderManager.INSTANCE
-            );
+            ConfigSection sec = JSONCodec.loadConfig(Main.class.getClassLoader().getResourceAsStream("lang/en_us.json")).asSection();
+            Map<String, UnresolvedMessage<String>> messages = new HashMap<>();
+            for(String key : sec.getKeys()) {
+                messages.put(key, MessageUtil.PARSE_PIPELINE.accept(key));
+            }
+
+            FileWrapper<ConfigObject> saved = reg.findOrCreate(ConfigContext.INSTANCE, "en_us", langDir, StandardCharsets.UTF_8, sec);
+            saved.load();
+            saved.save();
+
+            defaults = new LangRegistry<>(messages);
         } catch (IOException ex) {
             throw new IllegalStateException("Unable to load lang defaults!");
         }
 
-        LangManager.registerPlaceholders(PlaceholderManager.INSTANCE);
-        LangManager manager = new LangManager(defaults, langDir, reg, PlaceholderManager.INSTANCE);
-        manager.saveLanguageDefaults("en_us", defaults);
+        LangManager.registerPlaceholders(MessageUtil.PLACEHOLDERS);
+        LangManager<UnresolvedMessage<String>, Component> manager = new LangManager<>(Component.class, defaults, LangProvider.forDirectory(langDir, reg, MessageUtil.PARSE_PIPELINE), TextUtil.COMPONENT_RESOLVER);
 
         Authenticator.REGISTRY.register(Authenticator.MOJANG_ID, MojangAuthenticator.TYPE);
 
@@ -97,9 +107,9 @@ public class Main {
         try { Files.createDirectories(pluginDir); } catch (IOException e) {
             throw new RuntimeException("Could not create lang directory", e);
         }
-        PluginManagerImpl loader = new PluginManagerImpl(pluginDir);
+        PluginManagerImpl loader = new PluginManagerImpl(pluginDir, Path.of("config"));
 
-        ProxyServer ps = new ProxyServer(config, manager, loader);
+        ProxyServer ps = new ProxyServer(config, reg, manager, loader);
         try {
             ps.start();
         } catch (Exception ex) {

@@ -1,20 +1,13 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
-import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
-import org.wallentines.midnightlib.requirement.NumberCheck;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
 
 public class ConnectionInt implements ConnectionCheck {
@@ -63,11 +56,6 @@ public class ConnectionInt implements ConnectionCheck {
             this.requireAuth = requireAuth;
 
             this.serializer = Range.INTEGER.fieldOf("value").flatMap(ConnectionInt::range, range -> new ConnectionInt(this, range));
-        }
-
-        @Override
-        public TypeReference<ConnectionInt> type() {
-            return new TypeReference<ConnectionInt>() {};
         }
 
         @Override

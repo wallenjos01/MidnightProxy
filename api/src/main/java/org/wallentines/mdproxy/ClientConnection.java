@@ -2,9 +2,6 @@ package org.wallentines.mdproxy;
 
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.lang.PlaceholderManager;
-import org.wallentines.mcore.lang.PlaceholderSupplier;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
@@ -15,6 +12,9 @@ import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.pseudonym.Placeholder;
+import org.wallentines.pseudonym.PlaceholderManager;
+import org.wallentines.pseudonym.text.Component;
 
 import java.net.InetAddress;
 import java.util.Objects;
@@ -266,12 +266,12 @@ public interface ClientConnection {
 
     static void registerPlaceholders(PlaceholderManager manager) {
 
-        manager.registerSupplier("client_username", PlaceholderSupplier.inline(ctx -> ctx.onValue(ClientConnection.class, ClientConnection::username)));
-        manager.registerSupplier("client_uuid", PlaceholderSupplier.inline(ctx -> Objects.toString(ctx.onValue(ClientConnection.class, ClientConnection::uuid))));
-        manager.registerSupplier("client_protocol", PlaceholderSupplier.inline(ctx -> Objects.toString(ctx.onValue(ClientConnection.class, ClientConnection::protocolVersion))));
-        manager.registerSupplier("client_hostname", PlaceholderSupplier.inline(ctx -> ctx.onValue(ClientConnection.class, ClientConnection::hostname)));
-        manager.registerSupplier("client_port", PlaceholderSupplier.inline(ctx -> Objects.toString(ctx.onValue(ClientConnection.class, ClientConnection::port))));
-        manager.registerSupplier("client_locale", PlaceholderSupplier.inline(ctx -> ctx.onValue(ClientConnection.class, ClientConnection::locale)));
+        manager.register(Placeholder.of("client_username", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::username)));
+        manager.register(Placeholder.of("client_uuid", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::uuid).map(Objects::toString)));
+        manager.register(Placeholder.of("client_protocol", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::protocolVersion).map(Objects::toString)));
+        manager.register(Placeholder.of("client_hostname", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::hostname)));
+        manager.register(Placeholder.of("client_port", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::port).map(Objects::toString)));
+        manager.register(Placeholder.of("client_locale", String.class, ctx -> ctx.context().getFirst(ClientConnection.class).map(ClientConnection::locale)));
 
     }
 

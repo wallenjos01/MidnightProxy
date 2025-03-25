@@ -1,11 +1,11 @@
 package org.wallentines.mdproxy.lastsrv;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mcore.data.DataManager;
 import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
+import org.wallentines.mdproxy.DataManager;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;

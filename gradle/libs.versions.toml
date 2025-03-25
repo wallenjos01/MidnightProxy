@@ -1,15 +1,15 @@
 [versions]
 junit = "5.11.0"
 netty = "4.1.115.Final"
-mdcfg = "3.0.0"
-mdlib = "2.0.0"
-mcore = "2.0.0-pre10"
+mdcfg = "3.1.0"
+mdlib = "2.1.0-SNAPSHOT"
 smi = "0.2.0"
 slf4j = "2.0.11"
 logback = "1.5.8"
 jbr-anno = "24.1.0"
 guava = "33.3.0-jre"
 rabbitmq = "5.21.0"
+pseudonym = "0.1.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -28,10 +28,16 @@ midnight-cfg-sql = { module = "org.wallentines:midnightcfg-api-sql", version.ref
 midnight-cfg-json = { module = "org.wallentines:midnightcfg-codec-json", version.ref="mdcfg" }
 midnight-cfg-nbt = { module = "org.wallentines:midnightcfg-codec-nbt", version.ref="mdcfg" }
 midnight-lib = { module = "org.wallentines:midnightlib", version.ref="mdlib" }
-midnight-core = { module = "org.wallentines:midnightcore-common", version.ref="mcore" }
+
+#midnight-core = { module = "org.wallentines:midnightcore-common", version.ref="mcore" }
+pseudonym = { module = "org.wallentines:pseudonym-api", version.ref="pseudonym" }
+pseudonym-lang = { module = "org.wallentines:pseudonym-lang", version.ref="pseudonym" }
+pseudonym-text = { module = "org.wallentines:pseudonym-text", version.ref="pseudonym" }
+
 smi-api = { module = "org.wallentines:smi-api", version.ref = "smi" }
 smi-base = { module = "org.wallentines:smi-base", version.ref = "smi" }
 smi-amqp = { module = "org.wallentines:smi-impl-amqp", version.ref = "smi" }
+
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }

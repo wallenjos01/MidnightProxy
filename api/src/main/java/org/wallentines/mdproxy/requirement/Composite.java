@@ -2,7 +2,6 @@ package org.wallentines.mdproxy.requirement;
 
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
@@ -74,11 +73,6 @@ public class Composite implements ConnectionCheck {
                     Range.INTEGER.entry("count", Composite::count),
                     (values, count) -> new Composite(this, values, count)
             );
-        }
-
-        @Override
-        public TypeReference<Composite> type() {
-            return new TypeReference<Composite>() {};
         }
 
         @Override

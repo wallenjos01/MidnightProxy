@@ -3,8 +3,6 @@ package org.wallentines.mdproxy.resources;
 import com.google.common.collect.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.MidnightCoreAPI;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.ConfigList;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
@@ -17,6 +15,10 @@ import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.Content;
+import org.wallentines.pseudonym.text.ImmutableComponent;
+import org.wallentines.pseudonym.text.Style;
 
 
 import java.io.IOException;
@@ -33,29 +35,16 @@ public class ResourcePackPlugin implements Plugin {
             .with("routes", new ConfigSection())
             .with("global", new ConfigList());
 
-    private static final Component DEFAULT_KICK_MESSAGE = Component.translate("multiplayer.requiredTexturePrompt.disconnect");
+    private static final Component DEFAULT_KICK_MESSAGE = new ImmutableComponent(new Content.Translate("multiplayer.requiredTexturePrompt.disconnect"), Style.EMPTY, Collections.emptyList());
 
     private static final Identifier REMOVE_ID = new Identifier("mdp", "clear_packs");
     private static final Logger log = LoggerFactory.getLogger(ResourcePackPlugin.class);
 
-    private final FileWrapper<ConfigObject> config;
+    private FileWrapper<ConfigObject> config;
 
     private Map<UUID, Component> kickMessages;
     private Map<String, List<ResourcePackEntry>> routePacks;
     private List<ResourcePackEntry> globalPacks;
-
-    public ResourcePackPlugin() {
-
-        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("resource_pack");
-        try { Files.createDirectories(configFolder); } catch (IOException e) {
-            throw new RuntimeException("Could not create messenger directory", e);
-        }
-
-        this.config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
-        config.save();
-
-        reload();
-    }
 
     private void reload() {
 
@@ -82,6 +71,16 @@ public class ResourcePackPlugin implements Plugin {
 
     @Override
     public void initialize(Proxy proxy) {
+
+        Path configFolder = proxy.getPluginManager().configFolder().resolve("resource_pack");
+        try { Files.createDirectories(configFolder); } catch (IOException e) {
+            throw new RuntimeException("Could not create messenger directory", e);
+        }
+
+        this.config = proxy.fileCodecRegistry().findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
+        config.save();
+
+        reload();
 
         proxy.getCommands().register("rp", (sender, args) -> {
             if(args.length == 2 && args[1].equals("reload")) {

@@ -1,6 +1,7 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.mcore.text.Component;
+
+import org.wallentines.pseudonym.text.Component;
 
 import java.util.UUID;
 import java.util.stream.Stream;

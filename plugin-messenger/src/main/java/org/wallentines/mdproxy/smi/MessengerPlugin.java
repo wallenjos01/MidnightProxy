@@ -1,6 +1,5 @@
 package org.wallentines.mdproxy.smi;
 
-import org.wallentines.mcore.MidnightCoreAPI;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
@@ -25,26 +24,23 @@ public class MessengerPlugin implements Plugin {
     private static final ConfigSection DEFAULT_CONFIG = new ConfigSection()
             .with("messengers", new ConfigSection());
 
-    private final MessengerManagerImpl manager;
+    private MessengerManagerImpl manager;
 
-    public MessengerPlugin() {
+    @Override
+    public void initialize(Proxy proxy) {
 
-        Path configFolder = MidnightCoreAPI.GLOBAL_CONFIG_DIRECTORY.get().resolve("messenger");
+        Path configFolder = proxy.getPluginManager().configFolder().resolve("messenger");
         try { Files.createDirectories(configFolder); } catch (IOException e) {
             throw new RuntimeException("Could not create messenger directory", e);
         }
 
-        FileWrapper<ConfigObject> config = MidnightCoreAPI.FILE_CODEC_REGISTRY.findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
+        FileWrapper<ConfigObject> config = proxy.fileCodecRegistry().findOrCreate(ConfigContext.INSTANCE, "config", configFolder, DEFAULT_CONFIG);
         manager = new MessengerManagerImpl(REGISTRY);
         manager.loadAll(config.getRoot().asSection().getSection("messengers"));
 
         if(MessengerManager.Holder.gInstance == null) {
             MessengerManagerImpl.register(manager);
         }
-    }
-
-    @Override
-    public void initialize(Proxy proxy) {
 
         proxy.shutdownEvent().register(this, prx -> {
 

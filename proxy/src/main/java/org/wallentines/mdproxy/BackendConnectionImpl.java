@@ -2,20 +2,19 @@ package org.wallentines.mdproxy;
 
 import io.netty.channel.*;
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.*;
 
 public class BackendConnectionImpl implements BackendConnection {
 
     private final Backend backend;
-    private final GameVersion version;
+    private final int protocolVersion;
     private final Channel channel;
     private boolean forwarding = false;
 
-    public BackendConnectionImpl(Backend backend, GameVersion version, Channel channel) {
+    public BackendConnectionImpl(Backend backend, int version, Channel channel) {
         this.backend = backend;
-        this.version = version;
+        this.protocolVersion = version;
         this.channel = channel;
     }
 
@@ -34,7 +33,7 @@ public class BackendConnectionImpl implements BackendConnection {
     public void setupStatus(StatusResponder res) {
 
         this.channel.pipeline().addLast("frame_dec", new FrameDecoder());
-        this.channel.pipeline().addLast("decoder", new PacketDecoder<>(PacketRegistry.getClientbound(version, ProtocolPhase.STATUS)));
+        this.channel.pipeline().addLast("decoder", new PacketDecoder<>(PacketRegistry.getClientbound(protocolVersion, ProtocolPhase.STATUS)));
 
         this.channel.pipeline().addLast("handler", new PacketHandler<>(res));
         this.channel.config().setAutoRead(true);
@@ -47,9 +46,9 @@ public class BackendConnectionImpl implements BackendConnection {
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
-        this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
+        this.channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getServerbound(protocolVersion, phase));
         PacketDecoder<ClientboundPacketHandler> dec = this.channel.pipeline().get(PacketDecoder.class);
-        if(dec != null) dec.setRegistry(PacketRegistry.getClientbound(version, phase));
+        if(dec != null) dec.setRegistry(PacketRegistry.getClientbound(protocolVersion, phase));
     }
 
     public Channel getChannel() {

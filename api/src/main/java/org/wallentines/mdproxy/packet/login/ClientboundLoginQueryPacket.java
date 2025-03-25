@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.VarInt;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
@@ -28,7 +27,7 @@ public record ClientboundLoginQueryPacket(int messageId, Identifier channel, Byt
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         new VarInt(messageId).write(buf);
         PacketBufferUtil.writeUtf(buf, channel.toString());
         buf.writeBytes(data);
@@ -39,7 +38,7 @@ public record ClientboundLoginQueryPacket(int messageId, Identifier channel, Byt
         handler.handle(this);
     }
 
-    public static ClientboundLoginQueryPacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public static ClientboundLoginQueryPacket read(int  version, ProtocolPhase phase, ByteBuf buf) {
         VarInt messageId = VarInt.read(buf, 4);
         String sid = PacketBufferUtil.readUtf(buf);
         Identifier id = Identifier.parseOrDefault(sid, "minecraft");

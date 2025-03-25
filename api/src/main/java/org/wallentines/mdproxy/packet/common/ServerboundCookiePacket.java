@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -23,7 +22,7 @@ public record ServerboundCookiePacket(Identifier key, byte[] data) implements Pa
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
 
         PacketBufferUtil.writeUtf(buf, key.toString());
         PacketBufferUtil.writeOptional(buf, data, ByteBuf::writeBytes);
@@ -34,7 +33,7 @@ public record ServerboundCookiePacket(Identifier key, byte[] data) implements Pa
         handler.handle(this);
     }
 
-    public static ServerboundCookiePacket read(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundCookiePacket read(int  ver, ProtocolPhase phase, ByteBuf buf) {
 
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
         byte[] data = PacketBufferUtil.readOptional(buf, buf1 -> {

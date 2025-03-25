@@ -6,9 +6,6 @@ import io.netty.channel.ChannelFutureListener;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mcore.lang.UnresolvedComponent;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdcfg.serializer.SerializeResult;
@@ -25,8 +22,14 @@ import org.wallentines.mdproxy.packet.login.*;
 import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
+import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.types.DefaultedSingleton;
+import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.Content;
+import org.wallentines.pseudonym.text.ImmutableComponent;
+import org.wallentines.pseudonym.text.Style;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -40,7 +43,7 @@ import java.util.concurrent.CompletableFuture;
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
 
-    private static final Component IGNORE_STATUS_REASON = Component.translate("disconnect.ignoring_status_request");
+    private static final Component IGNORE_STATUS_REASON = new ImmutableComponent(new Content.Translate("disconnect.ignoring_status_request"), Style.EMPTY, Collections.emptyList());
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
     private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
@@ -126,7 +129,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginPacket login) {
 
         if (server.getRoutes().isEmpty()) {
-            disconnect(server.getLangManager().component("error.no_backends", conn));
+            disconnect(server.getLangManager().getMessage("error.no_backends", conn.getLanguage(), conn));
             return;
         }
 
@@ -172,7 +175,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
             if(authRoutes.isEmpty()) {
-                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+                disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
                 return;
             }
 
@@ -184,7 +187,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                         if (prof != null) {
                             return prof;
                         } else if (route.kickOnFail()) {
-                            disconnect(server.getLangManager().component(route.kickMessage(), conn));
+                            disconnect(server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
                             return null;
                         }
                     }
@@ -212,7 +215,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             PlayerProfile profile = conn.profile();
             if(profile == null) {
                 LOGGER.error("Received reconnect cookie before player info!");
-                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
             }
 
@@ -221,7 +224,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             if(!jwtRes.isComplete()) {
 
                 LOGGER.warn("Unable to parse reconnect cookie! {}", jwtRes.getError());
-                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
             }
 
@@ -243,7 +246,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             if(!verifier.verify(decoded)) {
                 LOGGER.warn("Unable to verify reconnect cookie!");
-                disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
             }
 
@@ -260,7 +263,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                         || ephRedirect == null || !ephRedirect.isBoolean()
                         || ephHaproxy == null || !ephHaproxy.isBoolean()) {
                     LOGGER.warn("Unable to find any reconnect backend!");
-                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                    disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                     return;
                 }
                 b = new Backend(ephHost, ephPort.asNumber().intValue(), ephRedirect.asBoolean(), ephHaproxy.asBoolean());
@@ -269,7 +272,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 b = server.getBackends().get(backendId);
                 if(b == null) {
                     LOGGER.warn("Unable to find requested reconnect backend {}!", backendId);
-                    disconnect(server.getLangManager().component("error.invalid_reconnect", conn));
+                    disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                     return;
                 }
             }
@@ -348,7 +351,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             channel.config().setAutoRead(false);
 
             server.getConnectionManager()
-                    .connectToBackend(conn, selectedBackend, new GameVersion("", conn.protocolVersion()), server.getBackendTimeout())
+                    .connectToBackend(conn, selectedBackend, conn.protocolVersion(), server.getBackendTimeout())
                     .thenAccept(bconn -> {
                         ((PlayerListImpl) server.getPlayerList()).addPlayer(conn);
 
@@ -370,7 +373,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     })
                     .exceptionally(ex -> {
                         LOGGER.error("An error occurred while connecting to a backend server!", ex);
-                        disconnect(server.getLangManager().component("error.backend_connection_failed", conn));
+                        disconnect(server.getLangManager().getMessage("error.backend_connection_failed", conn.getLanguage(), conn));
                         return null;
                     });
         });
@@ -390,7 +393,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         } else if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
             switch (conn.bypassesPlayerLimit(server)) {
                 case FAIL -> {
-                    disconnect(server.getLangManager().component("error.server_full"));
+                    disconnect(server.getLangManager().getMessage("error.server_full", conn.getLanguage(), conn));
                     return;
                 }
                 case NOT_ENOUGH_INFO -> canConnectImmediately = false;
@@ -416,8 +419,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             throw new IllegalStateException("Attempt to re-authenticate player");
         }
 
-        if(!new GameVersion("", conn.protocolVersion()).hasFeature(GameVersion.Feature.TRANSFER_PACKETS)) {
-            disconnect(server.getLangManager().component("error.cannot_transfer", conn));
+        if(!new GameVersion("", conn.protocolVersion()).hasFeature(PacketBufferUtil.TRANSFER_PACKETS)) {
+            disconnect(server.getLangManager().getMessage("error.cannot_transfer", conn.getLanguage(), conn));
             return;
         }
 
@@ -426,7 +429,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             LOGGER.info("Starting authentication for {}", conn.username());
             if(authRoutes.isEmpty()) {
-                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+                disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
                 return;
             }
 
@@ -446,12 +449,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                             conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
                             return;
                         } else if(route.kickOnFail()) {
-                            disconnect(server.getLangManager().component(route.kickMessage(), conn));
+                            disconnect(server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
                         }
                     }
                 }
 
-                disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+                disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
 
             }, server.getAuthExecutor());
 
@@ -465,7 +468,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void finishAuthentication(PlayerProfile profile) {
 
         if(profile == null) {
-            disconnect(server.getLangManager().component("error.generic_auth_failed", conn));
+            disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
             return;
         }
 
@@ -476,7 +479,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
             if(conn.bypassesPlayerLimit(server) != TestResult.PASS) {
-                disconnect(server.getLangManager().component("error.server_full"));
+                disconnect(server.getLangManager().getMessage("error.server_full", conn.getLanguage(), conn));
                 return;
             }
         }
@@ -487,7 +490,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     }
 
-    private void disconnect(UnresolvedComponent component) {
+    private void disconnect(Component component) {
+        conn.disconnect(component);
+    }
+
+    private void disconnect(UnresolvedMessage<String> component) {
         conn.disconnect(component);
     }
 
@@ -530,7 +537,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
 
             if(res == TestResult.FAIL && current.kickOnFail()) {
-                disconnect(server.getLangManager().component(current.kickMessage(), conn));
+                disconnect(server.getLangManager().getMessage(current.kickMessage(), conn.getLanguage(), conn));
                 return;
             }
 
@@ -539,7 +546,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         if(toUse == null) {
             LOGGER.warn("Unable to find any backend server for {}!", getUsername());
-            disconnect(server.getLangManager().component("error.no_valid_backends", conn));
+            disconnect(server.getLangManager().getMessage("error.no_valid_backends", conn.getLanguage(), conn));
             return;
         }
 
@@ -606,11 +613,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
-        GameVersion version = new GameVersion("", conn.protocolVersion());
         conn.phase = phase;
 
-        channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(version, phase));
-        channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(version, phase));
+        channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(conn.protocolVersion(), phase));
+        channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(conn.protocolVersion(), phase));
 
     }
 

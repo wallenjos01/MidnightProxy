@@ -2,10 +2,9 @@ package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mcore.text.Component;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
+import org.wallentines.pseudonym.text.Component;
 
 import java.util.UUID;
 
@@ -29,7 +28,7 @@ public record ClientboundAddResourcePackPacket(UUID packId, String url, String s
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         PacketBufferUtil.writeUUID(buf, packId);
         PacketBufferUtil.writeUtf(buf, url);
         PacketBufferUtil.writeUtf(buf, sha1);

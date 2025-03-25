@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.PlayerProfile;
 import org.wallentines.mdproxy.packet.ClientboundPacketHandler;
 import org.wallentines.mdproxy.packet.Packet;
@@ -28,7 +27,7 @@ public record ClientboundLoginFinishedPacket(PlayerProfile gameProfile) implemen
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
 
         PacketBufferUtil.writeUUID(buf, gameProfile.uuid());
         PacketBufferUtil.writeUtf(buf, gameProfile.username(), 16);
@@ -42,7 +41,7 @@ public record ClientboundLoginFinishedPacket(PlayerProfile gameProfile) implemen
             PacketBufferUtil.writeOptional(buf, prop.signature(), PacketBufferUtil::writeUtf);
         }
 
-        if(version.getProtocolVersion() < 768) {
+        if(version < 768) {
             buf.writeBoolean(true); // Strict error handling
         }
     }

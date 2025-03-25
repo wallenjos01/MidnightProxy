@@ -1,13 +1,12 @@
 package org.wallentines.mdproxy.packet.common;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mcore.text.Component;
-import org.wallentines.mcore.text.ModernSerializer;
 import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.ProtocolContext;
 
 public record ClientboundKickPacket(Component message) implements Packet<ClientboundPacketHandler> {
 
@@ -30,10 +29,10 @@ public record ClientboundKickPacket(Component message) implements Packet<Clientb
     }
 
     @Override
-    public void write(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
 
         if (phase == ProtocolPhase.LOGIN) {
-            PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, ModernSerializer.INSTANCE.serialize(GameVersion.context(ver), message).getOrThrow()));
+            PacketBufferUtil.writeUtf(buf, JSONCodec.minified().encodeToString(ConfigContext.INSTANCE, Component.SERIALIZER.serialize(new ProtocolContext<>(ConfigContext.INSTANCE, version), message).getOrThrow()));
         } else {
             PacketBufferUtil.writeNBTComponent(buf, message);
         }

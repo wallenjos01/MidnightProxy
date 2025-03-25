@@ -19,7 +19,9 @@ dependencies {
     implementation(libs.midnight.cfg.nbt)
 
     implementation(libs.midnight.lib)
-    implementation(libs.midnight.core)
+    implementation(libs.pseudonym)
+    implementation(libs.pseudonym.text)
+    implementation(libs.pseudonym.lang)
 
     implementation(libs.netty.buffer)
     implementation(libs.netty.codec)
@@ -43,7 +45,9 @@ dependencies {
     shadow(libs.midnight.cfg.nbt)
 
     shadow(libs.midnight.lib)
-    shadow(libs.midnight.core)
+    shadow(libs.pseudonym)
+    shadow(libs.pseudonym.text)
+    shadow(libs.pseudonym.lang)
 
     shadow(libs.netty.buffer)
     shadow(libs.netty.codec)

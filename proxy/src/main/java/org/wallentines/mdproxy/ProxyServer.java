@@ -2,9 +2,9 @@ package org.wallentines.mdproxy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.lang.LangManager;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
+import org.wallentines.mdcfg.codec.FileCodecRegistry;
 import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.command.CommandExecutor;
@@ -18,6 +18,9 @@ import org.wallentines.mdproxy.plugin.PluginManagerImpl;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.lang.LangManager;
+import org.wallentines.pseudonym.text.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,7 +45,7 @@ public class ProxyServer implements Proxy {
     private final Map<String, Authenticator> authenticators = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
-    private final LangManager langManager;
+    private final LangManager<UnresolvedMessage<String>, Component> langManager;
     private final PluginManagerImpl pluginLoader;
     private final UsedTokenCache reconnectTokenCache;
     private final IconCacheImpl iconCache;
@@ -50,6 +53,7 @@ public class ProxyServer implements Proxy {
     private final int clientTimeout;
     private final PlayerListImpl playerList;
     private PlayerCountProvider playerCount;
+    private final FileCodecRegistry fileCodecRegistry;
 
     private final ThreadPoolExecutor authExecutor;
 
@@ -72,12 +76,13 @@ public class ProxyServer implements Proxy {
     private final HandlerList<Proxy> started = new HandlerList<>();
 
 
-    public ProxyServer(FileWrapper<ConfigObject> config, LangManager langManager, PluginManagerImpl pluginLoader) {
+    public ProxyServer(FileWrapper<ConfigObject> config, FileCodecRegistry registry, LangManager<UnresolvedMessage<String>, Component> langManager, PluginManagerImpl pluginLoader) {
 
         this.config = config;
         this.langManager = langManager;
         this.pluginLoader = pluginLoader;
         this.reconnectTokenCache = new UsedTokenCache("rcid");
+        this.fileCodecRegistry = registry;
 
         this.playerList = new PlayerListImpl();
         this.playerCount = playerList;
@@ -147,7 +152,7 @@ public class ProxyServer implements Proxy {
     @Override
     public void reload() {
         config.load();
-        langManager.reload();
+        langManager.clearCache();
 
         ConfigSection conf = getConfig();
 
@@ -314,6 +319,11 @@ public class ProxyServer implements Proxy {
         return shutdown;
     }
 
+    @Override
+    public FileCodecRegistry fileCodecRegistry() {
+        return fileCodecRegistry;
+    }
+
     public int getReconnectTimeout() {
         return reconnectTimeout;
     }
@@ -338,7 +348,7 @@ public class ProxyServer implements Proxy {
         return backendTimeout;
     }
 
-    public LangManager getLangManager() {
+    public LangManager<UnresolvedMessage<String>, Component> getLangManager() {
         return langManager;
     }
 

@@ -1,7 +1,12 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.mcore.text.Component;
 
+import org.wallentines.pseudonym.text.Component;
+import org.wallentines.pseudonym.text.Content;
+import org.wallentines.pseudonym.text.ImmutableComponent;
+import org.wallentines.pseudonym.text.Style;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -46,7 +51,7 @@ public class PlayerListImpl implements PlayerList {
         ClientConnection prev = connections.put(playerId, conn);
 
         if(prev != null) {
-            prev.disconnect(Component.translate("multiplayer.disconnect.duplicate_login"));
+            prev.disconnect(new ImmutableComponent(new Content.Translate("multiplayer.disconnect.duplicate_login"), Style.EMPTY, Collections.emptyList()));
         }
     }
 

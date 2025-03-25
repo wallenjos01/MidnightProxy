@@ -37,9 +37,11 @@ public class PluginManagerImpl implements PluginManager {
     private final Map<Class<?>, Integer> pluginsByClass = new ConcurrentHashMap<>();
 
     private final Path pluginsDir;
+    private final Path configDir;
 
-    public PluginManagerImpl(Path pluginsDir) {
+    public PluginManagerImpl(Path pluginsDir, Path configDir) {
         this.pluginsDir = pluginsDir;
+        this.configDir = configDir;
     }
 
 
@@ -64,6 +66,11 @@ public class PluginManagerImpl implements PluginManager {
             return null;
         });
         return id == null ? null : pluginClass.cast(allPlugins.get(id).plugin());
+    }
+
+    @Override
+    public Path configFolder() {
+        return configDir;
     }
 
     public Stream<Plugin> getPluginsById() {

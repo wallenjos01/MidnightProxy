@@ -10,7 +10,9 @@ dependencies {
 
     api(libs.midnight.lib)
 
-    api(libs.midnight.core)
+    api(libs.pseudonym)
+    api(libs.pseudonym.text)
+    api(libs.pseudonym.lang)
 
     api(libs.netty.codec)
     api(libs.netty.buffer)

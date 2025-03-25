@@ -1,7 +1,7 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.mcore.lang.CustomPlaceholder;
-import org.wallentines.mcore.lang.PlaceholderContext;
+
+import org.wallentines.pseudonym.PipelineContext;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -32,13 +32,13 @@ public class ConnectionContext {
         return meta.put(key, value);
     }
 
-    public PlaceholderContext toPlaceholderContext() {
-        PlaceholderContext out = new PlaceholderContext();
-        out.addValue(connection);
+    public PipelineContext toPipelineContext() {
+        PipelineContext.Builder builder = PipelineContext.builder();
+        builder.add(connection);
         for(String s : meta.keySet()) {
-            out.addValue(CustomPlaceholder.inline(s, meta.get(s)));
+            builder.withContextPlaceholder(s, meta.get(s));
         }
-        return out;
+        return builder.build();
     }
 
     public String hostname() {

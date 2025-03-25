@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
@@ -61,11 +60,6 @@ public class ConnectionString implements ConnectionCheck {
                     .or(Serializer.STRING.map(set -> SerializeResult.ofNullable(set.stream().findFirst().orElse(null)), str -> SerializeResult.success(Collections.singleton(str))))
                     .fieldOf("value")
                     .flatMap(ConnectionString::values, values -> new ConnectionString(this, values));
-        }
-
-        @Override
-        public TypeReference<ConnectionString> type() {
-            return new TypeReference<ConnectionString>() {};
         }
 
         @Override

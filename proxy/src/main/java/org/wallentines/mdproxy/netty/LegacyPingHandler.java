@@ -6,13 +6,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.GameVersion;
-import org.wallentines.mdproxy.ClientConnectionImpl;
-import org.wallentines.mdproxy.ProxyServer;
-import org.wallentines.mdproxy.StatusEntry;
-import org.wallentines.mdproxy.StatusMessage;
+import org.wallentines.mdproxy.*;
 import org.wallentines.mdproxy.packet.ServerboundHandshakePacket;
 import org.wallentines.midnightlib.types.DefaultedSingleton;
+import org.wallentines.pseudonym.text.ConfigTextParser;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -145,9 +142,9 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
         StatusMessage msg = ent.create(new GameVersion("1.21", 767), server.getOnlinePlayers(), server.getPlayerLimit(), server.getIconCache());
 
         String data = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
-                msg.version().getProtocolVersion(),
-                msg.version().getId(),
-                msg.message().toLegacyText().replace("\u00A7", "\\u00A7"),
+                msg.version().protocolVersion(),
+                msg.version().protocolVersion(),
+                ConfigTextParser.LEGACY.serialize(msg.message()).replace("\u00A7", "\\u00A7"),
                 msg.playersOnline(),
                 msg.maxPlayers()
         );

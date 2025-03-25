@@ -1,11 +1,11 @@
 package org.wallentines.mdproxy.resources;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.text.Component;
-import org.wallentines.mcore.text.ConfigSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ResourcePack;
+import org.wallentines.mdproxy.util.MessageUtil;
+import org.wallentines.pseudonym.text.Component;
 
 import java.util.UUID;
 
@@ -16,8 +16,8 @@ public record ResourcePackEntry(UUID uuid, String url, @Nullable String hash, bo
             Serializer.STRING.entry("url", ResourcePackEntry::url),
             Serializer.STRING.entry("hash", ResourcePackEntry::hash).optional(),
             Serializer.BOOLEAN.entry("required", ResourcePackEntry::required).orElse(false),
-            ConfigSerializer.INSTANCE.entry("message", ResourcePackEntry::message).optional(),
-            ConfigSerializer.INSTANCE.entry("kick_message", ResourcePackEntry::kickMessage).optional(),
+            MessageUtil.CONFIG_SERIALIZER.entry("message", ResourcePackEntry::message).optional(),
+            MessageUtil.CONFIG_SERIALIZER.entry("kick_message", ResourcePackEntry::kickMessage).optional(),
             ResourcePackEntry::new
     );
 

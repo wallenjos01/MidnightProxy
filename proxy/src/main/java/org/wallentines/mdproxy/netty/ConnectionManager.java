@@ -7,7 +7,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.haproxy.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.*;
 import org.wallentines.mdproxy.packet.PacketRegistry;
 
@@ -58,7 +57,7 @@ public class ConnectionManager {
         LOGGER.info("Proxy listening on {}:{}", addr.getHostString(), addr.getPort());
     }
 
-    public CompletableFuture<BackendConnectionImpl> connectToBackend(ClientConnectionImpl conn, Backend backend, GameVersion version, int timeout) {
+    public CompletableFuture<BackendConnectionImpl> connectToBackend(ClientConnectionImpl conn, Backend backend, int protocolVersion, int timeout) {
         CompletableFuture<BackendConnectionImpl> out = new CompletableFuture<>();
 
         Bootstrap bootstrap = new Bootstrap()
@@ -101,7 +100,7 @@ public class ConnectionManager {
                                     dest.getPort()
                             ));
                         }
-                        out.complete(new BackendConnectionImpl(backend, version, channel));
+                        out.complete(new BackendConnectionImpl(backend, protocolVersion, channel));
 
                     } else {
                         out.completeExceptionally(future.cause());

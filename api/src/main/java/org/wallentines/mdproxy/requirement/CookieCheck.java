@@ -1,13 +1,11 @@
 package org.wallentines.mdproxy.requirement;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.*;
 
@@ -66,11 +64,6 @@ public class CookieCheck implements ConnectionCheck {
                             .or(Serializer.STRING.map(set -> SerializeResult.ofNullable(set.stream().findFirst().orElse(null)), str -> SerializeResult.success(Collections.singleton(str))))
                             .entry("values", CookieCheck::values),
                     (cookie, values) -> new CookieCheck(this, cookie, values));
-        }
-
-        @Override
-        public TypeReference<CookieCheck> type() {
-            return new TypeReference<CookieCheck>() {};
         }
 
         @Override

@@ -1,7 +1,7 @@
 package org.wallentines.mdproxy.packet;
 
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdcfg.Tuples;
+import org.wallentines.pseudonym.text.ProtocolContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,16 +9,16 @@ import java.util.function.BiPredicate;
 
 public class VersionSelector<T> {
 
-    private final List<Tuples.T2<BiPredicate<GameVersion, ProtocolPhase>, T>> rules;
+    private final List<Tuples.T2<BiPredicate<Integer, ProtocolPhase>, T>> rules;
     private final T defaultValue;
 
-    public VersionSelector(List<Tuples.T2<BiPredicate<GameVersion, ProtocolPhase>, T>> rules, T defaultValue) {
+    public VersionSelector(List<Tuples.T2<BiPredicate<Integer, ProtocolPhase>, T>> rules, T defaultValue) {
         this.rules = rules;
         this.defaultValue = defaultValue;
     }
 
-    public T select(GameVersion version, ProtocolPhase phase) {
-        for(Tuples.T2<BiPredicate<GameVersion, ProtocolPhase>, T> r : rules) {
+    public T select(Integer version, ProtocolPhase phase) {
+        for(Tuples.T2<BiPredicate<Integer, ProtocolPhase>, T> r : rules) {
             if(r.p1.test(version, phase)) {
                 return r.p2;
             }
@@ -32,27 +32,33 @@ public class VersionSelector<T> {
 
     public static class Builder<T> {
 
-        private final List<Tuples.T2<BiPredicate<GameVersion, ProtocolPhase>, T>> rules = new ArrayList<>();
+        private final List<Tuples.T2<BiPredicate<Integer, ProtocolPhase>, T>> rules = new ArrayList<>();
         private T defaultValue;
 
-        public Builder<T> add(BiPredicate<GameVersion, ProtocolPhase> predicate, T value) {
+        public Builder<T> add(BiPredicate<Integer, ProtocolPhase> predicate, T value) {
             rules.add(new Tuples.T2<>(predicate, value));
             return this;
         }
 
         public Builder<T> beforeVersion(int protocol, int snapshotProtocol, T value) {
             return add(
-                    (ver, phase) -> ver.isSnapshot()
-                            && ver.getSnapshotVersion() < snapshotProtocol
-                            || ver.getProtocolVersion() < protocol,
+                    (ver, phase) -> {
+                        if(ver > ProtocolContext.RELEASE_MAX_VERSION) {
+                            return ver - ProtocolContext.RELEASE_MAX_VERSION < snapshotProtocol;
+                        }
+                        return ver < protocol;
+                    },
                     value);
         }
 
         public Builder<T> afterVersion(int protocol, int snapshotProtocol, T value) {
             return add(
-                    (ver, phase) -> ver.isSnapshot()
-                            && ver.getSnapshotVersion() >= snapshotProtocol
-                            || ver.getProtocolVersion() >= protocol,
+                    (ver, phase) -> {
+                        if(ver > ProtocolContext.RELEASE_MAX_VERSION) {
+                            return ver - ProtocolContext.RELEASE_MAX_VERSION >= snapshotProtocol;
+                        }
+                        return ver >= protocol;
+                    },
                     value);
         }
 
@@ -65,21 +71,25 @@ public class VersionSelector<T> {
 
         public Builder<T> beforeVersionInPhase(int protocol, int snapshotProtocol, ProtocolPhase phase, T value) {
             return add(
-                    (ver, p) ->
-                            (ver.isSnapshot()
-                                    && ver.getSnapshotVersion() < snapshotProtocol
-                                    || ver.getProtocolVersion() < protocol)
-                            && p == phase,
+                    (ver, p) -> {
+                        if(p != phase) return false;
+                        if(ver > ProtocolContext.RELEASE_MAX_VERSION) {
+                            return ver - ProtocolContext.RELEASE_MAX_VERSION < snapshotProtocol;
+                        }
+                        return ver < protocol;
+                    },
                     value);
         }
 
         public Builder<T> afterVersionInPhase(int protocol, int snapshotProtocol, ProtocolPhase phase, T value) {
             return add(
-                    (ver, p) ->
-                            (ver.isSnapshot()
-                                    && ver.getSnapshotVersion() >= snapshotProtocol
-                                    || ver.getProtocolVersion() >= protocol)
-                                    && p == phase,
+                    (ver, p) -> {
+                        if(p != phase) return false;
+                        if(ver > ProtocolContext.RELEASE_MAX_VERSION) {
+                            return ver - ProtocolContext.RELEASE_MAX_VERSION >= snapshotProtocol;
+                        }
+                        return ver >= protocol;
+                    },
                     value);
         }
 

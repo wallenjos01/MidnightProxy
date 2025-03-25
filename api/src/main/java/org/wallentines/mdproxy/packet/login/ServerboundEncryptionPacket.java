@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
@@ -27,7 +26,7 @@ public record ServerboundEncryptionPacket(byte[] sharedSecret, byte[] verifyToke
 
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase,  ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase,  ByteBuf buf) {
         PacketBufferUtil.writeVarInt(buf, sharedSecret.length);
         buf.writeBytes(sharedSecret);
         PacketBufferUtil.writeVarInt(buf, verifyToken.length);
@@ -38,7 +37,7 @@ public record ServerboundEncryptionPacket(byte[] sharedSecret, byte[] verifyToke
         handler.handle(this);
     }
 
-    public static ServerboundEncryptionPacket read(GameVersion ver, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundEncryptionPacket read(int  ver, ProtocolPhase phase, ByteBuf buf) {
 
         byte[] secret = new byte[PacketBufferUtil.readVarInt(buf)];
         buf.readBytes(secret);

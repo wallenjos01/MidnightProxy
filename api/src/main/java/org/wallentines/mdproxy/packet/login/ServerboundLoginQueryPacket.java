@@ -2,7 +2,6 @@ package org.wallentines.mdproxy.packet.login;
 
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mcore.GameVersion;
 import org.wallentines.mdproxy.VarInt;
 import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
@@ -20,7 +19,7 @@ public record ServerboundLoginQueryPacket(int messageId, @Nullable ByteBuf data)
     }
 
     @Override
-    public void write(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public void write(int version, ProtocolPhase phase, ByteBuf buf) {
         new VarInt(messageId).write(buf);
         PacketBufferUtil.writeOptional(buf, data, ByteBuf::writeBytes);
     }
@@ -30,7 +29,7 @@ public record ServerboundLoginQueryPacket(int messageId, @Nullable ByteBuf data)
         handler.handle(this);
     }
 
-    public static ServerboundLoginQueryPacket read(GameVersion version, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundLoginQueryPacket read(int version, ProtocolPhase phase, ByteBuf buf) {
         VarInt messageId = VarInt.read(buf, 4);
 
         boolean message = buf.readBoolean();
