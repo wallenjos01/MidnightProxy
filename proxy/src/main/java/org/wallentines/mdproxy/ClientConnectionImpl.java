@@ -54,9 +54,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     private final Map<Identifier, byte[]> cookies = new HashMap<>();
 
-    @Deprecated
-    private final Map<String, Queue<Task>> tasks = new HashMap<>();
-
     private final Map<Integer, CompletableFuture<ServerboundLoginQueryPacket>> loginQueries = new HashMap<>();
     private final Map<UUID, CompletableFuture<ServerboundResourcePackStatusPacket>> resourcePacks = new HashMap<>();
     private final Map<Identifier, CompletableFuture<byte[]>> awaitedCookies = new HashMap<>();
@@ -296,59 +293,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         for(CompletableFuture<ServerboundResourcePackStatusPacket> packStatus : resourcePacks.values()) {
             packStatus.completeExceptionally(new IOException("Client disconnected"));
         }
-    }
-
-    @Deprecated
-    @Override
-    public void registerTask(String taskQueue, Task task) {
-
-        switch (taskQueue) {
-            case Task.PRE_LOGIN_QUEUE -> preLoginEvent.register(this, conn -> task.run(taskQueue, conn));
-            case Task.POST_LOGIN_QUEUE -> postLoginEvent.register(this, conn -> task.run(taskQueue, conn));
-            case Task.CONFIGURE_QUEUE -> enterConfigurationEvent.register(this, conn -> task.run(taskQueue, conn.p2));
-            case Task.PRE_BACKEND_CONNECT -> preConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
-            case Task.POST_BACKEND_CONNECT -> postConnectBackendEvent.register(this, conn -> task.run(taskQueue, conn.p2));
-            default -> tasks.computeIfAbsent(taskQueue, k -> new ArrayDeque<>()).add(task);
-        }
-
-    }
-
-    @Deprecated
-    @Override
-    public void executeTasks(String taskQueue) {
-        executeTasksAsync(taskQueue).join();
-    }
-
-    @Deprecated
-    @Override
-    public CompletableFuture<Void> executeTasksAsync(String taskQueue) {
-
-        return CompletableFuture.runAsync(() -> {
-
-            Queue<Task> toExecute = tasks.get(taskQueue);
-
-            if(toExecute == null || toExecute.isEmpty()) {
-                return;
-            }
-
-            List<Callable<Object>> toCall = new ArrayList<>(toExecute.size());
-            while(!toExecute.isEmpty()) {
-                Task task = toExecute.remove();
-                toCall.add(Executors.callable(() -> {
-                    try {
-                        task.run(taskQueue, this);
-                    } catch (Throwable th) {
-                        LOGGER.error("An error occurred while running a task!", th);
-                    }
-                }));
-            }
-            try {
-                channel.eventLoop().parent().invokeAll(toCall);
-            } catch (InterruptedException ex) {
-                LOGGER.error("Unable to complete all tasks!", ex);
-            }
-
-        }, channel.eventLoop().parent());
     }
 
     @Override

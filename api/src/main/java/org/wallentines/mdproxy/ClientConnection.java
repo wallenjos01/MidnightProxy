@@ -170,32 +170,6 @@ public interface ClientConnection {
     void disconnect();
 
     /**
-     * Registers a task to be run in the given queue.
-     * @param taskQueue The task queue name.
-     * @param task The task to run.
-     * @deprecated Use events instead
-     */
-    @Deprecated
-    void registerTask(String taskQueue, Task task);
-
-    /**
-     * Executes all the tasks in the given queue before returning.
-     * @param taskQueue The task queue name.
-     * @deprecated Use events instead
-     */
-    @Deprecated
-    void executeTasks(String taskQueue);
-
-    /**
-     * Executes all the tasks in the given queue asynchronously.
-     * @param taskQueue The task queue name.
-     * @return A completable future which will be complete when all tasks are done.
-     * @deprecated Use events instead
-     */
-    @Deprecated
-    CompletableFuture<Void> executeTasksAsync(String taskQueue);
-
-    /**
      * An event fired whenever a plugin message is received.
      * @return A plugin message event handler list.
      */
