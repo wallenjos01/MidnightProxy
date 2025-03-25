@@ -2,6 +2,8 @@ package org.wallentines.mdproxy.jwt;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.jwt.FileKeyStore;
+import org.wallentines.jwt.KeyStore;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.codec.FileWrapper;
@@ -35,7 +37,7 @@ public class JWTPlugin implements Plugin {
         try { Files.createDirectories(keyStoreDir); } catch (IOException e) {
             throw new RuntimeException("Could not create key store directory", e);
         }
-        keyStore = new FileKeyStore(keyStoreDir, FileKeyStore.DEFAULT_TYPES);
+        keyStore = new FileKeyStore(keyStoreDir);
 
         proxy.getCommands().register("jwt", new JWTCommand());
         ConnectionCheckType.REGISTRY.tryRegister("jwt", JWTCheck.TYPE);

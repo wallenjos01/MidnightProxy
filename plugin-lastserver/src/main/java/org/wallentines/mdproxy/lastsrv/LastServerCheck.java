@@ -1,7 +1,6 @@
 package org.wallentines.mdproxy.lastsrv;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
@@ -61,11 +60,6 @@ public class LastServerCheck implements ConnectionCheck {
     );
 
     public static class Type implements ConnectionCheckType<LastServerCheck> {
-
-        @Override
-        public TypeReference<LastServerCheck> type() {
-            return new TypeReference<>() {};
-        }
 
         @Override
         public Serializer<LastServerCheck> serializer() {

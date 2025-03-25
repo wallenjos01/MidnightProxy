@@ -1,8 +1,11 @@
 package org.wallentines.mdproxy.jwt;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
-import org.wallentines.mdcfg.serializer.*;
+import org.wallentines.jwt.*;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
@@ -136,11 +139,6 @@ public class JWTCheck implements ConnectionCheck {
     );
 
     public static class Type implements ConnectionCheckType<JWTCheck> {
-
-        @Override
-        public TypeReference<JWTCheck> type() {
-            return new TypeReference<JWTCheck>() {};
-        }
 
         @Override
         public Serializer<JWTCheck> serializer() {

@@ -8,12 +8,7 @@ import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.smi.Messenger;
-import org.wallentines.smi.MessengerType;
-import org.wallentines.smi.MessengerManager;
-import org.wallentines.smi.MessengerManagerImpl;
-import org.wallentines.smi.AmqpMessenger;
-
+import org.wallentines.smi.*;
 
 import java.io.IOException;
 import java.nio.file.Files;

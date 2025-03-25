@@ -1,5 +1,7 @@
 package org.wallentines.mdproxy.jwt;
 
+import org.wallentines.jwt.KeyStore;
+import org.wallentines.jwt.KeyType;
 import org.wallentines.mdproxy.command.ArgumentParser;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.command.CommandSender;

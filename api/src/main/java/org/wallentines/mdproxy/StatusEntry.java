@@ -2,13 +2,11 @@ package org.wallentines.mdproxy;
 
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.requirement.ConnectionRequirement;
 import org.wallentines.mdproxy.util.MessageUtil;
 import org.wallentines.pseudonym.text.Component;
-import org.wallentines.pseudonym.text.ConfigTextParser;
 
 import java.util.Collection;
 import java.util.List;

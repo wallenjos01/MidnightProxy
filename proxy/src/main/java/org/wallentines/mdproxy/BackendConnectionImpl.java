@@ -1,6 +1,6 @@
 package org.wallentines.mdproxy;
 
-import io.netty.channel.*;
+import io.netty.channel.Channel;
 import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdproxy.netty.*;
 import org.wallentines.mdproxy.packet.*;

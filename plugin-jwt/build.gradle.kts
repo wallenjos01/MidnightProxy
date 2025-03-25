@@ -9,7 +9,7 @@ Utils.setupResources(project, rootProject, "plugin.json")
 dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(project(":api"))
-    compileOnly(project(":api-jwt"))
+    compileOnly(libs.jwtutil)
 }
 
 val copyOutputTask = tasks.register<Copy>("copyOutputFiles") {

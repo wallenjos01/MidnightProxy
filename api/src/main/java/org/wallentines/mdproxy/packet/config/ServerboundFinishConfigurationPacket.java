@@ -1,7 +1,10 @@
 package org.wallentines.mdproxy.packet.config;
 
 import io.netty.buffer.ByteBuf;
-import org.wallentines.mdproxy.packet.*;
+import org.wallentines.mdproxy.packet.Packet;
+import org.wallentines.mdproxy.packet.PacketType;
+import org.wallentines.mdproxy.packet.ProtocolPhase;
+import org.wallentines.mdproxy.packet.ServerboundPacketHandler;
 
 public class ServerboundFinishConfigurationPacket implements Packet<ServerboundPacketHandler> {
 

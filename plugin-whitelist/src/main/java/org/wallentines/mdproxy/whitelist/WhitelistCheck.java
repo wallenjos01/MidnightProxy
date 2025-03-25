@@ -1,16 +1,12 @@
 package org.wallentines.mdproxy.whitelist;
 
 import org.jetbrains.annotations.NotNull;
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,11 +55,6 @@ public class WhitelistCheck implements ConnectionCheck {
     );
 
     public static class Type implements ConnectionCheckType<WhitelistCheck> {
-
-        @Override
-        public TypeReference<WhitelistCheck> type() {
-            return new TypeReference<>() {};
-        }
 
         @Override
         public Serializer<WhitelistCheck> serializer() {

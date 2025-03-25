@@ -12,7 +12,6 @@ repositories {
 dependencies {
 
     implementation(project(":api"))
-    implementation(project(":api-jwt"))
 
     implementation(libs.midnight.cfg)
     implementation(libs.midnight.cfg.json)
@@ -22,6 +21,7 @@ dependencies {
     implementation(libs.pseudonym)
     implementation(libs.pseudonym.text)
     implementation(libs.pseudonym.lang)
+    implementation(libs.jwtutil)
 
     implementation(libs.netty.buffer)
     implementation(libs.netty.codec)
@@ -38,7 +38,6 @@ dependencies {
 
 
     shadow(project(":api"))
-    shadow(project(":api-jwt"))
 
     shadow(libs.midnight.cfg)
     shadow(libs.midnight.cfg.json)
@@ -48,6 +47,7 @@ dependencies {
     shadow(libs.pseudonym)
     shadow(libs.pseudonym.text)
     shadow(libs.pseudonym.lang)
+    shadow(libs.jwtutil)
 
     shadow(libs.netty.buffer)
     shadow(libs.netty.codec)

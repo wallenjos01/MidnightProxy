@@ -20,7 +20,6 @@ import org.wallentines.pseudonym.text.Content;
 import org.wallentines.pseudonym.text.ImmutableComponent;
 import org.wallentines.pseudonym.text.Style;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
