@@ -89,7 +89,7 @@ public class JWTCheck implements ConnectionCheck {
                 return false;
             }
 
-            ctx.setMetaProperty("jwt." + s, claimStr);
+            ctx.setMetaProperty("jwt_" + s, claimStr);
         }
 
         return true;

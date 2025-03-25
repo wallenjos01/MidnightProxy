@@ -69,8 +69,8 @@ Using a JWT to connect a player to a backend:
         "key": "my_key",
         "cookie": "my_cookie",
         "expect_claims": {
-          "username": "%client_username%",
-          "uuid": "%client_uuid%"
+          "username": "<client_username>",
+          "uuid": "<client_uuid>"
         },
         "output_claims": [
           "backend"
@@ -78,7 +78,7 @@ Using a JWT to connect a player to a backend:
         "single_use_claim": "token_id",
         "require_auth": false
       },
-      "backend": "%jwt.backend%"
+      "backend": "<jwt_backend>"
     },
     {
       "backend": "lobby"
@@ -97,8 +97,8 @@ Using a JWT to connect a player to an ephemeral backend:
         "key": "my_key",
         "cookie": "my_cookie",
         "expect_claims": {
-          "username": "%client_username%",
-          "uuid": "%client_uuid%"
+          "username": "<client_username>",
+          "uuid": "<client_uuid>"
         },
         "output_claims": [
           "backend_host",
@@ -108,8 +108,8 @@ Using a JWT to connect a player to an ephemeral backend:
         "require_auth": false
       },
       "backend": {
-        "hostname": "%jwt.backend_hostname%",
-        "port": "%jwt.backend_port%"
+        "hostname": "<jwt_backend_hostname>",
+        "port": "<jwt_backend_port>"
       }
     },
     {

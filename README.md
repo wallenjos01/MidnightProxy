@@ -163,7 +163,8 @@ of the following formats:
 
 ### Outputs
 Some requirement types (Such as [`mdp:jwt`](plugin-jwt/README.md)) may output values when successfully checked. These values can be accessed in a route's
-`backend` field, by typing the name of the output between `%` characters.
+`backend` field, by typing the name of the output between angle brackets. See [pseudonym](https://github.com/wallenjos01/pseudonym)'s
+README for more information.
 
 ### Examples
 Requirement which routes players based on hostname:
