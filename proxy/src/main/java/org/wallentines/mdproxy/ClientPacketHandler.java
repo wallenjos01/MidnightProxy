@@ -203,6 +203,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundLoginFinishedPacket finished) {
 
         changePhase(ProtocolPhase.CONFIG);
+        tryNextServer();
     }
 
     @Override
@@ -225,13 +226,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
             if(!jwtRes.isComplete()) {
 
-                LOGGER.warn("Unable to parse reconnect cookie! {}", jwtRes.getError());
+                LOGGER.warn("Unable to parse reconnect cookie!", jwtRes.getError());
                 disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
             }
 
             JWT decoded = jwtRes.getOrThrow();
-            if(decoded.isExpired()) {
+            if(decoded.isExpired() || !server.getTokenCache().validate(decoded)) {
                 preLogin();
                 return;
             }
@@ -239,7 +240,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             // Verify claims
             JWTVerifier verifier = new JWTVerifier()
                     .requireEncrypted()
-                    .enforceSingleUse(server.getTokenCache())
                     .withClaim("hostname", conn.hostname())
                     .withClaim("port", conn.port())
                     .withClaim("username", profile.username())
@@ -285,13 +285,11 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         }
 
         conn.onCookieResponse(cookie.key(), cookie.data());
-        if(conn.phase == ProtocolPhase.LOGIN) {
-            if (requestedCookies.remove(cookie.key())) {
-                conn.setCookie(cookie.key(), cookie.data());
+        if (requestedCookies.remove(cookie.key())) {
+            conn.setCookie(cookie.key(), cookie.data());
 
-                if (requestedCookies.isEmpty()) {
-                    tryNextServer();
-                }
+            if (requestedCookies.isEmpty()) {
+                tryNextServer();
             }
         }
     }
@@ -305,7 +303,6 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundSettingsPacket settings) {
 
         conn.setLocale(settings.locale());
-        tryNextServer();
     }
 
     @Override

@@ -26,8 +26,11 @@ public class MessageUtil {
     public static String flatten(Component component) {
 
         StringBuilder builder = new StringBuilder();
+        if(component.content().type() == Content.Type.TEXT) {
+            builder.append(((Content.Text) component.content()).text());
+        }
         if(component.content().type() == Content.Type.TRANSLATE) {
-            builder.append(component.content());
+            builder.append(((Content.Translate) component.content()).key());
         }
         for(Component c : component.children()) {
             builder.append(flatten(c));

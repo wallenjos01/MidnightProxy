@@ -3,7 +3,9 @@ package org.wallentines.mdproxy.netty;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.DefaultMaxBytesRecvByteBufAllocator;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.flow.FlowControlHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +33,11 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel channel) throws Exception {
 
+        channel.config().setRecvByteBufAllocator(new DefaultMaxBytesRecvByteBufAllocator());
+
         channel.pipeline()
                 .addLast("frame_dec", new FrameDecoder())
+                .addLast(new FlowControlHandler())
                 .addLast(new ReadTimeoutHandler(server.getClientTimeout(), TimeUnit.MILLISECONDS))
                 .addLast("frame_enc", new FrameEncoder())
                 .addLast("decoder", new PacketDecoder<>(PacketRegistry.HANDSHAKE))
