@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.mdproxy.plugin.Plugin;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 public class TestPlugin implements Plugin {
 

@@ -11,7 +11,7 @@ import org.wallentines.mdproxy.packet.common.ServerboundResourcePackStatusPacket
 import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.pseudonym.Placeholder;
 import org.wallentines.pseudonym.PlaceholderManager;
 import org.wallentines.pseudonym.text.Component;

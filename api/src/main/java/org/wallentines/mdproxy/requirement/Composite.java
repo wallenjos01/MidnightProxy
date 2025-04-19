@@ -6,7 +6,7 @@ import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.midnightlib.requirement.CheckType;
 import org.wallentines.midnightlib.requirement.CompositeCheck;
 import org.wallentines.midnightlib.requirement.Requirement;

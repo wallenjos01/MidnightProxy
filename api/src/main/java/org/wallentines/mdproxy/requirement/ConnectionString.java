@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 import java.util.Collection;
 import java.util.Collections;

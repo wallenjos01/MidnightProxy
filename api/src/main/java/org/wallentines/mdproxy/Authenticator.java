@@ -1,6 +1,6 @@
 package org.wallentines.mdproxy;
 
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Registry;
 
 public interface Authenticator {
 

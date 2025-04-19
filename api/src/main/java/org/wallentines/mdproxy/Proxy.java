@@ -5,11 +5,11 @@ import org.wallentines.mdcfg.codec.FileCodecRegistry;
 import org.wallentines.mdproxy.command.CommandExecutor;
 import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Registry;
 import org.wallentines.pseudonym.ParameterTransformer;
+import org.wallentines.pseudonym.PartialMessage;
 import org.wallentines.pseudonym.Placeholder;
 import org.wallentines.pseudonym.PlaceholderManager;
-import org.wallentines.pseudonym.UnresolvedMessage;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -216,14 +216,14 @@ public interface Proxy {
         manager.register(Placeholder.of("proxy_player_limit", String.class, ctx -> ctx.context().getFirst(Proxy.class).map(Proxy::getPlayerLimit).map(Objects::toString)));
 
         manager.register(Placeholder.of("system_time", String.class, ctx -> {
-            String format = UnresolvedMessage.resolve(ctx.param(), ctx.context());
+            String format = PartialMessage.resolve(ctx.param(), ctx.context());
             if(format.isEmpty()) format = "dd/MM/yyyy HH:mm:ss";
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format);
             return Optional.of(Instant.now().atZone(ZoneId.systemDefault()).format(dtf));
         }, ParameterTransformer.IDENTITY));
 
         manager.register(Placeholder.of("system_time_utc", String.class, ctx -> {
-            String format = UnresolvedMessage.resolve(ctx.param(), ctx.context());
+            String format = PartialMessage.resolve(ctx.param(), ctx.context());
             if(format.isEmpty()) format = "dd/MM/yyyy HH:mm:ss";
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format);
             return Optional.of(Instant.now().atZone(ZoneOffset.UTC).format(dtf));

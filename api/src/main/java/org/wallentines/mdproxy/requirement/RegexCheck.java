@@ -3,7 +3,7 @@ package org.wallentines.mdproxy.requirement;
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.midnightlib.requirement.CheckType;
 
 import java.util.Collection;

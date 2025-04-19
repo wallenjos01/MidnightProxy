@@ -9,7 +9,7 @@ import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Registry;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -13,7 +13,7 @@ import org.wallentines.mdcfg.codec.JSONCodec;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.plugin.PluginManagerImpl;
 import org.wallentines.mdproxy.util.MessageUtil;
-import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.PartialMessage;
 import org.wallentines.pseudonym.lang.LangManager;
 import org.wallentines.pseudonym.lang.LangProvider;
 import org.wallentines.pseudonym.lang.LangRegistry;
@@ -81,10 +81,10 @@ public class Main {
         }
 
 
-        LangRegistry<UnresolvedMessage<String>> defaults;
+        LangRegistry<PartialMessage<String>> defaults;
         try {
             ConfigSection sec = JSONCodec.loadConfig(Main.class.getClassLoader().getResourceAsStream("lang/en_us.json")).asSection();
-            Map<String, UnresolvedMessage<String>> messages = new HashMap<>();
+            Map<String, PartialMessage<String>> messages = new HashMap<>();
             for(String key : sec.getKeys()) {
                 messages.put(key, MessageUtil.PARSE_PIPELINE.accept(key));
             }
@@ -99,7 +99,7 @@ public class Main {
         }
 
         LangManager.registerPlaceholders(MessageUtil.PLACEHOLDERS);
-        LangManager<UnresolvedMessage<String>, Component> manager = new LangManager<>(Component.class, defaults, LangProvider.forDirectory(langDir, reg, MessageUtil.PARSE_PIPELINE), TextUtil.COMPONENT_RESOLVER);
+        LangManager<PartialMessage<String>, Component> manager = new LangManager<>(Component.class, defaults, LangProvider.forDirectory(langDir, reg, MessageUtil.PARSE_PIPELINE), TextUtil.COMPONENT_RESOLVER);
 
         Authenticator.REGISTRY.register(Authenticator.MOJANG_ID, MojangAuthenticator.TYPE);
 

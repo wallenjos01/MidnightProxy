@@ -3,7 +3,7 @@ package org.wallentines.mdproxy.packet.common;
 import io.netty.buffer.ByteBuf;
 import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 public record ClientboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ClientboundPacketHandler> {
 

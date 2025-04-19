@@ -25,9 +25,9 @@ import org.wallentines.mdproxy.packet.status.ServerboundPingPacket;
 import org.wallentines.mdproxy.packet.status.ServerboundStatusPacket;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.midnightlib.types.DefaultedSingleton;
-import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.PartialMessage;
 import org.wallentines.pseudonym.text.Component;
 import org.wallentines.pseudonym.text.Content;
 import org.wallentines.pseudonym.text.ImmutableComponent;
@@ -493,7 +493,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.disconnect(component);
     }
 
-    private void disconnect(UnresolvedMessage<String> component) {
+    private void disconnect(PartialMessage<String> component) {
         conn.disconnect(component);
     }
 

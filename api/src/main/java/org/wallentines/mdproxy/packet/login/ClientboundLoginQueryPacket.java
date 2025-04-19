@@ -7,7 +7,7 @@ import org.wallentines.mdproxy.packet.Packet;
 import org.wallentines.mdproxy.packet.PacketType;
 import org.wallentines.mdproxy.packet.ProtocolPhase;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

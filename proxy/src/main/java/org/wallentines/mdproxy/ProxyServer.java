@@ -17,8 +17,8 @@ import org.wallentines.mdproxy.plugin.PluginManager;
 import org.wallentines.mdproxy.plugin.PluginManagerImpl;
 import org.wallentines.mdproxy.util.CryptUtil;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.mdcfg.registry.Registry;
+import org.wallentines.pseudonym.PartialMessage;
 import org.wallentines.pseudonym.lang.LangManager;
 import org.wallentines.pseudonym.text.Component;
 
@@ -48,7 +48,7 @@ public class ProxyServer implements Proxy {
     private final Map<String, Authenticator> authenticators = new HashMap<>();
     private final ConnectionManager listener;
     private final ConsoleHandler console;
-    private final LangManager<UnresolvedMessage<String>, Component> langManager;
+    private final LangManager<PartialMessage<String>, Component> langManager;
     private final PluginManagerImpl pluginLoader;
     private final UsedTokenCache reconnectTokenCache;
     private final IconCacheImpl iconCache;
@@ -79,7 +79,7 @@ public class ProxyServer implements Proxy {
     private final HandlerList<Proxy> started = new HandlerList<>();
 
 
-    public ProxyServer(FileWrapper<ConfigObject> config, FileCodecRegistry registry, LangManager<UnresolvedMessage<String>, Component> langManager, PluginManagerImpl pluginLoader) {
+    public ProxyServer(FileWrapper<ConfigObject> config, FileCodecRegistry registry, LangManager<PartialMessage<String>, Component> langManager, PluginManagerImpl pluginLoader) {
 
         this.config = config;
         this.langManager = langManager;
@@ -351,7 +351,7 @@ public class ProxyServer implements Proxy {
         return backendTimeout;
     }
 
-    public LangManager<UnresolvedMessage<String>, Component> getLangManager() {
+    public LangManager<PartialMessage<String>, Component> getLangManager() {
         return langManager;
     }
 

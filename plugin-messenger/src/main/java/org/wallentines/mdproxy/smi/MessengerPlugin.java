@@ -6,8 +6,8 @@ import org.wallentines.mdcfg.codec.FileWrapper;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdproxy.Proxy;
 import org.wallentines.mdproxy.plugin.Plugin;
-import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Identifier;
+import org.wallentines.mdcfg.registry.Registry;
 import org.wallentines.smi.*;
 
 import java.io.IOException;

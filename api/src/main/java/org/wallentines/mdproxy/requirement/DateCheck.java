@@ -7,7 +7,7 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.midnightlib.math.Range;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 import java.time.DateTimeException;
 import java.time.Instant;

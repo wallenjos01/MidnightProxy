@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.TestResult;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.midnightlib.requirement.Check;
 import org.wallentines.midnightlib.requirement.Requirement;
 

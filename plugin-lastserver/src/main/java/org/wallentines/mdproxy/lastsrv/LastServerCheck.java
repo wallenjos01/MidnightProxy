@@ -7,7 +7,7 @@ import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.DataManager;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -18,9 +18,9 @@ import org.wallentines.mdproxy.packet.login.ServerboundLoginQueryPacket;
 import org.wallentines.mdproxy.util.MessageUtil;
 import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.HandlerList;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.pseudonym.PipelineContext;
-import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.PartialMessage;
 import org.wallentines.pseudonym.lang.LocaleHolder;
 import org.wallentines.pseudonym.text.Component;
 import org.wallentines.pseudonym.text.TextUtil;
@@ -249,7 +249,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         }
     }
 
-    public void disconnect(UnresolvedMessage<String> component) {
+    public void disconnect(PartialMessage<String> component) {
         disconnect(TextUtil.COMPONENT_RESOLVER.accept(component, PipelineContext.of(this)));
     }
 

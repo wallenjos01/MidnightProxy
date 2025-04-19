@@ -10,9 +10,9 @@ import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
 import org.wallentines.mdproxy.util.MessageUtil;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.pseudonym.PipelineContext;
-import org.wallentines.pseudonym.UnresolvedMessage;
+import org.wallentines.pseudonym.PartialMessage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -26,9 +26,9 @@ public class JWTCheck implements ConnectionCheck {
     private final String key;
     private final KeyType<?> keyType;
     private final List<String> outputClaims;
-    private final Map<String, UnresolvedMessage<String>> expectClaims;
+    private final Map<String, PartialMessage<String>> expectClaims;
 
-    protected JWTCheck(boolean requireAuth, Identifier cookie, boolean requireEncryption, String singleUseKey, String key, KeyType<?> keyType, Collection<String> outputClaims, Map<String, UnresolvedMessage<String>> expectClaims) {
+    protected JWTCheck(boolean requireAuth, Identifier cookie, boolean requireEncryption, String singleUseKey, String key, KeyType<?> keyType, Collection<String> outputClaims, Map<String, PartialMessage<String>> expectClaims) {
         this.cookie = cookie;
         this.requireAuth = requireAuth;
         this.requireEncryption = requireEncryption;
@@ -51,8 +51,8 @@ public class JWTCheck implements ConnectionCheck {
 
         PipelineContext pipelineContext = PipelineContext.of(ctx.getConnection());
 
-        for(Map.Entry<String, UnresolvedMessage<String>> cmp : expectClaims.entrySet()) {
-            require.put(cmp.getKey(), UnresolvedMessage.resolve(cmp.getValue(), pipelineContext));
+        for(Map.Entry<String, PartialMessage<String>> cmp : expectClaims.entrySet()) {
+            require.put(cmp.getKey(), PartialMessage.resolve(cmp.getValue(), pipelineContext));
         }
 
         KeyStore store = ctx.getProxy().getPluginManager().get(JWTPlugin.class).getKeyStore();
