@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class ConnectionManager {
 
@@ -26,6 +27,7 @@ public class ConnectionManager {
     private final ChannelType channelType;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
+    private final EventLoopGroup eventHandlerGroup;
     private final ProxyServer server;
     private final Set<ClientPacketHandler> connected;
     private ChannelFuture listenChannel;
@@ -36,6 +38,7 @@ public class ConnectionManager {
         this.channelType = ChannelType.getBestChannelType();
         this.bossGroup = channelType.createEventLoopGroup("Netty Boss", bossThreads);
         this.workerGroup = channelType.createEventLoopGroup("Netty Worker", workerThreads);
+        this.eventHandlerGroup = channelType.createEventLoopGroup("EventHandler", workerThreads);
 
         this.connected = new HashSet<>();
     }
@@ -128,6 +131,10 @@ public class ConnectionManager {
         this.connected.remove(handler);
     }
 
+    public Executor getEventExecutor() {
+        return eventHandlerGroup;
+    }
+
     public void stop() {
 
         for(ClientPacketHandler c : connected) {
@@ -138,6 +145,7 @@ public class ConnectionManager {
             listenChannel.channel().close().syncUninterruptibly();
         }
 
+        eventHandlerGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
         bossGroup.shutdownGracefully();
     }

@@ -54,7 +54,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
             channel.pipeline().addFirst("haproxy_handler", new HAProxyHandler(addr));
         }
 
-        ClientPacketHandler handler = new ClientPacketHandler(channel, addr, server);
+        ClientPacketHandler handler = new ClientPacketHandler(channel, addr, server, manager.getEventExecutor());
         channel.pipeline().addLast("handler", new PacketHandler<>(handler));
 
         manager.addClientConnection(handler);

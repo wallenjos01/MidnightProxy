@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
@@ -60,6 +61,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private StatusResponder statusResponder;
     private Backend selectedBackend;
 
+    private final Executor eventExecutor;
     private final Random random = new SecureRandom();
     private final Queue<Route> routes;
     private final Queue<AuthRoute> authRoutes;
@@ -67,12 +69,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final DefaultedSingleton<InetSocketAddress> address;
 
 
-    public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server) {
+    public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server, Executor eventExecutor) {
 
         this.server = server;
         this.channel = channel;
         this.encrypted = false;
         this.address = address;
+        this.eventExecutor = eventExecutor;
 
         this.routes = new ArrayDeque<>(server.getRoutes());
         this.authRoutes = new ArrayDeque<>(server.getAuthRoutes());
@@ -90,7 +93,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
         }
 
-        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port(), handshake.intent());
+        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port(), handshake.intent(), eventExecutor);
         this.context = new ConnectionContext(conn, server);
         this.intent = handshake.intent();
 

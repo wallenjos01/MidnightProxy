@@ -13,6 +13,7 @@ import org.wallentines.pseudonym.text.ConfigTextParser;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
 
 /**
  * A packet handler for legacy ping requests. See <a href="https://wiki.vg/Server_List_Ping">...</a> for more information.
@@ -62,7 +63,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
                 conn = readClientInfo(ctx, buf);
                 if(conn == null) return;
             } else {
-                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS);
+                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
             }
 
             handleV1Request(ctx, conn);
@@ -107,14 +108,14 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
         int port = buf.readInt();
 
-        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.STATUS);
+        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.STATUS, null);
     }
 
     private void handleV0Request(ChannelHandlerContext ctx) {
 
         LOGGER.debug("Received legacy ping (pre-1.4) from {}", ctx.channel().remoteAddress());
 
-        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS);
+        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
         StatusEntry ent = conn.getStatusEntry(server);
         if(ent == null) {
             ctx.channel().close();

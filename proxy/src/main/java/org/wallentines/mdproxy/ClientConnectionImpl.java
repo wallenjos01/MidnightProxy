@@ -71,15 +71,13 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final ServerboundHandshakePacket.Intent intent;
 
 
-    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port, ServerboundHandshakePacket.Intent intent) {
+    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port, ServerboundHandshakePacket.Intent intent, Executor svc) {
         this.channel = channel;
         this.address = address;
         this.protocolVersion = protocolVersion;
         this.hostname = hostname;
         this.port = port;
         this.intent = intent;
-
-        ExecutorService svc = channel.parent().eventLoop();
 
         this.preLoginEvent = new ConcurrentHandlerList<>(svc);
         this.postLoginEvent = new ConcurrentHandlerList<>(svc);
