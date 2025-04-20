@@ -10,7 +10,7 @@ public record ClientboundCookieRequestPacket(Identifier key) implements Packet<C
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.LOGIN, 5)
             .inPhase(ProtocolPhase.CONFIG, 0)
-            .afterVersion(770, 229, 20)
+            .afterVersion(770, 229, 21)
             .orElse(22)
             .build();
 

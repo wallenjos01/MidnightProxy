@@ -44,7 +44,7 @@ public class LastServerCheck implements ConnectionCheck {
             String data = dm.getData(ctx.getConnection().uuid().toString()).getOrDefault("last_server", (String) null);
             if (data == null) return false;
 
-            ctx.setMetaProperty("last_server.backend", data);
+            ctx.setMetaProperty("last_server_backend", data);
             return true;
         }
     }

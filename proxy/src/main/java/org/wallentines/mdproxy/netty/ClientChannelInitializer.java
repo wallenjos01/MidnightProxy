@@ -66,6 +66,9 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                     bConn.close();
                     LOGGER.info("Client disconnected: {}", handler.getUsername());
                 }
+                if(!conn.hasDisconnected()) {
+                    LOGGER.warn("Client disconnected unexpectedly: {}", handler.getUsername());
+                }
                 if(conn.profileAvailable()) {
                     server.getPlayerList().removePlayer(conn.uuid());
                 }

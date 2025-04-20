@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class ResourcePackPlugin implements Plugin {
@@ -116,9 +117,7 @@ public class ResourcePackPlugin implements Plugin {
                                         .map(UUID::fromString)
                                         .toList();
                                 for(UUID packId : ids) {
-                                    log.info("Attempting to remove {}", packId);
                                     if(!packIds.contains(packId)) {
-                                        log.info("Removing {}", packId);
                                         ev.p2.removeResourcePack(packId);
                                     }
                                 }
@@ -126,7 +125,11 @@ public class ResourcePackPlugin implements Plugin {
                         })),
                         packs.stream()
                                 .map(pack -> ev.p2.sendResourcePack(pack.toPack()))
-                ).toArray(CompletableFuture<?>[]::new)).join();
+                ).toArray(CompletableFuture<?>[]::new)).orTimeout(5L, TimeUnit.SECONDS).whenComplete((unused, th) -> {
+                    if(th != null) {
+                        client.disconnect();
+                    }
+                }).join();
             });
         });
     }

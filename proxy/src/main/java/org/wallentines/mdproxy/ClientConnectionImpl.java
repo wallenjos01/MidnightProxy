@@ -267,8 +267,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         if(hasDisconnected()) {
             return;
         }
-        cleanup();
 
+        disconnected = true;
         if(!channel.isActive()) {
             return;
         }
@@ -282,17 +282,26 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
             }
         }
 
-        disconnected = true;
         channel.close().awaitUninterruptibly();
     }
 
     public void cleanup() {
+        disconnected = true;
+
+        for(CompletableFuture<byte[]> cookie : awaitedCookies.values()) {
+            cookie.cancel(true);
+        }
+        awaitedCookies.clear();
+
         for(CompletableFuture<ServerboundLoginQueryPacket> query : loginQueries.values()) {
-            query.completeExceptionally(new IOException("Client disconnected"));
+            query.cancel(true);
         }
+        loginQueries.clear();
+
         for(CompletableFuture<ServerboundResourcePackStatusPacket> packStatus : resourcePacks.values()) {
-            packStatus.completeExceptionally(new IOException("Client disconnected"));
+            packStatus.cancel(true);
         }
+        resourcePacks.clear();
     }
 
     @Override
@@ -342,6 +351,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public CompletableFuture<ServerboundLoginQueryPacket> sendLoginQuery(Identifier id, ByteBuf data) {
 
+        if(hasDisconnected()) {
+            return CompletableFuture.failedFuture(new IOException("Client disconnected"));
+        }
+
         ClientboundLoginQueryPacket pck = new ClientboundLoginQueryPacket(id, data);
         CompletableFuture<ServerboundLoginQueryPacket> out = new CompletableFuture<>();
         loginQueries.put(pck.messageId(), out);
@@ -375,6 +388,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public CompletableFuture<ServerboundResourcePackStatusPacket> sendResourcePack(ResourcePack pack) {
 
+        if(hasDisconnected()) {
+            return CompletableFuture.failedFuture(new IOException("Client disconnected"));
+        }
+
         if(phase == ProtocolPhase.LOGIN || phase == ProtocolPhase.HANDSHAKE) {
             return CompletableFuture.failedFuture(new IllegalStateException("Resource packs cannot be applied during " + phase.name()));
         }
@@ -403,6 +420,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     @Override
     public CompletableFuture<byte[]> requestCookie(Identifier id) {
+
+        if(hasDisconnected()) {
+            return CompletableFuture.failedFuture(new IOException("Client disconnected"));
+        }
 
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         awaitedCookies.put(id, future);

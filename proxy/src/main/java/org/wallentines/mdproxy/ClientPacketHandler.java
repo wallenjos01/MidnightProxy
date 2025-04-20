@@ -342,6 +342,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         conn.preConnectBackendEvent().invokeAsync(new Tuples.T2<>(selectedBackend, conn)).thenAccept(unused -> {
 
+            if(!channel.isActive()) {
+                return;
+            }
+
             if(conn.authenticated()) {
                 reconnect(selectedBackend);
                 return;
@@ -611,6 +615,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
+
+        if(!channel.isActive()) return;
 
         conn.phase = phase;
 
