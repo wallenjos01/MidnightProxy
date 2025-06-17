@@ -41,14 +41,9 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
 
         int id = PacketBufferUtil.readVarInt(bytes);
         if (registry.getPacketType(id) == null) {
-            LOGGER.warn("Received packet with unknown id {} in phase {}[{}]!", id, registry.getPhase().name(),
-                    registry.getPacketFlow().name());
             ctx.channel().close();
             return;
         }
-
-        LOGGER.warn("Decoded a packet with id {} in phase {}[{}]!", id, registry.getPhase().name(),
-                registry.getPacketFlow().name());
 
         Packet<T> p;
         try {
