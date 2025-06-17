@@ -65,8 +65,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                 if(bConn != null) {
                     bConn.close();
                     LOGGER.info("Client disconnected: {}", handler.getUsername());
-                }
-                if(!conn.hasDisconnected()) {
+                } else if(!conn.hasDisconnected() && !conn.wasReconnected()) {
                     LOGGER.warn("Client disconnected unexpectedly: {}", handler.getUsername());
                 }
                 if(conn.profileAvailable()) {
