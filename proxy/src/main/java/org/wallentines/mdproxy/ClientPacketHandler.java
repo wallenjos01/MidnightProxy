@@ -45,8 +45,8 @@ import java.util.concurrent.Executor;
 
 public class ClientPacketHandler implements ServerboundPacketHandler {
 
-
-    private static final Component IGNORE_STATUS_REASON = new ImmutableComponent(new Content.Translate("disconnect.ignoring_status_request"), Style.EMPTY, Collections.emptyList());
+    private static final Component IGNORE_STATUS_REASON = new ImmutableComponent(
+            new Content.Translate("disconnect.ignoring_status_request"), Style.EMPTY, Collections.emptyList());
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ClientPacketHandler");
     private static final Identifier RECONNECT_COOKIE = new Identifier("mdp", "rc");
@@ -68,8 +68,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private final HashSet<Identifier> requestedCookies = new HashSet<>();
     private final DefaultedSingleton<InetSocketAddress> address;
 
-
-    public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server, Executor eventExecutor) {
+    public ClientPacketHandler(Channel channel, DefaultedSingleton<InetSocketAddress> address, ProxyServer server,
+            Executor eventExecutor) {
 
         this.server = server;
         this.channel = channel;
@@ -89,17 +89,19 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundHandshakePacket handshake) {
 
-        if(handshake.intent() != ServerboundHandshakePacket.Intent.STATUS || server.logStatusMessages()) {
-            LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(), handshake.intent().name());
+        if (handshake.intent() != ServerboundHandshakePacket.Intent.STATUS || server.logStatusMessages()) {
+            LOGGER.info("Received handshake from {} to {} ({})", getUsername(), handshake.address(),
+                    handshake.intent().name());
         }
 
-        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(), handshake.port(), handshake.intent(), eventExecutor);
+        this.conn = new ClientConnectionImpl(channel, address.get(), handshake.protocolVersion(), handshake.address(),
+                handshake.port(), handshake.intent(), eventExecutor);
         this.context = new ConnectionContext(conn, server);
         this.intent = handshake.intent();
 
         this.server.clientConnectEvent().invoke(conn);
 
-        if(handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {
+        if (handshake.intent() == ServerboundHandshakePacket.Intent.STATUS) {
             changePhase(ProtocolPhase.STATUS);
         } else {
             changePhase(ProtocolPhase.LOGIN);
@@ -110,7 +112,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     public void handle(ServerboundStatusPacket ping) {
 
         StatusEntry e = conn.getStatusEntry(server);
-        if(e == null) {
+        if (e == null) {
             conn.disconnect(IGNORE_STATUS_REASON, false);
             return;
         }
@@ -122,7 +124,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @Override
     public void handle(ServerboundPingPacket ping) {
 
-        if(statusResponder == null) {
+        if (statusResponder == null) {
             LOGGER.warn("Received ping packet before status packet!");
             conn.disconnect(IGNORE_STATUS_REASON, false);
             return;
@@ -140,7 +142,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         conn.setProfile(new PlayerProfile(login.uuid(), login.username()));
 
-        if(intent == ServerboundHandshakePacket.Intent.TRANSFER) {
+        if (intent == ServerboundHandshakePacket.Intent.TRANSFER) {
             conn.send(new ClientboundCookieRequestPacket(RECONNECT_COOKIE));
 
         } else {
@@ -156,12 +158,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundEncryptionPacket encrypt) {
-        if(!conn.profileAvailable() || challenge == null) {
+        if (!conn.profileAvailable() || challenge == null) {
             throw new IllegalStateException("Received unrequested encryption packet!");
         }
 
         PrivateKey privateKey = server.getKeyPair().getPrivate();
-        if(!MessageDigest.isEqual(challenge, CryptUtil.decryptData(privateKey, encrypt.verifyToken()))) {
+        if (!MessageDigest.isEqual(challenge, CryptUtil.decryptData(privateKey, encrypt.verifyToken()))) {
             throw new IllegalStateException("Encryption challenge failed!");
         }
 
@@ -178,21 +180,23 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             finishAuthentication(profile);
         } else {
 
-            String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic())).toString(16);
-            if(authRoutes.isEmpty()) {
+            String serverId = new BigInteger(CryptUtil.hashServerId(decryptedSecret, server.getKeyPair().getPublic()))
+                    .toString(16);
+            if (authRoutes.isEmpty()) {
                 disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
                 return;
             }
 
             CompletableFuture.supplyAsync(() -> {
-                while(!routes.isEmpty()) {
+                while (!routes.isEmpty()) {
                     AuthRoute route = authRoutes.remove();
-                    if(route.canUse(context)) {
+                    if (route.canUse(context)) {
                         PlayerProfile prof = route.authenticate(context, serverId);
                         if (prof != null) {
                             return prof;
                         } else if (route.kickOnFail()) {
-                            disconnect(server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
+                            disconnect(
+                                    server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
                             return null;
                         }
                     }
@@ -211,23 +215,24 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     @Override
     public void handle(ServerboundCookiePacket cookie) {
-        if(cookie.key().equals(RECONNECT_COOKIE)) {
+        if (cookie.key().equals(RECONNECT_COOKIE)) {
 
-            if(cookie.data().length == 0) {
+            if (cookie.data().length == 0) {
                 preLogin();
                 return;
             }
 
             PlayerProfile profile = conn.profile();
-            if(profile == null) {
+            if (profile == null) {
                 LOGGER.error("Received reconnect cookie before player info!");
                 disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
             }
 
             String jwt = new String(cookie.data(), StandardCharsets.US_ASCII);
-            SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt, KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
-            if(!jwtRes.isComplete()) {
+            SerializeResult<JWT> jwtRes = JWTReader.readAny(jwt,
+                    KeySupplier.of(server.getReconnectKeyPair().getPrivate(), KeyType.RSA_PRIVATE));
+            if (!jwtRes.isComplete()) {
 
                 LOGGER.warn("Unable to parse reconnect cookie!", jwtRes.getError());
                 disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
@@ -235,7 +240,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
 
             JWT decoded = jwtRes.getOrThrow();
-            if(decoded.isExpired() || !server.getTokenCache().validate(decoded)) {
+            if (decoded.isExpired() || !server.getTokenCache().validate(decoded)) {
                 preLogin();
                 return;
             }
@@ -249,7 +254,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     .withClaim("uuid", profile.uuid().toString())
                     .withClaim("protocol", conn.protocolVersion());
 
-            if(!verifier.verify(decoded)) {
+            if (!verifier.verify(decoded)) {
                 LOGGER.warn("Unable to verify reconnect cookie!");
                 disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                 return;
@@ -257,13 +262,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
             Backend b;
             String backendId = decoded.getClaimAsString("backend");
-            if(backendId == null) {
+            if (backendId == null) {
                 // Check for ephemeral backend
                 String ephHost = decoded.getClaimAsString("backend_host");
                 ConfigObject ephPort = decoded.getClaim("backend_port");
                 ConfigObject ephRedirect = decoded.getClaim("backend_redirect");
                 ConfigObject ephHaproxy = decoded.getClaim("backend_haproxy");
-                if(ephHost == null
+                if (ephHost == null
                         || ephPort == null || !ephPort.isNumber()
                         || ephRedirect == null || !ephRedirect.isBoolean()
                         || ephHaproxy == null || !ephHaproxy.isBoolean()) {
@@ -271,11 +276,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                     return;
                 }
-                b = new Backend(ephHost, ephPort.asNumber().intValue(), ephRedirect.asBoolean(), ephHaproxy.asBoolean());
+                b = new Backend(ephHost, ephPort.asNumber().intValue(), ephRedirect.asBoolean(),
+                        ephHaproxy.asBoolean());
 
             } else {
                 b = server.getBackends().get(backendId);
-                if(b == null) {
+                if (b == null) {
                     LOGGER.warn("Unable to find requested reconnect backend {}!", backendId);
                     disconnect(server.getLangManager().getMessage("error.invalid_reconnect", conn.getLanguage(), conn));
                     return;
@@ -326,13 +332,13 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void connectToBackend(Backend b) {
 
-        if(conn.hasDisconnected()) {
+        if (conn.hasDisconnected()) {
             LOGGER.warn("Attempt to connect disconnected player to a backend");
             return;
         }
 
         selectedBackend = b;
-        if(wasReconnected() || !conn.authenticated()) {
+        if (wasReconnected() || !conn.authenticated()) {
             connectToBackendNow();
         } else {
             conn.enterConfigurationEvent().invokeAsync(new Tuples.T2<>(b, conn)).thenAccept(unused -> {
@@ -345,11 +351,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         conn.preConnectBackendEvent().invokeAsync(new Tuples.T2<>(selectedBackend, conn)).thenAccept(unused -> {
 
-            if(!channel.isActive()) {
+            if (!channel.isActive()) {
                 return;
             }
-
-            if(conn.authenticated()) {
+            if (conn.authenticated()) {
                 reconnect(selectedBackend);
                 return;
             }
@@ -363,7 +368,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
                         conn.setBackend(bconn);
 
-                        bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(), ServerboundHandshakePacket.Intent.LOGIN));
+                        bconn.send(new ServerboundHandshakePacket(conn.protocolVersion(), conn.hostname(), conn.port(),
+                                ServerboundHandshakePacket.Intent.LOGIN));
 
                         PlayerProfile profile = conn.profile();
 
@@ -379,7 +385,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                     })
                     .exceptionally(ex -> {
                         LOGGER.error("An error occurred while connecting to a backend server!", ex);
-                        disconnect(server.getLangManager().getMessage("error.backend_connection_failed", conn.getLanguage(), conn));
+                        disconnect(server.getLangManager().getMessage("error.backend_connection_failed",
+                                conn.getLanguage(), conn));
                         return null;
                     });
         });
@@ -394,10 +401,12 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         boolean canConnectImmediately = true;
 
-        if(server.requiresAuth()) {
+        if (server.requiresAuth()) {
             canConnectImmediately = false;
-        } else if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
+        } else if (server.getOnlinePlayers() >= server.getPlayerLimit()) {
             switch (conn.bypassesPlayerLimit(server)) {
+                case PASS -> {
+                }
                 case FAIL -> {
                     disconnect(server.getLangManager().getMessage("error.server_full", conn.getLanguage(), conn));
                     return;
@@ -406,56 +415,58 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             }
         }
 
-        if(canConnectImmediately) {
+        if (canConnectImmediately) {
             tryNextServer();
             return;
         }
 
-        if(conn.hasDisconnected()) {
+        if (conn.hasDisconnected()) {
             return;
         }
 
         startAuthentication();
     }
 
-
     private void startAuthentication() {
 
-        if(conn.authenticated()) {
+        if (conn.authenticated()) {
             throw new IllegalStateException("Attempt to re-authenticate player");
         }
 
-        if(!new GameVersion("", conn.protocolVersion()).hasFeature(PacketBufferUtil.TRANSFER_PACKETS)) {
+        if (!new GameVersion("", conn.protocolVersion()).hasFeature(PacketBufferUtil.TRANSFER_PACKETS)) {
             disconnect(server.getLangManager().getMessage("error.cannot_transfer", conn.getLanguage(), conn));
             return;
         }
 
         challenge = Ints.toByteArray(random.nextInt());
-        if(server.usesAuthentication()) {
+        if (server.usesAuthentication()) {
 
             LOGGER.info("Starting authentication for {}", conn.username());
-            if(authRoutes.isEmpty()) {
+            if (authRoutes.isEmpty()) {
                 disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
                 return;
             }
 
             CompletableFuture.runAsync(() -> {
 
-                while(!routes.isEmpty()) {
+                while (!routes.isEmpty()) {
                     AuthRoute route = authRoutes.remove();
-                    if(route.authenticator().shouldClientAuthenticate()) {
-                        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, true));
+                    if (route.authenticator().shouldClientAuthenticate()) {
+                        conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(),
+                                challenge, true));
                         return;
                     }
 
-                    if(route.canUse(context)) {
+                    if (route.canUse(context)) {
                         PlayerProfile prof = route.authenticate(context, null);
                         if (prof != null) {
                             conn.setProfile(prof);
-                            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
+                            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(),
+                                    challenge, false));
                             return;
-                        } else if(route.kickOnFail()) {
-                            disconnect(server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
+                        } else if (route.kickOnFail()) {
+                            disconnect(
+                                    server.getLangManager().getMessage(route.kickMessage(), conn.getLanguage(), conn));
                         }
                     }
                 }
@@ -467,13 +478,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             server.usesAuthentication();
 
         } else {
-            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge, false));
+            conn.send(new ClientboundEncryptionPacket("", server.getKeyPair().getPublic().getEncoded(), challenge,
+                    false));
         }
     }
 
     private void finishAuthentication(PlayerProfile profile) {
 
-        if(profile == null) {
+        if (profile == null) {
             disconnect(server.getLangManager().getMessage("error.generic_auth_failed", conn.getLanguage(), conn));
             return;
         }
@@ -483,8 +495,8 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
         LOGGER.info("User {} signed in with UUID {}", getUsername(), profile.uuid());
 
-        if(server.getOnlinePlayers() >= server.getPlayerLimit()) {
-            if(conn.bypassesPlayerLimit(server) != TestResult.PASS) {
+        if (server.getOnlinePlayers() >= server.getPlayerLimit()) {
+            if (conn.bypassesPlayerLimit(server) != TestResult.PASS) {
                 disconnect(server.getLangManager().getMessage("error.server_full", conn.getLanguage(), conn));
                 return;
             }
@@ -507,7 +519,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     private void tryNextServer() {
 
         Backend toUse = null;
-        while(!routes.isEmpty()) {
+        while (!routes.isEmpty()) {
 
             Route current = routes.peek();
             if (conn.authenticated() || current.requirement() != null && !current.requirement().requiresAuth()) {
@@ -517,7 +529,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                         conn.send(new ClientboundCookieRequestPacket(id));
                     }
                 }
-                if(!requestedCookies.isEmpty()) {
+                if (!requestedCookies.isEmpty()) {
                     return;
                 }
             }
@@ -528,21 +540,21 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
-            if(res == TestResult.NOT_ENOUGH_INFO) {
+            if (res == TestResult.NOT_ENOUGH_INFO) {
                 startAuthentication();
                 return;
             }
 
-            if(res == TestResult.PASS) {
+            if (res == TestResult.PASS) {
                 toUse = current.resolveBackend(context, server.getBackends());
-                if(toUse == null) {
+                if (toUse == null) {
                     LOGGER.warn("Unable to resolve backend for successful route! ({})", current.backend());
                 } else {
                     break;
                 }
             }
 
-            if(res == TestResult.FAIL && current.kickOnFail()) {
+            if (res == TestResult.FAIL && current.kickOnFail()) {
                 disconnect(server.getLangManager().getMessage(current.kickMessage(), conn.getLanguage(), conn));
                 return;
             }
@@ -550,7 +562,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             routes.remove();
         }
 
-        if(toUse == null) {
+        if (toUse == null) {
             LOGGER.warn("Unable to find any backend server for {}!", getUsername());
             disconnect(server.getLangManager().getMessage("error.no_valid_backends", conn.getLanguage(), conn));
             return;
@@ -561,10 +573,10 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
 
     private void setupEncryption(byte[] key) throws GeneralSecurityException {
 
-        if(!channel.isActive()) {
+        if (!channel.isActive()) {
             throw new IllegalStateException("Channel is not active!");
         }
-        if(!channel.eventLoop().inEventLoop()) {
+        if (!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("Attempt to enable encryption from outside the event loop!");
         }
         channel.config().setAutoRead(false);
@@ -590,7 +602,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         channel.pipeline().remove("frame_enc");
         channel.pipeline().remove("encoder");
 
-        if(encrypted) {
+        if (encrypted) {
             channel.pipeline().remove("decrypt");
             channel.pipeline().remove("encrypt");
         }
@@ -598,12 +610,14 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         channel.pipeline().addLast("forward", new PacketForwarder(forward));
         channel.config().setAutoRead(true);
 
-        LOGGER.info("User {} connected to backend {}", conn.username(), server.getBackends().getId(conn.getBackendConnection().getBackend()));
+        LOGGER.info("User {} connected to backend {}", conn.username(),
+                server.getBackends().getId(conn.getBackendConnection().getBackend()));
     }
 
     public String getUsername() {
 
-        if(conn == null) return channel.remoteAddress().toString();
+        if (conn == null)
+            return channel.remoteAddress().toString();
 
         PlayerProfile profile = conn.profile();
         return profile == null
@@ -619,12 +633,15 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
     @SuppressWarnings("unchecked")
     public void changePhase(ProtocolPhase phase) {
 
-        if(!channel.isActive()) return;
+        if (!channel.isActive())
+            return;
 
         conn.phase = phase;
 
-        channel.pipeline().get(PacketDecoder.class).setRegistry(PacketRegistry.getServerbound(conn.protocolVersion(), phase));
-        channel.pipeline().get(PacketEncoder.class).setRegistry(PacketRegistry.getClientbound(conn.protocolVersion(), phase));
+        channel.pipeline().get(PacketDecoder.class)
+                .setRegistry(PacketRegistry.getServerbound(conn.protocolVersion(), phase));
+        channel.pipeline().get(PacketEncoder.class)
+                .setRegistry(PacketRegistry.getClientbound(conn.protocolVersion(), phase));
 
     }
 
@@ -647,7 +664,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 .issuedBy("midnightproxy");
 
         // Ephemeral Backend
-        if(backendId == null) {
+        if (backendId == null) {
             backendId = b.toString();
             builder.withClaim("backend_host", b.hostname())
                     .withClaim("backend_port", b.port())
@@ -668,7 +685,5 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
         conn.send(new ClientboundTransferPacket(host, port), ChannelFutureListener.CLOSE);
 
     }
-
-
 
 }

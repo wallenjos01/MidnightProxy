@@ -5,14 +5,15 @@ import org.wallentines.mdproxy.packet.*;
 import org.wallentines.mdproxy.util.PacketBufferUtil;
 import org.wallentines.mdcfg.registry.Identifier;
 
-public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) implements Packet<ServerboundPacketHandler> {
+public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data)
+        implements Packet<ServerboundPacketHandler> {
 
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .afterVersionInPhase(766, 171, ProtocolPhase.CONFIG, 2)
             .inPhase(ProtocolPhase.CONFIG, 1)
-            .orElse(20)
+            .beforeVersion(771, 245, 20)
+            .orElse(21)
             .build();
-
 
     public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
             ServerboundPluginMessagePacket::read);
@@ -33,7 +34,7 @@ public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data) i
         handler.handle(this);
     }
 
-    public static ServerboundPluginMessagePacket read(int  version, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundPluginMessagePacket read(int version, ProtocolPhase phase, ByteBuf buf) {
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
         ServerboundPluginMessagePacket out = new ServerboundPluginMessagePacket(id, buf.retainedSlice());
         buf.skipBytes(buf.readableBytes());

@@ -41,7 +41,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final String hostname;
     private final int port;
 
-
     private PlayerProfile profile;
     private boolean auth;
     private String locale;
@@ -61,7 +60,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private final HandlerList<ServerboundPluginMessagePacket> pluginMessageEvent = new HandlerList<>();
     private final HandlerList<ServerboundLoginQueryPacket> loginQueryEvent = new HandlerList<>();
 
-
     private final ConcurrentHandlerList<ClientConnection> preLoginEvent;
     private final ConcurrentHandlerList<ClientConnection> postLoginEvent;
     private final ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> enterConfigurationEvent;
@@ -70,8 +68,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     private final ServerboundHandshakePacket.Intent intent;
 
-
-    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname, int port, ServerboundHandshakePacket.Intent intent, Executor svc) {
+    public ClientConnectionImpl(Channel channel, InetSocketAddress address, int protocolVersion, String hostname,
+            int port, ServerboundHandshakePacket.Intent intent, Executor svc) {
         this.channel = channel;
         this.address = address;
         this.protocolVersion = protocolVersion;
@@ -94,12 +92,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         return profile != null;
     }
 
-
     @Override
     public boolean profileAvailable() {
         return profile != null;
     }
-
 
     @Override
     public boolean authenticated() {
@@ -118,10 +114,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public TestResult bypassesPlayerLimit(Proxy server) {
 
-        if(server.getPlayerLimit() == -1) {
+        if (server.getPlayerLimit() == -1) {
             return TestResult.PASS;
         }
-        if(!authenticated()) {
+        if (!authenticated()) {
             return TestResult.NOT_ENOUGH_INFO;
         }
 
@@ -216,17 +212,17 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void send(Packet<ClientboundPacketHandler> packet, ChannelFutureListener listener) {
 
-        if(hasDisconnected()) {
+        if (hasDisconnected()) {
             LOGGER.warn("Attempt to send packet to player {} after they disconnected!", username());
             return;
         }
 
-        if(backend != null) {
+        if (backend != null) {
             LOGGER.warn("Attempt to send packet to player {} after they connected to a backend!", username());
             return;
         }
 
-        if(channel.eventLoop().inEventLoop()) {
+        if (channel.eventLoop().inEventLoop()) {
             doSend(packet, listener);
         } else {
             channel.eventLoop().execute(() -> doSend(packet, listener));
@@ -251,7 +247,6 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         disconnect(TextUtil.COMPONENT_RESOLVER.accept(component, PipelineContext.of(this)));
     }
 
-
     public void disconnect() {
         disconnect(null, true);
     }
@@ -262,20 +257,21 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     public void disconnect(Component component, boolean log) {
 
-        if(hasDisconnected()) {
+        if (hasDisconnected()) {
             return;
         }
 
         disconnected = true;
-        if(!channel.isActive()) {
+        if (!channel.isActive()) {
             return;
         }
 
-        if(component == null) {
+        if (component == null) {
             LOGGER.info("Disconnecting player {}", username());
         } else {
-            if(log) LOGGER.info("Disconnecting player {}: {}", username(), MessageUtil.flatten(component));
-            if(backend == null) {
+            if (log)
+                LOGGER.info("Disconnecting player {}: {}", username(), MessageUtil.flatten(component));
+            if (backend == null) {
                 send(new ClientboundKickPacket(component));
             }
         }
@@ -286,17 +282,17 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     public void cleanup() {
         disconnected = true;
 
-        for(CompletableFuture<byte[]> cookie : awaitedCookies.values()) {
+        for (CompletableFuture<byte[]> cookie : awaitedCookies.values()) {
             cookie.cancel(true);
         }
         awaitedCookies.clear();
 
-        for(CompletableFuture<ServerboundLoginQueryPacket> query : loginQueries.values()) {
+        for (CompletableFuture<ServerboundLoginQueryPacket> query : loginQueries.values()) {
             query.cancel(true);
         }
         loginQueries.clear();
 
-        for(CompletableFuture<ServerboundResourcePackStatusPacket> packStatus : resourcePacks.values()) {
+        for (CompletableFuture<ServerboundResourcePackStatusPacket> packStatus : resourcePacks.values()) {
             packStatus.cancel(true);
         }
         resourcePacks.clear();
@@ -313,7 +309,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
         CompletableFuture<ServerboundPluginMessagePacket> future = new CompletableFuture<>();
 
         pluginMessageEvent.register(future, msg -> {
-            if(msg.channel().equals(id)) {
+            if (msg.channel().equals(id)) {
                 future.complete(msg);
             }
         });
@@ -338,7 +334,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     private void loginQueryReceived(ServerboundLoginQueryPacket packet) {
 
         CompletableFuture<ServerboundLoginQueryPacket> awaited = loginQueries.remove(packet.messageId());
-        if(awaited == null) {
+        if (awaited == null) {
             LOGGER.warn("Received unsolicited login query #{}", packet.messageId());
             return;
         }
@@ -349,7 +345,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public CompletableFuture<ServerboundLoginQueryPacket> sendLoginQuery(Identifier id, ByteBuf data) {
 
-        if(hasDisconnected()) {
+        if (hasDisconnected()) {
             return CompletableFuture.failedFuture(new IOException("Client disconnected"));
         }
 
@@ -386,16 +382,18 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public CompletableFuture<ServerboundResourcePackStatusPacket> sendResourcePack(ResourcePack pack) {
 
-        if(hasDisconnected()) {
+        if (hasDisconnected()) {
             return CompletableFuture.failedFuture(new IOException("Client disconnected"));
         }
 
-        if(phase == ProtocolPhase.LOGIN || phase == ProtocolPhase.HANDSHAKE) {
-            return CompletableFuture.failedFuture(new IllegalStateException("Resource packs cannot be applied during " + phase.name()));
+        if (phase == ProtocolPhase.LOGIN || phase == ProtocolPhase.HANDSHAKE) {
+            return CompletableFuture
+                    .failedFuture(new IllegalStateException("Resource packs cannot be applied during " + phase.name()));
         }
 
-        if(resourcePacks.containsKey(pack.uuid())) {
-            return CompletableFuture.failedFuture(new IllegalStateException("Attempt to apply the same resource pack twice!"));
+        if (resourcePacks.containsKey(pack.uuid())) {
+            return CompletableFuture
+                    .failedFuture(new IllegalStateException("Attempt to apply the same resource pack twice!"));
         }
 
         CompletableFuture<ServerboundResourcePackStatusPacket> out = new CompletableFuture<>();
@@ -419,7 +417,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     @Override
     public CompletableFuture<byte[]> requestCookie(Identifier id) {
 
-        if(hasDisconnected()) {
+        if (hasDisconnected()) {
             return CompletableFuture.failedFuture(new IOException("Client disconnected"));
         }
 
@@ -431,11 +429,10 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     void onCookieResponse(Identifier id, byte @Nullable [] data) {
         CompletableFuture<byte[]> fut = awaitedCookies.remove(id);
-        if(fut != null) {
+        if (fut != null) {
             fut.complete(data);
         }
     }
-
 
     @Override
     public ServerboundHandshakePacket.Intent getIntent() {
@@ -444,13 +441,16 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     void onPackResponse(ServerboundResourcePackStatusPacket packet) {
 
-        if(packet.action() == ServerboundResourcePackStatusPacket.Action.ACCEPTED || packet.action() == ServerboundResourcePackStatusPacket.Action.DOWNLOAD_COMPLETE) {
+        LOGGER.info("Got resource pack response from {}: {}", username(), packet.action());
+
+        if (packet.action() == ServerboundResourcePackStatusPacket.Action.ACCEPTED
+                || packet.action() == ServerboundResourcePackStatusPacket.Action.DOWNLOAD_COMPLETE) {
             // Expect more packets
             return;
         }
 
         CompletableFuture<ServerboundResourcePackStatusPacket> future = resourcePacks.remove(packet.packId());
-        if(future == null) {
+        if (future == null) {
             LOGGER.warn("Received unsolicited resource pack response for pack {}", packet.packId());
             return;
         }

@@ -10,7 +10,8 @@ public record ServerboundCookiePacket(Identifier key, byte[] data) implements Pa
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.LOGIN, 4)
             .inPhase(ProtocolPhase.CONFIG, 1)
-            .orElse(19)
+            .beforeVersion(771, 245, 19)
+            .orElse(20)
             .build();
 
     public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,
@@ -33,7 +34,7 @@ public record ServerboundCookiePacket(Identifier key, byte[] data) implements Pa
         handler.handle(this);
     }
 
-    public static ServerboundCookiePacket read(int  ver, ProtocolPhase phase, ByteBuf buf) {
+    public static ServerboundCookiePacket read(int ver, ProtocolPhase phase, ByteBuf buf) {
 
         Identifier id = Identifier.parseOrDefault(PacketBufferUtil.readUtf(buf), "minecraft");
         byte[] data = PacketBufferUtil.readOptional(buf, buf1 -> {

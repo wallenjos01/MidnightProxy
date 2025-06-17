@@ -25,7 +25,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if(msg instanceof ByteBuf buf) {
+        if (msg instanceof ByteBuf buf) {
             decode(ctx, buf);
         } else {
             ctx.fireChannelRead(msg);
@@ -40,25 +40,31 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
         }
 
         int id = PacketBufferUtil.readVarInt(bytes);
-        if(registry.getPacketType(id) == null) {
+        if (registry.getPacketType(id) == null) {
+            LOGGER.warn("Received packet with unknown id {} in phase {}[{}]!", id, registry.getPhase().name(),
+                    registry.getPacketFlow().name());
             ctx.channel().close();
             return;
         }
 
+        LOGGER.warn("Decoded a packet with id {} in phase {}[{}]!", id, registry.getPhase().name(),
+                registry.getPacketFlow().name());
+
         Packet<T> p;
         try {
             p = registry.read(id, bytes);
-            if(bytes.isReadable()) {
+            if (bytes.isReadable()) {
                 int extra = bytes.readableBytes();
                 throw new DecoderException("Found " + extra + " extra bytes after the end of a packet!");
             }
             ctx.fireChannelRead(p);
 
         } catch (Exception ex) {
-            throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase " + registry.getPhase().name() + "[" + registry.getPacketFlow().name() + "]", ex);
+            throw new DecoderException("An error occurred while parsing a packet with id " + id + " in phase "
+                    + registry.getPhase().name() + "[" + registry.getPacketFlow().name() + "]", ex);
         }
 
-        if(bytes.refCnt() > 0) {
+        if (bytes.refCnt() > 0) {
             bytes.release();
         }
     }

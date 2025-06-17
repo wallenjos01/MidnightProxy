@@ -13,13 +13,12 @@ import org.wallentines.pseudonym.text.ConfigTextParser;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Executors;
 
 /**
- * A packet handler for legacy ping requests. See <a href="https://wiki.vg/Server_List_Ping">...</a> for more information.
+ * A packet handler for legacy ping requests. See
+ * <a href="https://wiki.vg/Server_List_Ping">...</a> for more information.
  */
 public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LegacyPingHandler.class);
     private static final String PING_CHANNEL = "MC|PingHost";
@@ -57,13 +56,16 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            // 1.4-1.5 clients send only FE and the payload. 1.6 Also sends client information as a plugin message.
+            // 1.4-1.5 clients send only FE and the payload. 1.6 Also sends client
+            // information as a plugin message.
             ClientConnectionImpl conn;
             if (buf.isReadable()) {
                 conn = readClientInfo(ctx, buf);
-                if(conn == null) return;
+                if (conn == null)
+                    return;
             } else {
-                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
+                conn = new ClientConnectionImpl(ctx.channel(), address.get(), 60,
+                        ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
             }
 
             handleV1Request(ctx, conn);
@@ -77,7 +79,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
             ctx.channel().pipeline().remove(this);
 
-            if(!legacyPing) {
+            if (!legacyPing) {
                 buf.resetReaderIndex();
                 ctx.fireChannelRead(buf);
             }
@@ -88,15 +90,18 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
     private ClientConnectionImpl readClientInfo(ChannelHandlerContext ctx, ByteBuf buf) {
 
         int packetId = buf.readUnsignedByte();
-        if(packetId != 0xFA) {
-            LOGGER.debug("Failed to read client info from legacy ping! Expected packet ID 0xFA, but found {}", packetId);
+        if (packetId != 0xFA) {
+            LOGGER.debug("Failed to read client info from legacy ping! Expected packet ID 0xFA, but found {}",
+                    packetId);
             return null;
         }
 
         short channelLength = buf.readShort();
         String channel = buf.readCharSequence(channelLength * 2, StandardCharsets.UTF_16BE).toString();
-        if(!channel.equals(PING_CHANNEL)) {
-            LOGGER.debug("Failed to read client info from legacy ping! Expected plugin message in channel {}, but found {}", PING_CHANNEL, channel);
+        if (!channel.equals(PING_CHANNEL)) {
+            LOGGER.debug(
+                    "Failed to read client info from legacy ping! Expected plugin message in channel {}, but found {}",
+                    PING_CHANNEL, channel);
             return null;
         }
 
@@ -108,16 +113,18 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
         int port = buf.readInt();
 
-        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port, ServerboundHandshakePacket.Intent.STATUS, null);
+        return new ClientConnectionImpl(ctx.channel(), address.get(), protocolVersion, hostname, port,
+                ServerboundHandshakePacket.Intent.STATUS, null);
     }
 
     private void handleV0Request(ChannelHandlerContext ctx) {
 
         LOGGER.debug("Received legacy ping (pre-1.4) from {}", ctx.channel().remoteAddress());
 
-        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39, ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
+        ClientConnectionImpl conn = new ClientConnectionImpl(ctx.channel(), address.get(), 39,
+                ctx.channel().localAddress().toString(), 25565, ServerboundHandshakePacket.Intent.STATUS, null);
         StatusEntry ent = conn.getStatusEntry(server);
-        if(ent == null) {
+        if (ent == null) {
             ctx.channel().close();
             return;
         }
@@ -125,8 +132,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
         String data = String.format("%s§%d§%d",
                 "",
                 server.getOnlinePlayers(),
-                server.getPlayerLimit()
-        );
+                server.getPlayerLimit());
 
         kick(ctx, data);
     }
@@ -136,19 +142,19 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
         LOGGER.debug("Received legacy ping (1.4-1.6) from {}", ctx.channel().remoteAddress());
 
         StatusEntry ent = conn.getStatusEntry(server);
-        if(ent == null) {
+        if (ent == null) {
             ctx.channel().close();
             return;
         }
-        StatusMessage msg = ent.create(new GameVersion("1.21", 767), server.getOnlinePlayers(), server.getPlayerLimit(), server.getIconCache());
+        StatusMessage msg = ent.create(new GameVersion("1.21", 767), server.getOnlinePlayers(), server.getPlayerLimit(),
+                server.getIconCache());
 
         String data = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
                 msg.version().protocolVersion(),
                 msg.version().protocolVersion(),
                 ConfigTextParser.LEGACY.serialize(msg.message()).replace("\u00A7", "\\u00A7"),
                 msg.playersOnline(),
-                msg.maxPlayers()
-        );
+                msg.maxPlayers());
 
         kick(ctx, data);
     }
