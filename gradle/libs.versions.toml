@@ -1,9 +1,9 @@
 [versions]
 junit = "5.11.0"
 netty = "4.1.115.Final"
-mdcfg = "3.4.0"
+mdcfg = "3.5.0-SNAPSHOT"
 mdlib = "2.2.0"
-smi = "0.3.0"
+smi = "0.3.1-SNAPSHOT"
 slf4j = "2.0.11"
 logback = "1.5.8"
 jbr-anno = "24.1.0"

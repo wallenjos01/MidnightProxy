@@ -10,9 +10,7 @@ Utils.setupResources(project, rootProject, "plugin.json")
 dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(project(":api"))
-
-    implementation(libs.midnight.cfg.sql)
-    shadow(libs.midnight.cfg.sql)
+    compileOnly(project(":sql"))
 }
 
 val copyOutputTask = tasks.register<Copy>("copyOutputFiles") {
