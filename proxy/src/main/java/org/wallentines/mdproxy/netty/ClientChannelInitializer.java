@@ -9,6 +9,7 @@ import io.netty.handler.flow.FlowControlHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.mdcfg.Tuples;
 import org.wallentines.mdproxy.BackendConnectionImpl;
 import org.wallentines.mdproxy.ClientConnectionImpl;
 import org.wallentines.mdproxy.ClientPacketHandler;
@@ -68,6 +69,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                 } else if(!conn.hasDisconnected() && !conn.wasReconnected()) {
                     LOGGER.warn("Client disconnected unexpectedly: {}", handler.getUsername());
                 }
+                conn.disconnectEvent().invoke(new Tuples.T2<>(conn.getBackendConnection().getBackend(), conn));
                 if(conn.profileAvailable()) {
                     server.getPlayerList().removePlayer(conn.uuid());
                 }

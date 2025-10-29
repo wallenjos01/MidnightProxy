@@ -548,7 +548,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
             if (res == TestResult.PASS) {
                 toUse = current.resolveBackend(context, server.getBackends());
                 if (toUse == null) {
-                    LOGGER.warn("Unable to resolve backend for successful route! ({})", current.backend());
+                    LOGGER.warn("Unable to resolve backend for successful route! ({})", current.backends());
                 } else {
                     break;
                 }

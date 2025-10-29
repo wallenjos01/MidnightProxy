@@ -1,16 +1,24 @@
 package org.wallentines.mdproxy.lastsrv;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.registry.Identifier;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdcfg.sql.Condition;
+import org.wallentines.mdcfg.sql.DataType;
+import org.wallentines.mdcfg.sql.DataValue;
+import org.wallentines.mdcfg.sql.QueryResult;
 import org.wallentines.mdproxy.ConnectionContext;
 import org.wallentines.mdproxy.DataManager;
 import org.wallentines.mdproxy.requirement.ConnectionCheck;
 import org.wallentines.mdproxy.requirement.ConnectionCheckType;
+import org.wallentines.mdproxy.sql.SQLPlugin;
 
 public class LastServerCheck implements ConnectionCheck {
 
@@ -45,18 +53,18 @@ public class LastServerCheck implements ConnectionCheck {
 
         pl.connectDatabase(ctx.getProxy())
             .thenAccept(sql -> {
-                UUID uid = client.uuid();
+                UUID uid = ctx.uuid();
                 ByteBuffer uuidBuf = ByteBuffer.allocate(16);
                 uuidBuf.putLong(0, uid.getMostSignificantBits());
                 uuidBuf.putLong(8, uid.getLeastSignificantBits());
                 DataValue dv = DataType.BLOB.create(uuidBuf);
 
                 QueryResult res = sql.select(Tables.TABLE_NAME)
-                                      .where(Condition.equals("uuid", dv))
+                                      .where(Condition.equals("player", dv))
                                       .execute();
 
-                if (res.size() > 0) {
-                    String id = res.row(0).getString("server");
+                if (res.rows() > 0) {
+                    String id = res.get(0).getString("server");
                     ctx.setMetaProperty("last_server_backend", id);
                     result.set(true);
                 }

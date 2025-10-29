@@ -14,7 +14,7 @@ public class Tables {
             .withColumn("server", DataType.VARCHAR(1024))
             .build();
 
-    public void init(SQLConnection connection) {
+    public static void init(SQLConnection connection) {
 
         if (!connection.hasTable(TABLE_NAME)) {
             connection.createTable(TABLE_NAME, TABLE_SCHEMA).execute();

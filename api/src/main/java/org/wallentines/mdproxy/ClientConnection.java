@@ -237,6 +237,7 @@ public interface ClientConnection {
     ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> enterConfigurationEvent();
     ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> preConnectBackendEvent();
     ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> postConnectBackendEvent();
+    ConcurrentHandlerList<Tuples.T2<Backend, ClientConnection>> disconnectEvent();
 
     static void registerPlaceholders(PlaceholderManager manager) {
 

@@ -9,6 +9,7 @@ Utils.setupResources(project, rootProject, "plugin.json")
 dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(project(":api"))
+    compileOnly(project(":plugin-sql"))
 }
 
 val copyOutputTask = tasks.register<Copy>("copyOutputFiles") {
