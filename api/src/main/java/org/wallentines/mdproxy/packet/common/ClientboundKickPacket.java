@@ -13,6 +13,7 @@ public record ClientboundKickPacket(Component message) implements Packet<Clientb
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.LOGIN, 0)
             .inPhase(ProtocolPhase.CONFIG, 2)
+            .afterVersion(774, 259, 32)
             .afterVersion(770, 229, 27)
             .orElse(29)
             .build();

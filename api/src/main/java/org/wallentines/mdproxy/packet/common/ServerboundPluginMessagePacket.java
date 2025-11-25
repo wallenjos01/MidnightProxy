@@ -11,8 +11,9 @@ public record ServerboundPluginMessagePacket(Identifier channel, ByteBuf data)
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .afterVersionInPhase(766, 171, ProtocolPhase.CONFIG, 2)
             .inPhase(ProtocolPhase.CONFIG, 1)
-            .beforeVersion(771, 245, 20)
-            .orElse(21)
+            .afterVersion(773, 259, 22)
+            .afterVersion(771, 245, 21)
+            .orElse(20)
             .build();
 
     public static final PacketType<ServerboundPacketHandler> TYPE = PacketType.of(ID_SELECTOR::select,

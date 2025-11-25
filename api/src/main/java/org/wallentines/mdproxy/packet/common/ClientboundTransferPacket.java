@@ -8,6 +8,7 @@ public record ClientboundTransferPacket(String host, int port) implements Packet
 
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.CONFIG, 11)
+            .afterVersion(773, 259, 127)
             .orElse(122)
             .build();
 

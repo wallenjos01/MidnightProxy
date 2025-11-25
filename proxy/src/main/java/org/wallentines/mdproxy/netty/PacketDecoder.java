@@ -41,8 +41,7 @@ public class PacketDecoder<T> extends ChannelInboundHandlerAdapter {
 
         int id = PacketBufferUtil.readVarInt(bytes);
         if (registry.getPacketType(id) == null) {
-            ctx.channel().close();
-            return;
+            throw new DecoderException("Unknown packet type " + id + "!");
         }
 
         Packet<T> p;

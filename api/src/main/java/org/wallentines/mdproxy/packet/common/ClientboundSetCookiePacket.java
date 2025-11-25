@@ -9,6 +9,7 @@ public record ClientboundSetCookiePacket(Identifier id, byte[] data) implements 
 
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.CONFIG, 10)
+            .afterVersion(773, 259, 118)
             .afterVersion(770, 229, 113)
             .orElse(114)
             .build();

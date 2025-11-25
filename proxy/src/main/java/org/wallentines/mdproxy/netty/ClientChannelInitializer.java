@@ -69,7 +69,7 @@ public class ClientChannelInitializer extends ChannelInitializer<Channel> {
                 } else if(!conn.hasDisconnected() && !conn.wasReconnected()) {
                     LOGGER.warn("Client disconnected unexpectedly: {}", handler.getUsername());
                 }
-                conn.disconnectEvent().invoke(new Tuples.T2<>(conn.getBackendConnection().getBackend(), conn));
+                conn.disconnectEvent().invoke(new Tuples.T2<>(bConn == null ? null : bConn.getBackend(), conn));
                 if(conn.profileAvailable()) {
                     server.getPlayerList().removePlayer(conn.uuid());
                 }

@@ -39,11 +39,12 @@ public record Route(BackendSet backends, @Nullable ConnectionRequirement require
     }
 
     public @Nullable Backend resolveBackend(ConnectionContext ctx, Registry<String, Backend> registry) {
+        if(backends == null) return null;
         return backends.next(ctx, registry, balanceStrategy);
     }
 
     public static final Serializer<Route> SERIALIZER = ObjectSerializer.create(
-            BackendSet.SERIALIZER.entry("backends", Route::backends).acceptKey("backend").optional(),
+            BackendSet.SERIALIZER.entry("backend", Route::backends).optional(),
             ConnectionRequirement.SERIALIZER.entry("requirement", Route::requirement).optional(),
             Serializer.BOOLEAN.entry("kick_on_fail", Route::kickOnFail).orElse(false),
             Serializer.STRING.entry("kick_message", Route::kickMessage).orElse("error.generic_route_failed"),

@@ -270,44 +270,46 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
             return;
         }
 
-        disconnected = true;
         if (!channel.isActive()) {
             return;
         }
 
-        if (component == null) {
-            LOGGER.info("Disconnecting player {}", username());
-        } else {
-            if (log)
+        if(log)
+            if (component == null) {
+                LOGGER.info("Disconnecting player {}", username());
+            } else {
                 LOGGER.info("Disconnecting player {}: {}", username(),
                             MessageUtil.flatten(component));
-            if (backend == null) {
-                send(new ClientboundKickPacket(component));
-            }
         }
 
+        if (backend == null) {
+            send(new ClientboundKickPacket(component == null ? Component.empty() : component));
+        }
+
+        disconnected = true;
         channel.close().awaitUninterruptibly();
     }
 
     public void cleanup() {
         disconnected = true;
 
-        for (CompletableFuture<byte[]> cookie : awaitedCookies.values()) {
-            cookie.cancel(true);
-        }
+        List<CompletableFuture<byte[]>> cookies = List.copyOf(awaitedCookies.values());
         awaitedCookies.clear();
-
-        for (CompletableFuture<ServerboundLoginQueryPacket> query :
-             loginQueries.values()) {
-            query.cancel(true);
+        for (CompletableFuture<byte[]> cookie : cookies) {
+            cookie.completeExceptionally(new IOException("Client disconnected"));
         }
+
+        List<CompletableFuture<ServerboundLoginQueryPacket>> queries = List.copyOf(loginQueries.values());
         loginQueries.clear();
-
-        for (CompletableFuture<ServerboundResourcePackStatusPacket> packStatus :
-             resourcePacks.values()) {
-            packStatus.cancel(true);
+        for (CompletableFuture<ServerboundLoginQueryPacket> query : queries) {
+            query.completeExceptionally(new IOException("Client disconnected"));
         }
+
+        List<CompletableFuture<ServerboundResourcePackStatusPacket>> packs = List.copyOf(resourcePacks.values());
         resourcePacks.clear();
+        for (CompletableFuture<ServerboundResourcePackStatusPacket> pack : packs) {
+            pack.completeExceptionally(new IOException("Client disconnected"));
+        }
     }
 
     @Override
@@ -348,6 +350,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
 
     private void loginQueryReceived(ServerboundLoginQueryPacket packet) {
 
+        if(hasDisconnected()) return;
         CompletableFuture<ServerboundLoginQueryPacket> awaited =
             loginQueries.remove(packet.messageId());
         if (awaited == null) {
@@ -407,6 +410,8 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     public CompletableFuture<ServerboundResourcePackStatusPacket>
     sendResourcePack(ResourcePack pack) {
 
+        if(pack == null) return CompletableFuture.failedFuture(new IllegalArgumentException("Cannot send a null resource pack!"));
+
         if (hasDisconnected()) {
             return CompletableFuture.failedFuture(
                 new IOException("Client disconnected"));
@@ -456,6 +461,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     void onCookieResponse(Identifier id, byte @Nullable[] data) {
+        if(hasDisconnected()) return;
         CompletableFuture<byte[]> fut = awaitedCookies.remove(id);
         if (fut != null) {
             fut.complete(data);
@@ -468,6 +474,7 @@ public class ClientConnectionImpl implements ClientConnection, LocaleHolder {
     }
 
     void onPackResponse(ServerboundResourcePackStatusPacket packet) {
+        if(hasDisconnected()) return;
         if (packet.action() ==
                 ServerboundResourcePackStatusPacket.Action.ACCEPTED ||
             packet.action() ==

@@ -10,6 +10,7 @@ public record ClientboundPluginMessagePacket(Identifier channel, ByteBuf data) i
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .afterVersionInPhase(766, 171, ProtocolPhase.CONFIG, 1)
             .inPhase(ProtocolPhase.CONFIG, 0)
+            .afterVersion(773, 259, 24)
             .afterVersion(770, 229, 23)
             .orElse(25)
             .build();

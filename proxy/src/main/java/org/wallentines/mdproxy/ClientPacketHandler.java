@@ -359,6 +359,7 @@ public class ClientPacketHandler implements ServerboundPacketHandler {
                 return;
             }
 
+
             channel.config().setAutoRead(false);
 
             server.getConnectionManager()

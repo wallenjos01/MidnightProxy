@@ -12,6 +12,7 @@ public record ClientboundAddResourcePackPacket(UUID packId, String url, String s
 
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.CONFIG, 9)
+            .afterVersion(773, 259, 79)
             .afterVersion(770, 229, 74)
             .orElse(75)
             .build();
