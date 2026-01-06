@@ -10,7 +10,6 @@ public record ServerboundCookiePacket(Identifier key, byte[] data) implements Pa
     private static final VersionSelector<Integer> ID_SELECTOR = VersionSelector.<Integer>builder()
             .inPhase(ProtocolPhase.LOGIN, 4)
             .inPhase(ProtocolPhase.CONFIG, 1)
-            .afterVersion(773, 259, 21)
             .afterVersion(771, 245, 20)
             .orElse(19)
             .build();

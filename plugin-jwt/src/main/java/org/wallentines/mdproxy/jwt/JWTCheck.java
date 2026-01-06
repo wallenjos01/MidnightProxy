@@ -44,6 +44,7 @@ public class JWTCheck implements ConnectionCheck {
 
         byte[] data = ctx.getConnection().getCookie(cookie);
         if(data == null || data.length == 0) {
+            JWTPlugin.LOGGER.warn("Unable to find required JWT cookie for {}! ({})", ctx.username(), cookie);
             return false;
         }
 
