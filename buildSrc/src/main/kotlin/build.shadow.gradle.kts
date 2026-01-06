@@ -23,7 +23,6 @@ tasks.jar {
     archiveClassifier.set("partial")
 }
 
-val javaComponent = components["java"] as AdhocComponentWithVariants
-javaComponent.withVariantsFromConfiguration(configurations["shadowRuntimeElements"]) {
-    skip()
+shadow {
+    addShadowVariantIntoJavaComponent = false
 }
